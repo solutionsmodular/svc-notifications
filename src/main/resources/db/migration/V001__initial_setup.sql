@@ -70,6 +70,18 @@ insert into ne.message_templates(tenant_id, event_subject, event_verb, status, r
 values (1, 'something', 'happened', 'A', 'msg.contextRequest.recipientAddress', 'STATIC', 'something-happened-summary',
         'STATIC', 'something-happened-body');
 
+--
+-- Key value definition of criteria to be met by message context for a template to result in a delivered notification
+create table ne.delivery_criteria
+(
+    id                BIGINT auto_increment,
+    messageTemplateId BIGINT       not null,
+    context_key       varchar(100) not null,
+    value             varchar(100) not null,
+    constraint delivery_criteria_pk
+        primary key (id)
+);
+
 create table ne.delivered_notifications
 (
     id                  BIGINT auto_increment              not null,
