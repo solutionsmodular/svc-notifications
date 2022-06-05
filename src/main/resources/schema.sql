@@ -5,10 +5,6 @@ create table ne.notification_component_status
     constraint status_pk
         primary key (status)
 );
-insert into ne.notification_component_status (status, description)
-values ('A', 'Active'),
-       ('I', 'Inactive'),
-       ('D', 'Deleted');
 
 --
 -- Describes the manner by which the content for a notification subject or body should be obtained
@@ -21,10 +17,6 @@ create table ne.content_lookup_types
     constraint content_lookup_types_pk
         primary key (type)
 );
-insert into ne.content_lookup_types(type, description)
-values ('URL', 'Static content HTML. Key should be http or https URL'),
-       ('CONTENT_KEY', 'Using SolMod infrastructure, this content key should be used for content management'),
-       ('STATIC', 'Reference the ne.basic_static_content table by content key');
 
 -- In systems not using Content Manager, Notification Engine can store its own content
 create table ne.basic_static_content
@@ -64,18 +56,13 @@ create table ne.message_templates
     constraint message_templates_pk
         primary key (id)
 );
-insert into ne.message_templates(tenant_id, event_subject, event_verb, status, recipient_context_key,
-                                 summary_content_lookup_type,
-                                 summary_content_key, body_content_lookup_type, body_content_key)
-values (1, 'something', 'happened', 'A', 'msg.contextRequest.recipientAddress', 'STATIC', 'something-happened-summary',
-        'STATIC', 'something-happened-body');
 
 --
 -- Key value definition of criteria to be met by message context for a template to result in a delivered notification
 create table ne.delivery_criteria
 (
     id                BIGINT auto_increment,
-    messageTemplateId BIGINT       not null,
+    message_template_id BIGINT       not null,
     context_key       varchar(100) not null,
     value             varchar(100) not null,
     constraint delivery_criteria_pk
