@@ -1,4 +1,4 @@
-package com.solmod.svcnotificationadmin.web;
+package com.solmod.notification.admin.web;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

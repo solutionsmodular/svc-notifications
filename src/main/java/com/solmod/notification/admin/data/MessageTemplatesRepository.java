@@ -1,9 +1,9 @@
-package com.solmod.svcnotificationadmin.data;
+package com.solmod.notification.admin.data;
 
 
-import com.solmod.svcnotificationadmin.domain.ContentLookupType;
-import com.solmod.svcnotificationadmin.domain.MessageTemplate;
-import com.solmod.svcnotificationadmin.domain.MessageTemplateStatus;
+import com.solmod.notification.admin.domain.ContentLookupType;
+import com.solmod.notification.admin.domain.MessageTemplate;
+import com.solmod.notification.admin.domain.MessageTemplateStatus;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

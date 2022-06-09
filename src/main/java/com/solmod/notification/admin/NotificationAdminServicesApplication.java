@@ -1,11 +1,11 @@
-package com.solmod.svcnotificationadmin;
+package com.solmod.notification.admin;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
-import com.solmod.svcnotificationadmin.domain.ContentLookupType;
-import com.solmod.svcnotificationadmin.domain.MessageTemplateStatus;
+import com.solmod.notification.admin.domain.ContentLookupType;
+import com.solmod.notification.admin.domain.MessageTemplateStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;

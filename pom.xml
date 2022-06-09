@@ -8,10 +8,10 @@
         <version>2.6.7</version>
     </parent>
     <groupId>com.solmod</groupId>
-    <artifactId>svc-notification-admin</artifactId>
+    <artifactId>svc-notifications</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>Notification Engine Admin Services</name>
-    <description>Administer configurations/admin which controls the behavior of the Notification Engine</description>
+    <name>Notification Services</name>
+    <description>This project supplies back end services handling Notification Engine and Notification Admin</description>
     <properties>
         <java.version>11</java.version>
         <spring-cloud.version>2021.0.2</spring-cloud.version>
