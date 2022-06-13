@@ -1,8 +1,10 @@
-package com.solmod.notification.admin.domain;
+package com.solmod.notification.domain;
 
 import com.solmod.commons.ObjectUtils;
 import com.solmod.commons.StringifyException;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 public class MessageTemplate extends Tenanted {
@@ -15,6 +17,7 @@ public class MessageTemplate extends Tenanted {
     private String summaryContentKey;
     private ContentLookupType bodyContentLookupType;
     private String bodyContentKey;
+    private Map<String, Object> deliveryCriteria = new HashMap<>();
 
     public String getEventSubject() {
         return eventSubject;
@@ -80,6 +83,14 @@ public class MessageTemplate extends Tenanted {
         this.bodyContentKey = bodyContentLookupKey;
     }
 
+    public Map<String, Object> getDeliveryCriteria() {
+        return deliveryCriteria;
+    }
+
+    public void setDeliveryCriteria(Map<String, Object> deliveryCriteria) {
+        this.deliveryCriteria = deliveryCriteria;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -101,6 +112,13 @@ public class MessageTemplate extends Tenanted {
         result = result + (eventSubject != null ? eventSubject.hashCode() : 0);
         result = result + (eventVerb != null ? eventVerb.hashCode() : 0);
         result = result + (messageTemplateStatus != null ? messageTemplateStatus.hashCode() : 0);
+        result = result + (recipientContextKey != null ? recipientContextKey.hashCode() : 0);
+        result = result + (summaryContentLookupType != null ? summaryContentLookupType.hashCode() : 0);
+        result = result + (summaryContentKey != null ? summaryContentKey.hashCode() : 0);
+        result = result + (bodyContentLookupType != null ? bodyContentLookupType.hashCode() : 0);
+        result = result + (bodyContentKey != null ? bodyContentKey.hashCode() : 0);
+        result = result + (deliveryCriteria != null ? deliveryCriteria.hashCode() : 0);
+
         return result;
     }
 

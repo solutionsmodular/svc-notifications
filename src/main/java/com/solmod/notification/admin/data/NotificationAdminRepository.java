@@ -1,9 +1,9 @@
 package com.solmod.notification.admin.data;
 
 
-import com.solmod.notification.admin.domain.ContentLookupType;
-import com.solmod.notification.admin.domain.MessageTemplate;
-import com.solmod.notification.admin.domain.MessageTemplateStatus;
+import com.solmod.notification.domain.ContentLookupType;
+import com.solmod.notification.domain.MessageTemplate;
+import com.solmod.notification.domain.MessageTemplateStatus;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,12 +20,12 @@ import java.sql.Timestamp;
 import java.util.*;
 
 @Repository
-public class MessageTemplatesRepository {
+public class NotificationAdminRepository {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final NamedParameterJdbcTemplate template;
 
-    public MessageTemplatesRepository(DataSource dataSource) {
+    public NotificationAdminRepository(DataSource dataSource) {
         this.template = new NamedParameterJdbcTemplate(dataSource);
     }
 

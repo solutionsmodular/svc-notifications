@@ -1,4 +1,4 @@
-package com.solmod.notification.admin.domain;
+package com.solmod.notification.domain;
 
 import java.util.Objects;
 
