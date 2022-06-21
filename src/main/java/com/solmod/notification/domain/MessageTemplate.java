@@ -13,10 +13,8 @@ public class MessageTemplate extends Tenanted {
     private String eventVerb;
     private MessageTemplateStatus messageTemplateStatus = MessageTemplateStatus.ACTIVE;
     private String recipientContextKey;
-    private ContentLookupType summaryContentLookupType;
-    private String summaryContentKey;
-    private ContentLookupType bodyContentLookupType;
-    private String bodyContentKey;
+    private ContentLookupType contentLookupType;
+    private String contentKey;
     private Map<String, Object> deliveryCriteria = new HashMap<>();
 
     public String getEventSubject() {
@@ -51,36 +49,24 @@ public class MessageTemplate extends Tenanted {
         this.recipientContextKey = recipientContextKey;
     }
 
-    public ContentLookupType getSummaryContentLookupType() {
-        return summaryContentLookupType;
+    public MessageTemplateStatus getMessageTemplateStatus() {
+        return messageTemplateStatus;
     }
 
-    public void setSummaryContentLookupType(ContentLookupType summaryContentLookupType) {
-        this.summaryContentLookupType = summaryContentLookupType;
+    public ContentLookupType getContentLookupType() {
+        return contentLookupType;
     }
 
-    public String getSummaryContentKey() {
-        return summaryContentKey;
+    public void setContentLookupType(ContentLookupType contentLookupType) {
+        this.contentLookupType = contentLookupType;
     }
 
-    public void setSummaryContentKey(String summaryContentLookupKey) {
-        this.summaryContentKey = summaryContentLookupKey;
+    public String getContentKey() {
+        return contentKey;
     }
 
-    public ContentLookupType getBodyContentLookupType() {
-        return bodyContentLookupType;
-    }
-
-    public void setBodyContentLookupType(ContentLookupType bodyContentLookupType) {
-        this.bodyContentLookupType = bodyContentLookupType;
-    }
-
-    public String getBodyContentKey() {
-        return bodyContentKey;
-    }
-
-    public void setBodyContentKey(String bodyContentLookupKey) {
-        this.bodyContentKey = bodyContentLookupKey;
+    public void setContentKey(String contentKey) {
+        this.contentKey = contentKey;
     }
 
     public Map<String, Object> getDeliveryCriteria() {
@@ -109,15 +95,13 @@ public class MessageTemplate extends Tenanted {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = result + (eventSubject != null ? eventSubject.hashCode() : 0);
-        result = result + (eventVerb != null ? eventVerb.hashCode() : 0);
-        result = result + (messageTemplateStatus != null ? messageTemplateStatus.hashCode() : 0);
-        result = result + (recipientContextKey != null ? recipientContextKey.hashCode() : 0);
-        result = result + (summaryContentLookupType != null ? summaryContentLookupType.hashCode() : 0);
-        result = result + (summaryContentKey != null ? summaryContentKey.hashCode() : 0);
-        result = result + (bodyContentLookupType != null ? bodyContentLookupType.hashCode() : 0);
-        result = result + (bodyContentKey != null ? bodyContentKey.hashCode() : 0);
-        result = result + (deliveryCriteria != null ? deliveryCriteria.hashCode() : 0);
+        result += (eventSubject != null ? eventSubject.hashCode() : 0);
+        result += (eventVerb != null ? eventVerb.hashCode() : 0);
+        result += (messageTemplateStatus != null ? messageTemplateStatus.hashCode() : 0);
+        result += (recipientContextKey != null ? recipientContextKey.hashCode() : 0);
+        result += (contentLookupType != null ? contentLookupType.hashCode() : 0);
+        result += (contentKey != null ? contentKey.hashCode() : 0);
+        result += (deliveryCriteria != null ? deliveryCriteria.hashCode() : 0);
 
         return result;
     }

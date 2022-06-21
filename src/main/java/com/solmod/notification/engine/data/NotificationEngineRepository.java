@@ -41,8 +41,7 @@ public class NotificationEngineRepository {
         SQLStatementParams params = new SQLStatementParams(crit);
         params.buildForSelect();
         String sql = "select mt.id, mt.tenant_id, mt.event_subject, mt.event_verb, status, mt.recipient_context_key, " +
-                "mt.summary_content_lookup_type, mt.summary_content_key, mt.body_content_lookup_type, " +
-                "mt.body_content_key, mt.created_date, mt.modified_date, \n" +
+                "mt.content_lookup_type, mt.content_key, mt.created_date, mt.modified_date, \n" +
                 "dc.context_key, dc.value \n" +
                 "FROM message_templates mt \n" +
                 "LEFT JOIN delivery_criteria dc on dc.message_template_id = mt.id " +
@@ -148,10 +147,8 @@ public class NotificationEngineRepository {
             messageTemplate.setEventSubject(rs.getString("event_subject"));
             messageTemplate.setEventVerb(rs.getString("event_verb"));
             messageTemplate.setRecipientContextKey(rs.getString("recipient_context_key"));
-            messageTemplate.setBodyContentKey(rs.getString("body_content_key"));
-            messageTemplate.setBodyContentLookupType(ContentLookupType.valueOf(rs.getString("body_content_lookup_type")));
-            messageTemplate.setSummaryContentKey(rs.getString("summary_content_key"));
-            messageTemplate.setSummaryContentLookupType(ContentLookupType.valueOf(rs.getString("summary_content_lookup_type")));
+            messageTemplate.setContentKey(rs.getString("content_key"));
+            messageTemplate.setContentLookupType(ContentLookupType.valueOf(rs.getString("content_lookup_type")));
 
             return messageTemplate;
         }
