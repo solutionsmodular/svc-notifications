@@ -2,6 +2,7 @@ package com.solmod.commons;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.style.DefaultToStringStyler;
@@ -45,23 +46,26 @@ public class ObjectUtils {
      * @throws StringifyException In the event of any error
      */
     public static String stringify(Object toStringify) throws StringifyException {
-        ToStringCreator toStringCreator = new ToStringCreator(toStringify, new ToStringSolmodStyler(toStringify));
         Method[] classMethods = toStringify.getClass().getMethods();
 
         final StringBuilder errorMessage = new StringBuilder();
 
+        StringBuffer stringified = new StringBuffer();
         stream(classMethods)
                 .filter(c -> (c.getName().startsWith("get") || c.getName().startsWith("is")) &&
                         !c.getName().equals("getClass"))
                 .forEach(getMethod -> {
                     try {
-                        toStringCreator.append(getMethod.getName(), getMethod.invoke(toStringify));
+                        Object value = getMethod.invoke(toStringify);
+                        if (value != null && !StringUtils.isBlank(value.toString())) {
+                            stringified.append(String.format("(%s=%s)", getMethod.getName(), value));
+                        }
                     } catch (IllegalAccessException | InvocationTargetException e) {
-                        errorMessage.append(e.getMessage()).append(" after parsing ").append(toStringCreator);
+                        errorMessage.append(e.getMessage()).append(" after parsing ").append(stringified);
                     }
                 });
 
-        return errorMessage.length() == 0 ? toStringCreator.toString() : errorMessage.toString();
+        return errorMessage.length() == 0 ? stringified.toString() : errorMessage.toString();
     }
 
     /**

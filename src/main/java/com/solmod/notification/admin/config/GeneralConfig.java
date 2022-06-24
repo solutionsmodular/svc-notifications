@@ -1,25 +1,20 @@
-package com.solmod.svcnotificationadmin;
+package com.solmod.notification.admin.config;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
-import com.solmod.svcnotificationadmin.domain.ContentLookupType;
-import com.solmod.svcnotificationadmin.domain.MessageTemplateStatus;
+import com.solmod.notification.domain.ContentLookupType;
+import com.solmod.notification.domain.MessageTemplateStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-@SpringBootApplication
-public class NotificationAdminServicesApplication {
+@Configuration
+public class GeneralConfig {
 
     Logger logger = LoggerFactory.getLogger(getClass());
-
-    public static void main(String[] args) {
-        SpringApplication.run(NotificationAdminServicesApplication.class, args);
-    }
 
     @Bean
     public ObjectMapper getObjectMapper() {
@@ -36,5 +31,4 @@ public class NotificationAdminServicesApplication {
             return null;
         }
     }
-
 }

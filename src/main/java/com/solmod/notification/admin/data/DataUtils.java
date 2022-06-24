@@ -1,4 +1,4 @@
-package com.solmod.svcnotificationadmin.data;
+package com.solmod.notification.admin.data;
 
 public class DataUtils {
 

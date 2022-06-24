@@ -1,4 +1,4 @@
-package com.solmod.svcnotificationadmin.domain;
+package com.solmod.notification.domain;
 
 
 import com.fasterxml.jackson.annotation.JsonFormat;

@@ -1,0 +1,33 @@
+spring:
+  cloud:
+    function:
+      definition: NotificationDispatcher
+    stream:
+      binders:
+        #This section of the configuration tells the solace binder how to connect to the solace event broker/mesh
+        solace-broker:
+          type: solace
+          environment:
+            solace:
+              java:
+                host: tcps://mr-d921o3pohka.messaging.solace.cloud:55443
+                msgVpn: solbus
+                clientUsername: solace-cloud-client
+                clientPassword: pg75jej15jvj30h6qnvlalsofn
+                connectRetries: 3
+                connectRetriesPerHost: 0
+                reconnectRetries: 3
+      bindings:
+        #The bindings section is used to define your input and output channels.
+        NotificationDispatcher-in-0:
+          destination: SolBus
+          #The presence of "group" tells the binder to follow the "consumer group" pattern; if not present the "publish-subscribe" pattern will be used.
+#          group: GROUP
+        NotificationDispatcher-out-0:
+          destination: SolComm
+#      solace:
+        #The solace bindings section allows for solace specific configurations to be applied to a channel. A common example is adding topic subscriptions to a queue as shown below.
+#        bindings:
+#          MyProcessor-in-0:
+#            consumer:
+#              queueAdditionalSubscriptions: topic/subscriptions,wildcards/*/accepted/>
