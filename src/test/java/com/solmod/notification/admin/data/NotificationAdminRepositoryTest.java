@@ -3,17 +3,17 @@ package com.solmod.notification.admin.data;
 import com.solmod.notification.domain.ContentLookupType;
 import com.solmod.notification.domain.MessageTemplate;
 import com.solmod.notification.domain.MessageTemplateStatus;
+import com.solmod.notification.engine.data.NotificationEngineRepository;
 import com.solmod.notification.exception.MessageTemplateAlreadyExistsException;
 import com.solmod.notification.exception.MessageTemplateNonexistentException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Spy;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.jdbc.core.RowMapperResultSetExtractor;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import java.util.Set;
@@ -33,6 +33,9 @@ public class NotificationAdminRepositoryTest {
 
     @Mock
     NamedParameterJdbcTemplate template;
+
+    @Captor
+    ArgumentCaptor<String> stringArgCaptor;
 
     @Test
     void assertBasics() {
@@ -58,7 +61,7 @@ public class NotificationAdminRepositoryTest {
     }
 
     @Test
-    @DisplayName("Assert that we cannot create a MessageTemplate if fields are missing")
+    @DisplayName("Assert that we cannot create a MessageTemplate and an error is logged if fields are missing")
     void create_MissingFields(CapturedOutput captured) throws MessageTemplateAlreadyExistsException {
         MessageTemplate request = new MessageTemplate();
         request.setTenantId(345L);
@@ -87,8 +90,35 @@ public class NotificationAdminRepositoryTest {
     }
 
     @Test
-    @DisplayName("Assert we can update a MessageTemplate whem there are no rules broken")
+    @DisplayName("Assert only supplied values are registered as change request")
     void update_allClear() throws MessageTemplateNonexistentException, MessageTemplateAlreadyExistsException {
+        MessageTemplate origFormOfRequest = new MessageTemplate();
+        origFormOfRequest.setId(155L);
+        origFormOfRequest.setMessageTemplateStatus(MessageTemplateStatus.INACTIVE);
+        origFormOfRequest.setEventSubject("OG_subject");
+        origFormOfRequest.setEventVerb("OG_verb");
+        origFormOfRequest.setContentLookupType(ContentLookupType.URL);
+        origFormOfRequest.setContentKey("OG-content-key");
+        origFormOfRequest.setRecipientContextKey("a-recipient-context-key");
+
+        MessageTemplate request = new MessageTemplate();
+        request.setId(155L);
+        request.setMessageTemplateStatus(MessageTemplateStatus.INACTIVE);
+        request.setEventSubject("new_subject");
+        request.setEventVerb("new_verb");
+        request.setRecipientContextKey(" ");
+
+        doReturn(origFormOfRequest).when(repo).getMessageTemplate(request.getId());
+        doReturn(null).when(repo).getMessageTemplate(eq(UniqueMessageTemplateId.from(request)));
+
+        Set<DataUtils.FieldUpdate> result = repo.update(request);
+
+        assertEquals(2, result.size());
+    }
+
+    @Test
+    @DisplayName("Assert we can update a MessageTemplate when there are no rules broken")
+    void update_allClear_ignoreMissingFields() throws MessageTemplateNonexistentException, MessageTemplateAlreadyExistsException {
         MessageTemplate origFormOfRequest = new MessageTemplate();
         origFormOfRequest.setId(155L);
         origFormOfRequest.setMessageTemplateStatus(MessageTemplateStatus.INACTIVE);
@@ -105,7 +135,7 @@ public class NotificationAdminRepositoryTest {
         request.setEventVerb("new_verb");
         request.setContentLookupType(ContentLookupType.STATIC);
         request.setContentKey("new-content-key");
-        request.setRecipientContextKey("a-recipient-context-key");
+        request.setRecipientContextKey(origFormOfRequest.getRecipientContextKey());
 
         doReturn(origFormOfRequest).when(repo).getMessageTemplate(request.getId());
         doReturn(null).when(repo).getMessageTemplate(eq(UniqueMessageTemplateId.from(request)));
@@ -116,7 +146,7 @@ public class NotificationAdminRepositoryTest {
     }
 
     @Test
-    @DisplayName("Assert we can update a MessageTemplate whem there are no rules broken")
+    @DisplayName("Assert no update is performed if there are no changes")
     void update_noChange() throws MessageTemplateNonexistentException, MessageTemplateAlreadyExistsException {
         MessageTemplate origFormOfRequest = new MessageTemplate();
         origFormOfRequest.setId(155L);
@@ -252,37 +282,53 @@ public class NotificationAdminRepositoryTest {
     }
 
     @Test
-    @DisplayName("Assert a SQL statement contains any non-null criteria supplied in the criteria")
+    @DisplayName("Assert a SQL statement contains only ID as criteria when criteria provides it")
     void getMessageTemplates_byCriteriaInclId_exists() {
-        /*        if (crit.getId() != null) {
-            MessageTemplate messageTemplate = getMessageTemplate(crit.getId());
-            if (messageTemplate != null)
-                return List.of(messageTemplate);
-            return Collections.emptyList();
-        }
+        MessageTemplate crit = new MessageTemplate();
+        crit.setId(55L);
+        crit.setTenantId(55L);
+        crit.setEventSubject("event_subject");
+        crit.setEventVerb("event_verb");
+        crit.setRecipientContextKey("recipient_context_key");
+        crit.setContentKey("content_key");
+        crit.setContentLookupType(ContentLookupType.STATIC);
 
-        SQLStatementParams params = new SQLStatementParams(crit);
-        params.buildForSelect();
-        String sql = "select id, tenant_id, event_subject, event_verb, status, recipient_context_key, " +
-                "content_lookup_type, content_key, created_date, modified_date \n" +
-                "FROM message_templates \n" +
-                "WHERE " + params.statement;
+        repo.getMessageTemplates(crit);
 
-        return template.query(sql, params.params, new RowMapperResultSetExtractor<>(new MessageTemplateRowMapper()));
-*/
-        repo.getMessageTemplates()
+        verify(template, times(1)).query(stringArgCaptor.capture(), anyMap(), any(NotificationAdminRepository.MessageTemplateRowMapper.class));
+
+        assertTrue(stringArgCaptor.getValue().contains(":id"));
+        assertFalse(stringArgCaptor.getValue().contains(":tenant_id"));
+        assertFalse(stringArgCaptor.getValue().contains(":event_subject"));
+        assertFalse(stringArgCaptor.getValue().contains(":event_verb"));
+        assertFalse(stringArgCaptor.getValue().contains(":recipient_context_key"));
+        assertFalse(stringArgCaptor.getValue().contains(":content_key"));
+        assertFalse(stringArgCaptor.getValue().contains(":content_lookup_type"));
     }
 
     @Test
     @DisplayName("Assert a SQL statement contains any non-null criteria supplied in the criteria")
-    void getMessageTemplates_byCriteriaInclId_notExists() {
-        
-    }
+    void getMessageTemplates_byCrit() {
+        MessageTemplate crit = new MessageTemplate();
+        crit.setTenantId(55L);
+        crit.setEventSubject("event_subject");
+        crit.setEventVerb("event_verb");
+        crit.setRecipientContextKey("recipient_context_key");
+        crit.setContentKey("content_key");
+        crit.setContentLookupType(ContentLookupType.STATIC);
 
-    @Test
-    @DisplayName("Assert a SQL statement contains any non-null criteria supplied in the criteria")
-    void getMessageTemplates_byCriteriaExclId() {
-        
+        // Test call
+        repo.getMessageTemplates(crit);
+
+        verify(template, times(1)).query(stringArgCaptor.capture(), anyMap(),
+                ArgumentMatchers.<RowMapperResultSetExtractor<NotificationEngineRepository.MessageTemplateRowMapper>>any());
+
+        assertTrue(stringArgCaptor.getValue().contains(":tenant_id"));
+        assertTrue(stringArgCaptor.getValue().contains(":event_subject"));
+        assertTrue(stringArgCaptor.getValue().contains(":event_verb"));
+        assertTrue(stringArgCaptor.getValue().contains(":recipient_context_key"));
+        assertTrue(stringArgCaptor.getValue().contains(":content_key"));
+        assertTrue(stringArgCaptor.getValue().contains(":content_lookup_type"));
     }
 
     private MessageTemplate buildFullyPopulatedMessageTemplate() {

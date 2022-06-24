@@ -38,6 +38,8 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
 
         Collection<MessageTemplate> messageTemplates = mtRepo.getMessageTemplates(crit);
 
+        // For ea template:
+        //   Gather delivery criteria
 
         return null;
     }

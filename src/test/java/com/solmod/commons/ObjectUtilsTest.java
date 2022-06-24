@@ -1,6 +1,5 @@
 package com.solmod.commons;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import java.util.Objects;
@@ -10,20 +9,33 @@ import static org.junit.jupiter.api.Assertions.*;
 class ObjectUtilsTest {
 
     @Test
-    void doSomethingRandom() {
-        SomeClass thing = new SomeClass("Whatever", "Whatever else");
+    void testToString_withValues() {
+        SomeClass thing = new SomeClass("Whatever", 15);
         String thingString = thing.toString();
 
         assertNotNull(thingString);
         assertNotEquals("", thingString);
-        System.out.println("Solmod styled a thing: " + thingString);
+        assertTrue(thingString.contains("Whatever"));
+        assertTrue(thingString.toLowerCase().contains("someproperty"));
+    }
+
+    @Test
+    void doSomethingNoValues() {
+        SomeClass thing = new SomeClass();
+        String thingString = thing.toString();
+
+        assertNotNull(thingString);
+        assertEquals("", thingString);
     }
 
     public static class SomeClass {
         private String someProperty;
-        private String someOtherProperty;
+        private Integer someOtherProperty;
 
-        public SomeClass(String someProperty, String someOtherProperty) {
+        public SomeClass() {
+        }
+
+        public SomeClass(String someProperty, int someOtherProperty) {
             this.someProperty = someProperty;
             this.someOtherProperty = someOtherProperty;
         }
@@ -36,18 +48,18 @@ class ObjectUtilsTest {
             this.someProperty = someProperty;
         }
 
-        public String getSomeOtherProperty() {
+        public Integer getSomeOtherProperty() {
             return someOtherProperty;
         }
 
-        public void setSomeOtherProperty(String someOtherProperty) {
+        public void setSomeOtherProperty(int someOtherProperty) {
             this.someOtherProperty = someOtherProperty;
         }
 
         @Override
         public String toString() {
             try {
-                return ObjectUtils.toJson(this, new ObjectMapper());
+                return ObjectUtils.stringify(this);
             } catch (StringifyException e) {
                 return Objects.toString(this);
             }

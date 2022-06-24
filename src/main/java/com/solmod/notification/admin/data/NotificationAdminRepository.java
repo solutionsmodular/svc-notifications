@@ -6,9 +6,11 @@ import com.solmod.notification.domain.MessageTemplate;
 import com.solmod.notification.domain.MessageTemplateStatus;
 import com.solmod.notification.exception.MessageTemplateAlreadyExistsException;
 import com.solmod.notification.exception.MessageTemplateNonexistentException;
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.RowMapperResultSetExtractor;
@@ -28,6 +30,7 @@ public class NotificationAdminRepository {
 
     private final NamedParameterJdbcTemplate template;
 
+    @Autowired
     public NotificationAdminRepository(NamedParameterJdbcTemplate template) {
         this.template = template;
     }
@@ -220,6 +223,7 @@ public class NotificationAdminRepository {
          * this=that portion of an update statement and params
          * Note: Cheat here; that I'm taking this opportunity to build a map of old:new values for updated
          * templates, but we'll need that map for publishing to the bus
+         * Note: Herein, the rule disallowing the updating of tenantId is endforced
          *
          * @param originalTemplate {@link MessageTemplate} naming the original form of that being updated
          */
@@ -228,9 +232,9 @@ public class NotificationAdminRepository {
             StringBuilder builder = new StringBuilder();
 
             params.put("id", originalTemplate.getId()); // always where clause for an update
-            updates.add(appendProperty("tenant_id", originalTemplate.getTenantId(),
-                    msgTemplate.getTenantId(),
-                    builder));
+
+            // Disallow updating tenantId
+
             updates.add(appendProperty("event_subject", originalTemplate.getEventSubject(),
                     msgTemplate.getEventSubject(),
                     builder));
@@ -243,8 +247,8 @@ public class NotificationAdminRepository {
             updates.add(appendProperty("recipient_context_key", originalTemplate.getRecipientContextKey(),
                     msgTemplate.getRecipientContextKey(),
                     builder));
-            updates.add(appendProperty("content_lookup_type", originalTemplate.getContentLookupType().name(),
-                    msgTemplate.getContentLookupType().name(),
+            updates.add(appendProperty("content_lookup_type", originalTemplate.getContentLookupType(),
+                    msgTemplate.getContentLookupType(),
                     builder));
             updates.add(appendProperty("content_key", originalTemplate.getContentKey(),
                     msgTemplate.getContentKey(),
@@ -260,11 +264,14 @@ public class NotificationAdminRepository {
          * This busy body helper takes old and new values and a field name (matching the DB column name), as well as
          * the statement presumed to be being built. It will return null if there is no difference in values, but will
          * construct a {@link DataUtils.FieldUpdate} and return it
+         * Note: The rule that any value has to be replaced with a non-empty value is enforced here. If there is a
+         * requirement to blank out a value, that needs to be architected
          *
          * @return DataUtils.FieldUpdate if there is a diff in value. null otherwise
          */
         private DataUtils.FieldUpdate appendProperty(String fieldName, Object originalValue, Object newValue, StringBuilder statement) {
-            if (!Objects.equals(newValue, originalValue)) {
+            if (newValue != null && !StringUtils.isBlank(newValue.toString()) &&
+                    !Objects.equals(newValue, originalValue)) {
                 delimCriteria(statement, ", ").append(fieldName).append("= :").append(fieldName);
                 params.put(fieldName, newValue);
                 return new DataUtils.FieldUpdate(fieldName, originalValue, newValue);
@@ -288,7 +295,7 @@ public class NotificationAdminRepository {
         }
     }
 
-    private static class MessageTemplateRowMapper implements RowMapper<MessageTemplate> {
+    public  static class MessageTemplateRowMapper implements RowMapper<MessageTemplate> {
         @Override
         public MessageTemplate mapRow(ResultSet rs, int rowNum) throws SQLException {
             MessageTemplate messageTemplate = new MessageTemplate();

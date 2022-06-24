@@ -1,6 +1,5 @@
 package com.solmod.notification.engine.data;
 
-
 import com.solmod.notification.admin.data.MessageTemplateSearchCriteria;
 import com.solmod.notification.domain.ContentLookupType;
 import com.solmod.notification.domain.MessageTemplate;
@@ -13,7 +12,6 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -24,8 +22,8 @@ public class NotificationEngineRepository {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final NamedParameterJdbcTemplate template;
 
-    public NotificationEngineRepository(DataSource dataSource) {
-        this.template = new NamedParameterJdbcTemplate(dataSource);
+    public NotificationEngineRepository(NamedParameterJdbcTemplate template) {
+        this.template = template;
     }
 
     /**
@@ -50,12 +48,11 @@ public class NotificationEngineRepository {
         List<MessageTemplate> matchingTemplates = template.query(sql, params.params, new RowMapperResultSetExtractor<>(new MessageTemplateRowMapper()));
 
         Collection<MessageTemplate> sortedTemplates = mergeMessageTemplateResults(matchingTemplates);
-        if (sortedTemplates != null) return sortedTemplates;
 
-        return Collections.emptyList();
+        return sortedTemplates == null ? Collections.emptyList() : sortedTemplates;
     }
 
-    Collection<MessageTemplate> mergeMessageTemplateResults(List<MessageTemplate> matchingTemplates) {
+    private Collection<MessageTemplate> mergeMessageTemplateResults(List<MessageTemplate> matchingTemplates) {
         if (matchingTemplates != null && !matchingTemplates.isEmpty()) {
             Map<Long, MessageTemplate> sortedTemplates = new HashMap<>();
             for (MessageTemplate curTemplate : matchingTemplates) {
@@ -93,7 +90,7 @@ public class NotificationEngineRepository {
          * and package the interpreted params needed for those. Using this build, this instance can be used to glean
          * where clause for select statement and supporting params
          */
-        void buildForSelect() {
+        private void buildForSelect() {
             StringBuilder builder = new StringBuilder();
             appendProperty("tenant_id", msgTemplate.getTenantId(), builder);
             appendProperty("event_subject", msgTemplate.getEventSubject(), builder);
@@ -134,7 +131,7 @@ public class NotificationEngineRepository {
         }
     }
 
-    private static class MessageTemplateRowMapper implements RowMapper<MessageTemplate> {
+    public static class MessageTemplateRowMapper implements RowMapper<MessageTemplate> {
 
         @Override
         public MessageTemplate mapRow(ResultSet rs, int rowNum) throws SQLException {
