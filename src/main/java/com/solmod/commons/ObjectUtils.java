@@ -29,7 +29,7 @@ public class ObjectUtils {
      * @return {@code String} with masking appropriate to the security levels required
      * @throws StringifyException In the event of an error of any sort
      */
-    public static String toJson2(Object toStringify, ObjectMapper objectMapper) throws StringifyException {
+    public static String toJson(Object toStringify, ObjectMapper objectMapper) throws StringifyException {
         try {
             return objectMapper.writeValueAsString(toStringify);
         } catch (JsonProcessingException e) {
