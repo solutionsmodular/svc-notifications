@@ -2,7 +2,7 @@ package com.solmod.notification.admin.data;
 
 import com.solmod.notification.domain.ContentLookupType;
 import com.solmod.notification.domain.MessageTemplate;
-import com.solmod.notification.domain.MessageTemplateStatus;
+import com.solmod.notification.domain.Status;
 import com.solmod.notification.engine.data.NotificationEngineRepository;
 import com.solmod.notification.exception.MessageTemplateAlreadyExistsException;
 import com.solmod.notification.exception.MessageTemplateNonexistentException;
@@ -49,17 +49,15 @@ public class NotificationAdminRepositoryTest {
     void create_allClear() throws MessageTemplateAlreadyExistsException {
         MessageTemplate request = buildFullyPopulatedMessageTemplate();
 
-        doReturn(null, new MessageTemplate()).when(repo).getMessageTemplate(any(UniqueMessageTemplateId.class));
+        doReturn(null, new MessageTemplate()).when(repo).getMessageTemplate(any(MessageTemplate.class));
         when(template.update(anyString(), anyMap())).thenReturn(1);
 
         // Call
-        MessageTemplate created = repo.create(request);
+        repo.create(request);
 
-        // Assert
-        assertNotNull(created);
         verify(repo, times(1)).create(any(MessageTemplate.class));
         // Find first to ensure it doesn't exist, use same find to load after save
-        verify(repo, times(2)).getMessageTemplate(any(UniqueMessageTemplateId.class));
+        verify(repo, times(1)).getMessageTemplate(any(MessageTemplate.class));
     }
 
     @Test
@@ -70,23 +68,22 @@ public class NotificationAdminRepositoryTest {
         request.setEventSubject("Test");
         request.setEventVerb("Happening");
         request.setContentLookupType(ContentLookupType.STATIC);
-        request.setMessageTemplateStatus(MessageTemplateStatus.ACTIVE);
+        request.setMessageTemplateStatus(Status.ACTIVE);
         doReturn(emptyList()).when(repo).getMessageTemplates(any(MessageTemplate.class));
 
         // Call
-        MessageTemplate created = repo.create(request);
+        repo.create(request);
 
         // Assert
         assertTrue(captured.getOut().contains("Failed attempt to save message template"));
-        assertNull(created);
         // Find first to ensure it doesn't exist, use same find to load after save
-        verify(repo, times(1)).getMessageTemplate(any(UniqueMessageTemplateId.class));
+        verify(repo, times(1)).getMessageTemplate(any(MessageTemplate.class));
     }
 
     @Test
     @DisplayName("Assert we get an Exception if the MessageTemplate already exists per UniqueMessageTemplateId")
     void create_alreadyExists() throws MessageTemplateAlreadyExistsException {
-        doReturn(new MessageTemplate()).when(repo).getMessageTemplate(any(UniqueMessageTemplateId.class));
+        doReturn(new MessageTemplate()).when(repo).getMessageTemplate(any(MessageTemplate.class));
         assertThrows(MessageTemplateAlreadyExistsException.class, () -> repo.create(new MessageTemplate()));
         verify(repo, times(1)).create(any(MessageTemplate.class));
     }
@@ -96,7 +93,7 @@ public class NotificationAdminRepositoryTest {
     void update_allClear() throws MessageTemplateNonexistentException, MessageTemplateAlreadyExistsException {
         MessageTemplate origFormOfRequest = new MessageTemplate();
         origFormOfRequest.setId(155L);
-        origFormOfRequest.setMessageTemplateStatus(MessageTemplateStatus.INACTIVE);
+        origFormOfRequest.setMessageTemplateStatus(Status.INACTIVE);
         origFormOfRequest.setEventSubject("OG_subject");
         origFormOfRequest.setEventVerb("OG_verb");
         origFormOfRequest.setContentLookupType(ContentLookupType.URL);
@@ -105,17 +102,18 @@ public class NotificationAdminRepositoryTest {
 
         MessageTemplate request = new MessageTemplate();
         request.setId(155L);
-        request.setMessageTemplateStatus(MessageTemplateStatus.INACTIVE);
+        request.setMessageTemplateStatus(Status.INACTIVE);
         request.setEventSubject("new_subject");
         request.setEventVerb("new_verb");
         request.setRecipientContextKey(" ");
 
         doReturn(origFormOfRequest).when(repo).getMessageTemplate(request.getId());
-        doReturn(null).when(repo).getMessageTemplate(eq(UniqueMessageTemplateId.from(request)));
 
+        // Test call
         Set<DataUtils.FieldUpdate> result = repo.update(request);
 
         assertEquals(2, result.size());
+        verify(repo, never()).getMessageTemplate(any(MessageTemplate.class)); // No need to check dupes on inactive
     }
 
     @Test
@@ -123,7 +121,7 @@ public class NotificationAdminRepositoryTest {
     void update_allClear_ignoreMissingFields() throws MessageTemplateNonexistentException, MessageTemplateAlreadyExistsException {
         MessageTemplate origFormOfRequest = new MessageTemplate();
         origFormOfRequest.setId(155L);
-        origFormOfRequest.setMessageTemplateStatus(MessageTemplateStatus.INACTIVE);
+        origFormOfRequest.setMessageTemplateStatus(Status.INACTIVE);
         origFormOfRequest.setEventSubject("OG_subject");
         origFormOfRequest.setEventVerb("OG_verb");
         origFormOfRequest.setContentLookupType(ContentLookupType.URL);
@@ -132,7 +130,7 @@ public class NotificationAdminRepositoryTest {
 
         MessageTemplate request = new MessageTemplate();
         request.setId(155L);
-        request.setMessageTemplateStatus(MessageTemplateStatus.INACTIVE);
+        request.setMessageTemplateStatus(Status.INACTIVE);
         request.setEventSubject("new_subject");
         request.setEventVerb("new_verb");
         request.setContentLookupType(ContentLookupType.STATIC);
@@ -140,8 +138,8 @@ public class NotificationAdminRepositoryTest {
         request.setRecipientContextKey(origFormOfRequest.getRecipientContextKey());
 
         doReturn(origFormOfRequest).when(repo).getMessageTemplate(request.getId());
-        doReturn(null).when(repo).getMessageTemplate(eq(UniqueMessageTemplateId.from(request)));
 
+        // Test call
         Set<DataUtils.FieldUpdate> result = repo.update(request);
 
         assertEquals(4, result.size());
@@ -152,7 +150,7 @@ public class NotificationAdminRepositoryTest {
     void update_noChange() throws MessageTemplateNonexistentException, MessageTemplateAlreadyExistsException {
         MessageTemplate origFormOfRequest = new MessageTemplate();
         origFormOfRequest.setId(155L);
-        origFormOfRequest.setMessageTemplateStatus(MessageTemplateStatus.INACTIVE);
+        origFormOfRequest.setMessageTemplateStatus(Status.INACTIVE);
         origFormOfRequest.setEventSubject("OG_subject");
         origFormOfRequest.setEventVerb("OG_verb");
         origFormOfRequest.setContentLookupType(ContentLookupType.URL);
@@ -160,7 +158,7 @@ public class NotificationAdminRepositoryTest {
         origFormOfRequest.setRecipientContextKey("a-recipient-context-key");
 
         MessageTemplate request = new MessageTemplate();
-        request.setId(155L);
+        request.setId(origFormOfRequest.getId());
         request.setMessageTemplateStatus(origFormOfRequest.getStatus());
         request.setEventSubject(origFormOfRequest.getEventSubject());
         request.setEventVerb(origFormOfRequest.getEventVerb());
@@ -169,12 +167,12 @@ public class NotificationAdminRepositoryTest {
         request.setRecipientContextKey(origFormOfRequest.getRecipientContextKey());
 
         doReturn(origFormOfRequest).when(repo).getMessageTemplate(request.getId());
-        doReturn(null).when(repo).getMessageTemplate(eq(UniqueMessageTemplateId.from(request)));
 
         Set<DataUtils.FieldUpdate> result = repo.update(request);
 
         assertTrue(result.isEmpty());
         verify(template, never()).update(anyString(), anyMap());
+        verify(repo, never()).getMessageTemplate(any(MessageTemplate.class));
     }
 
     @Test
@@ -183,7 +181,7 @@ public class NotificationAdminRepositoryTest {
     void update_templateNotFound(CapturedOutput out) {
         MessageTemplate request = new MessageTemplate();
         request.setId(15L);
-        request.setMessageTemplateStatus(MessageTemplateStatus.ACTIVE);
+        request.setMessageTemplateStatus(Status.ACTIVE);
         doReturn(null).when(repo).getMessageTemplate(request.getId());
 
         assertThrows(MessageTemplateNonexistentException.class, () -> repo.update(request));
@@ -198,7 +196,7 @@ public class NotificationAdminRepositoryTest {
 
         MessageTemplate request = new MessageTemplate();
         request.setId(155L);
-        request.setMessageTemplateStatus(MessageTemplateStatus.ACTIVE);
+        request.setMessageTemplateStatus(Status.ACTIVE);
         request.setEventSubject("rit_test_subject");
         request.setEventVerb("rit_test_verb");
         request.setContentLookupType(ContentLookupType.STATIC);
@@ -207,7 +205,7 @@ public class NotificationAdminRepositoryTest {
 
         MessageTemplate existing = new MessageTemplate();
         existing.setId(156L);
-        existing.setMessageTemplateStatus(MessageTemplateStatus.ACTIVE);
+        existing.setMessageTemplateStatus(Status.ACTIVE);
         existing.setEventSubject(request.getEventSubject());
         existing.setEventVerb(request.getEventVerb());
         existing.setContentLookupType(ContentLookupType.STATIC);
@@ -215,7 +213,7 @@ public class NotificationAdminRepositoryTest {
         existing.setRecipientContextKey(request.getRecipientContextKey());
 
         doReturn(request).when(repo).getMessageTemplate(request.getId());
-        doReturn(existing).when(repo).getMessageTemplate(eq(UniqueMessageTemplateId.from(request)));
+        doReturn(existing).when(repo).getMessageTemplate(eq(request));
 
         // Call
         assertThrows(MessageTemplateAlreadyExistsException.class, () -> repo.update(request));
@@ -226,7 +224,7 @@ public class NotificationAdminRepositoryTest {
     void update_noConflictDueToStatus() throws MessageTemplateNonexistentException, MessageTemplateAlreadyExistsException {
         MessageTemplate origFormOfRequest = new MessageTemplate();
         origFormOfRequest.setId(155L);
-        origFormOfRequest.setMessageTemplateStatus(MessageTemplateStatus.INACTIVE);
+        origFormOfRequest.setMessageTemplateStatus(Status.INACTIVE);
         origFormOfRequest.setEventSubject("not_colliding_subject");
         origFormOfRequest.setEventVerb("not_colliding_verb");
         origFormOfRequest.setContentLookupType(ContentLookupType.URL);
@@ -235,24 +233,14 @@ public class NotificationAdminRepositoryTest {
 
         MessageTemplate request = new MessageTemplate();
         request.setId(155L);
-        request.setMessageTemplateStatus(MessageTemplateStatus.INACTIVE);
+        request.setMessageTemplateStatus(Status.INACTIVE);
         request.setEventSubject("colliding_subject");
         request.setEventVerb("colliding_verb");
         request.setContentLookupType(ContentLookupType.CONTENT_KEY);
         request.setContentKey("a-content-key");
         request.setRecipientContextKey("a-recipient-context-key");
 
-        MessageTemplate colliding = new MessageTemplate();
-        colliding.setId(66532L);
-        colliding.setMessageTemplateStatus(MessageTemplateStatus.ACTIVE);
-        colliding.setEventSubject(request.getEventSubject());
-        colliding.setEventVerb(request.getEventVerb());
-        colliding.setContentLookupType(ContentLookupType.STATIC); // lookup type doesn't matter here
-        colliding.setContentKey(request.getContentKey());
-        colliding.setRecipientContextKey(request.getRecipientContextKey());
-
         doReturn(origFormOfRequest).when(repo).getMessageTemplate(request.getId());
-        doReturn(colliding).when(repo).getMessageTemplate(eq(UniqueMessageTemplateId.from(request)));
 
         Set<DataUtils.FieldUpdate> result = repo.update(request);
 
@@ -313,7 +301,7 @@ public class NotificationAdminRepositoryTest {
         doReturn(List.of(new MessageTemplate(), new MessageTemplate())).when(repo).getMessageTemplates(any(MessageTemplate.class));
 
         // test call
-        MessageTemplate result = repo.getMessageTemplate(new UniqueMessageTemplateId(1L, "some-sub", "some-verb", "some-recipient", "some-content-key"));
+        MessageTemplate result = repo.getMessageTemplate(new MessageTemplate());
 
         assertNull(result);
         assertTrue(output.getOut().contains("ERROR"));
@@ -327,7 +315,7 @@ public class NotificationAdminRepositoryTest {
         doReturn(List.of(new MessageTemplate())).when(repo).getMessageTemplates(any(MessageTemplate.class));
 
         // test call
-        MessageTemplate result = repo.getMessageTemplate(new UniqueMessageTemplateId(1L, "some-sub", "some-verb", "some-recipient", "some-content-key"));
+        MessageTemplate result = repo.getMessageTemplate(new MessageTemplate());
 
         assertNotNull(result);
         assertFalse(output.getOut().contains("ERROR"));
@@ -340,7 +328,7 @@ public class NotificationAdminRepositoryTest {
         doReturn(emptyList()).when(repo).getMessageTemplates(any(MessageTemplate.class));
 
         // test call
-        MessageTemplate result = repo.getMessageTemplate(new UniqueMessageTemplateId(1L, "some-sub", "some-verb", "some-recipient", "some-content-key"));
+        MessageTemplate result = repo.getMessageTemplate(new MessageTemplate());
 
         assertNull(result);
         assertFalse(output.getOut().contains("ERROR"));
@@ -354,32 +342,7 @@ public class NotificationAdminRepositoryTest {
     }
 
     @Test
-    @DisplayName("Assert a SQL statement contains only ID as criteria when criteria provides it")
-    void getMessageTemplates_byCriteriaInclId_exists() {
-        MessageTemplate crit = new MessageTemplate();
-        crit.setId(55L);
-        crit.setTenantId(55L);
-        crit.setEventSubject("event_subject");
-        crit.setEventVerb("event_verb");
-        crit.setRecipientContextKey("recipient_context_key");
-        crit.setContentKey("content_key");
-        crit.setContentLookupType(ContentLookupType.STATIC);
-
-        repo.getMessageTemplates(crit);
-
-        verify(template, times(1)).query(stringArgCaptor.capture(), anyMap(), any(NotificationAdminRepository.MessageTemplateRowMapper.class));
-
-        assertTrue(stringArgCaptor.getValue().contains(":id"));
-        assertFalse(stringArgCaptor.getValue().contains(":tenant_id"));
-        assertFalse(stringArgCaptor.getValue().contains(":event_subject"));
-        assertFalse(stringArgCaptor.getValue().contains(":event_verb"));
-        assertFalse(stringArgCaptor.getValue().contains(":recipient_context_key"));
-        assertFalse(stringArgCaptor.getValue().contains(":content_key"));
-        assertFalse(stringArgCaptor.getValue().contains(":content_lookup_type"));
-    }
-
-    @Test
-    @DisplayName("Assert a SQL statement contains any non-null criteria supplied in the criteria")
+    @DisplayName("Assert a SQL statement contains any non-null criteria supplied in the criteria. By criteria ignores ID")
     void getMessageTemplates_byCrit() {
         MessageTemplate crit = new MessageTemplate();
         crit.setTenantId(55L);
@@ -395,6 +358,7 @@ public class NotificationAdminRepositoryTest {
         verify(template, times(1)).query(stringArgCaptor.capture(), anyMap(),
                 ArgumentMatchers.<RowMapperResultSetExtractor<NotificationEngineRepository.MessageTemplateRowMapper>>any());
 
+        assertFalse(stringArgCaptor.getValue().contains(":id"));
         assertTrue(stringArgCaptor.getValue().contains(":tenant_id"));
         assertTrue(stringArgCaptor.getValue().contains(":event_subject"));
         assertTrue(stringArgCaptor.getValue().contains(":event_verb"));
@@ -409,7 +373,7 @@ public class NotificationAdminRepositoryTest {
         request.setEventSubject("All");
         request.setEventVerb("Cleared");
         request.setRecipientContextKey("find.recipient.address.here");
-        request.setMessageTemplateStatus(MessageTemplateStatus.ACTIVE);
+        request.setMessageTemplateStatus(Status.ACTIVE);
         request.setContentLookupType(ContentLookupType.STATIC);
         request.setContentKey("TEST_CONTENT_KEY");
 
