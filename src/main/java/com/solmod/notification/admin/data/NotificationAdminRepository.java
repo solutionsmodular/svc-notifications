@@ -18,6 +18,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.validation.constraints.NotNull;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -42,7 +43,7 @@ public class NotificationAdminRepository {
      * @param request {@link MessageTemplate} representing the request.
      */
     @Transactional
-    public MessageTemplate create(final MessageTemplate request) throws MessageTemplateAlreadyExistsException {
+    public MessageTemplate create(@NotNull final MessageTemplate request) throws MessageTemplateAlreadyExistsException {
         MessageTemplate existing = getMessageTemplate(UniqueMessageTemplateId.from(request));
         if (existing != null) {
             throw new MessageTemplateAlreadyExistsException(existing,
@@ -81,7 +82,7 @@ public class NotificationAdminRepository {
      * @param request {@link MessageTemplate} representing the request to make updates to an existing MessageTemplate
      */
     @Transactional
-    public Set<DataUtils.FieldUpdate> update(final MessageTemplate request) throws MessageTemplateNonexistentException, MessageTemplateAlreadyExistsException {
+    public Set<DataUtils.FieldUpdate> update(@NotNull final MessageTemplate request) throws MessageTemplateNonexistentException, MessageTemplateAlreadyExistsException {
         log.debug("Updating MessageTemplate {}", request.getId());
         MessageTemplate origById = getMessageTemplate(request.getId());
         if (origById == null) {
@@ -123,9 +124,11 @@ public class NotificationAdminRepository {
      * @param id {@code Long} ID
      * @return {@link MessageTemplate}, or null if a MessageTemplate cannot be found with the given ID
      */
-    public MessageTemplate getMessageTemplate(Long id) {
-        if (id == null)
+    public MessageTemplate getMessageTemplate(final Long id) {
+        if (id == null) {
+            log.warn("Request to get message template with null id. That's weird.");
             return null;
+        }
 
         String sql = "select id, tenant_id, event_subject, event_verb, status, recipient_context_key, " +
                 "content_lookup_type, content_key, modified_date, created_date " +
@@ -151,7 +154,7 @@ public class NotificationAdminRepository {
      * @return List of matching {@link MessageTemplate}s
      */
     @Transactional
-    public List<MessageTemplate> getMessageTemplates(final MessageTemplate crit) {
+    public List<MessageTemplate> getMessageTemplates(@NotNull final MessageTemplate crit) {
 
         if (crit.getId() != null) {
             MessageTemplate messageTemplate = getMessageTemplate(crit.getId());
@@ -170,7 +173,7 @@ public class NotificationAdminRepository {
         return template.query(sql, params.params, new RowMapperResultSetExtractor<>(new MessageTemplateRowMapper()));
     }
 
-    public MessageTemplate getMessageTemplate(UniqueMessageTemplateId id) {
+    public MessageTemplate getMessageTemplate(@NotNull final UniqueMessageTemplateId id) {
         MessageTemplate criteria = id.toMessageTemplate();
 
         List<MessageTemplate> messageTemplates = getMessageTemplates(criteria);

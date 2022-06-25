@@ -16,6 +16,8 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.jdbc.core.RowMapperResultSetExtractor;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static java.util.Collections.emptyList;
@@ -258,27 +260,97 @@ public class NotificationAdminRepositoryTest {
     }
 
     @Test
-    void getMessageTemplate_byId_exists() {
+    @ExtendWith(OutputCaptureExtension.class)
+    void getMessageTemplate_byId_exists(CapturedOutput output) {
+
+        long testId = 15L;
+        when(template.query(anyString(), eq(Map.of("id", testId)), any(NotificationAdminRepository.MessageTemplateRowMapper.class)))
+                .thenReturn(List.of(new MessageTemplate()));
+
+        // Test call
+        MessageTemplate result = repo.getMessageTemplate(testId);
+
+        assertNotNull(result);
+        assertFalse(output.getOut().contains("WARN"));
+        verify(template, times(1)).query(anyString(), anyMap(), any(NotificationAdminRepository.MessageTemplateRowMapper.class));
     }
 
     @Test
-    void getMessageTemplate_byId_notExists() {
+    @ExtendWith(OutputCaptureExtension.class)
+    @DisplayName("Assert we get a null and a warning log when we get a req by ID which doesn't exist")
+    void getMessageTemplate_byId_notExists(CapturedOutput output) {
+
+        long testId = 15L;
+        when(template.query(anyString(), eq(Map.of("id", testId)), any(NotificationAdminRepository.MessageTemplateRowMapper.class)))
+                .thenReturn(emptyList());
+
+        // Test call
+        MessageTemplate result = repo.getMessageTemplate(15L);
+
+        assertNull(result);
+        assertTrue(output.getOut().contains("WARN"));
+        assertTrue(output.getOut().contains("no results"));
+        verify(template, times(1)).query(anyString(), eq(Map.of("id", testId)), any(NotificationAdminRepository.MessageTemplateRowMapper.class));
     }
 
     @Test
-    void getMessageTemplate_byId_nullId() {
+    @ExtendWith(OutputCaptureExtension.class)
+    @DisplayName("Assert we get a null and a log if getMessage(id) is supplied a null id")
+    void getMessageTemplate_byId_nullId(CapturedOutput output) {
+        // Test call
+        MessageTemplate result = repo.getMessageTemplate((Long) null);
+
+        assertNull(result);
+        assertTrue(output.getOut().contains("WARN"));
+        assertTrue(output.getOut().contains("null id"));
+        verify(template, never()).query(anyString(), anyMap(), any(NotificationAdminRepository.MessageTemplateRowMapper.class));
     }
 
     @Test
-    void getMessageTemplate_byUniqueId_exists() {
+    @ExtendWith(OutputCaptureExtension.class)
+    @DisplayName("Assert we get a null and a log if getMessage by unique ID results in multiple")
+    void getMessageTemplate_byUniqueId_multipleExist(CapturedOutput output) {
+        doReturn(List.of(new MessageTemplate(), new MessageTemplate())).when(repo).getMessageTemplates(any(MessageTemplate.class));
+
+        // test call
+        MessageTemplate result = repo.getMessageTemplate(new UniqueMessageTemplateId(1L, "some-sub", "some-verb", "some-recipient", "some-content-key"));
+
+        assertNull(result);
+        assertTrue(output.getOut().contains("ERROR"));
+        assertTrue(output.getOut().contains("DATA INTEGRITY ERROR"));
     }
 
     @Test
-    void getMessageTemplate_byUniqueId_notExists() {
+    @ExtendWith(OutputCaptureExtension.class)
+    @DisplayName("Assert there are no issues when a single MessageTemplate is returned on getByUniqueId")
+    void getMessageTemplate_byUniqueId_exists(CapturedOutput output) {
+        doReturn(List.of(new MessageTemplate())).when(repo).getMessageTemplates(any(MessageTemplate.class));
+
+        // test call
+        MessageTemplate result = repo.getMessageTemplate(new UniqueMessageTemplateId(1L, "some-sub", "some-verb", "some-recipient", "some-content-key"));
+
+        assertNotNull(result);
+        assertFalse(output.getOut().contains("ERROR"));
+        assertFalse(output.getOut().contains("WARN"));
     }
 
     @Test
+    @ExtendWith(OutputCaptureExtension.class)
+    void getMessageTemplate_byUniqueId_notExists(CapturedOutput output) {
+        doReturn(emptyList()).when(repo).getMessageTemplates(any(MessageTemplate.class));
+
+        // test call
+        MessageTemplate result = repo.getMessageTemplate(new UniqueMessageTemplateId(1L, "some-sub", "some-verb", "some-recipient", "some-content-key"));
+
+        assertNull(result);
+        assertFalse(output.getOut().contains("ERROR"));
+        assertFalse(output.getOut().contains("WARN"));
+    }
+
+    @Test
+    @DisplayName("Assert for getMessageTemplate by null ID test not needed; @NonNull")
     void getMessageTemplate_byUniqueId_nullId() {
+        assertTrue(true);
     }
 
     @Test
