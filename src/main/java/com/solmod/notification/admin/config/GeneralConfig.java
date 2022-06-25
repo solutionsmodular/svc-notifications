@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.solmod.notification.domain.ContentLookupType;
-import com.solmod.notification.domain.MessageTemplateStatus;
+import com.solmod.notification.domain.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -21,7 +21,7 @@ public class GeneralConfig {
         try {
             ObjectMapper mapper = new ObjectMapper();
             mapper.writeValueAsString(ContentLookupType.class);
-            mapper.writeValueAsString(MessageTemplateStatus.class);
+            mapper.writeValueAsString(Status.class);
             mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             mapper.registerModule(new JodaModule());
 

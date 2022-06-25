@@ -3,7 +3,7 @@ package com.solmod.notification.admin.data;
 
 import com.solmod.notification.domain.ContentLookupType;
 import com.solmod.notification.domain.MessageTemplate;
-import com.solmod.notification.domain.MessageTemplateStatus;
+import com.solmod.notification.domain.Status;
 import com.solmod.notification.exception.MessageTemplateAlreadyExistsException;
 import com.solmod.notification.exception.MessageTemplateNonexistentException;
 import org.apache.commons.lang3.StringUtils;
@@ -42,9 +42,8 @@ public class NotificationAdminRepository {
      *
      * @param request {@link MessageTemplate} representing the request.
      */
-    @Transactional
-    public MessageTemplate create(@NotNull final MessageTemplate request) throws MessageTemplateAlreadyExistsException {
-        MessageTemplate existing = getMessageTemplate(UniqueMessageTemplateId.from(request));
+    public void create(@NotNull final MessageTemplate request) throws MessageTemplateAlreadyExistsException {
+        MessageTemplate existing = getMessageTemplate(request);
         if (existing != null) {
             throw new MessageTemplateAlreadyExistsException(existing,
                     "Cannot create this message template; it would collide with existing Message Template.");
@@ -66,14 +65,12 @@ public class NotificationAdminRepository {
                     "content_key", request.getContentKey()
             ));
 
-            return getMessageTemplate(UniqueMessageTemplateId.from(request));
+            log.info("Message template created per request");
         } catch (DataAccessException e) {
             log.warn("DAE: Failed attempt to save message template: {}\n{}", e.getMessage(), request);
         } catch (NullPointerException e) {
             log.warn("NPE: Failed attempt to save message template with missing fields: {}\n{}", e.getMessage(), request);
         }
-
-        return null;
     }
 
     /**
@@ -81,30 +78,29 @@ public class NotificationAdminRepository {
      *
      * @param request {@link MessageTemplate} representing the request to make updates to an existing MessageTemplate
      */
-    @Transactional
     public Set<DataUtils.FieldUpdate> update(@NotNull final MessageTemplate request) throws MessageTemplateNonexistentException, MessageTemplateAlreadyExistsException {
         log.debug("Updating MessageTemplate {}", request.getId());
         MessageTemplate origById = getMessageTemplate(request.getId());
         if (origById == null) {
-            log.warn("Attempt to update a MessageTemplate which does not exist: {}", request);
+            log.warn("Attempt to update a MessageTemplate which does not exist: {}. Pretty weird.", request);
             throw new MessageTemplateNonexistentException(request, "MessageTemplate was not found");
         }
 
-        // Get by UniqueId criteria and if one is present, but not the orig request ID, then the change would collide
-        MessageTemplate activeExistingByCriteria = getMessageTemplate(UniqueMessageTemplateId.from(request));
-        if (activeExistingByCriteria != null &&
-                !Objects.equals(activeExistingByCriteria.getId(), origById.getId()) &&
-                request.getStatus().equals(MessageTemplateStatus.ACTIVE) /* updating inactive is no problem*/) {
-            // There's been a change in one of the UniqueMessageTemplateId fields making it clash with an existing Template
-            // Logging is not important, as it doesn't signify an error herein or with the client
-            throw new MessageTemplateAlreadyExistsException(request, "Can not update Unique ID params for this MessageTemplate, one already exists");
+        // If the request template is active, we need to ensure there's !another active template to collide
+        if (request.getMessageTemplateStatus().equals(Status.ACTIVE)) {
+            MessageTemplate existing = getMessageTemplate(request);
+            if (existing != null) {
+                // There's been a change in one of the UniqueMessageTemplateId fields making it clash with an existing Template
+                // Logging is not important, as it doesn't signify an error herein or with the client
+                throw new MessageTemplateAlreadyExistsException(request, "Can not update Unique ID params for this MessageTemplate, one already exists");
+            }
         }
 
         SQLStatementParams statementParams = new SQLStatementParams(request);
         Set<DataUtils.FieldUpdate> fieldUpdates = statementParams.buildForUpdate(origById);
 
         if (fieldUpdates.isEmpty()) {
-            log.debug("No fields changed");
+            log.info("Update request for MessageTemplate where no fields changed. Kinda weird.");
             return Collections.emptySet();
         }
 
@@ -145,9 +141,10 @@ public class NotificationAdminRepository {
     }
 
     /**
-     * Retrieve {@link MessageTemplate}s by criteria. ID will be used in isolation if provided as criteria, returning
-     * empty list if MessageTemplate cannot be found with the specified ID.
-     * For search which does not regard ID, see getMessageTemplates({@link UniqueMessageTemplateId})
+     * Retrieve {@link MessageTemplate}s by criteria. ID will be ignored by this method and will return all which
+     * qualify, an empty list otherwise.
+     * For search which assumes only one MessageTemplate should exist per the criteria provided, (e.g. duplicate), see
+     * getMessageTemplate({@link MessageTemplate})
      *
      * @param crit {@link MessageTemplate} doubling as criteria for a query. Downside: Can't use null or empty string
      *             as criteria value
@@ -155,13 +152,6 @@ public class NotificationAdminRepository {
      */
     @Transactional
     public List<MessageTemplate> getMessageTemplates(@NotNull final MessageTemplate crit) {
-
-        if (crit.getId() != null) {
-            MessageTemplate messageTemplate = getMessageTemplate(crit.getId());
-            if (messageTemplate != null)
-                return List.of(messageTemplate);
-            return Collections.emptyList();
-        }
 
         SQLStatementParams params = new SQLStatementParams(crit);
         params.buildForSelect();
@@ -173,10 +163,18 @@ public class NotificationAdminRepository {
         return template.query(sql, params.params, new RowMapperResultSetExtractor<>(new MessageTemplateRowMapper()));
     }
 
-    public MessageTemplate getMessageTemplate(@NotNull final UniqueMessageTemplateId id) {
-        MessageTemplate criteria = id.toMessageTemplate();
+    public MessageTemplate getMessageTemplate(@NotNull final MessageTemplate id) {
 
-        List<MessageTemplate> messageTemplates = getMessageTemplates(criteria);
+        MessageTemplate uniqueCriteria = new MessageTemplate();
+        uniqueCriteria.setMessageTemplateStatus(Status.ACTIVE);
+        uniqueCriteria.setEventSubject(id.getEventSubject());
+        uniqueCriteria.setEventVerb(id.getEventVerb());
+        uniqueCriteria.setDeliveryCriteria(id.getDeliveryCriteria());
+        uniqueCriteria.setRecipientContextKey(id.getRecipientContextKey());
+        uniqueCriteria.setTenantId(id.getTenantId());
+        uniqueCriteria.setContentKey(id.getContentKey()); // TODO: at some point, this needs to consider sender strategy
+
+        List<MessageTemplate> messageTemplates = getMessageTemplates(id);
         if (messageTemplates.size() > 1) {
             log.error("DATA INTEGRITY ERROR: more than one MessageTemplate found for {}", id);
             return null;
@@ -306,7 +304,7 @@ public class NotificationAdminRepository {
             messageTemplate.setEventSubject(rs.getString("event_subject"));
             messageTemplate.setEventVerb(rs.getString("event_verb"));
             messageTemplate.setTenantId(rs.getLong("tenant_id"));
-            messageTemplate.setMessageTemplateStatus(MessageTemplateStatus.fromCode(rs.getString("status")));
+            messageTemplate.setMessageTemplateStatus(Status.fromCode(rs.getString("status")));
             messageTemplate.setRecipientContextKey(rs.getString("recipient_context_key"));
             messageTemplate.setContentKey(rs.getString("content_key"));
             messageTemplate.setContentLookupType(ContentLookupType.valueOf(rs.getString("content_lookup_type")));

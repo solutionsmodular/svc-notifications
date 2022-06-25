@@ -11,7 +11,7 @@ public class MessageTemplate extends Tenanted {
 
     private String eventSubject;
     private String eventVerb;
-    private MessageTemplateStatus messageTemplateStatus = MessageTemplateStatus.ACTIVE;
+    private Status status = Status.ACTIVE;
     private String recipientContextKey;
     private ContentLookupType contentLookupType;
     private String contentKey;
@@ -33,12 +33,12 @@ public class MessageTemplate extends Tenanted {
         this.eventVerb = eventVerb;
     }
 
-    public MessageTemplateStatus getStatus() {
-        return messageTemplateStatus;
+    public Status getStatus() {
+        return status;
     }
 
-    public void setMessageTemplateStatus(MessageTemplateStatus messageTemplateStatus) {
-        this.messageTemplateStatus = messageTemplateStatus;
+    public void setMessageTemplateStatus(Status status) {
+        this.status = status;
     }
 
     public String getRecipientContextKey() {
@@ -49,8 +49,8 @@ public class MessageTemplate extends Tenanted {
         this.recipientContextKey = recipientContextKey;
     }
 
-    public MessageTemplateStatus getMessageTemplateStatus() {
-        return messageTemplateStatus;
+    public Status getMessageTemplateStatus() {
+        return status;
     }
 
     public ContentLookupType getContentLookupType() {
@@ -89,7 +89,11 @@ public class MessageTemplate extends Tenanted {
 
         if (!Objects.equals(eventSubject, that.eventSubject)) return false;
         if (!Objects.equals(eventVerb, that.eventVerb)) return false;
-        return Objects.equals(messageTemplateStatus, that.messageTemplateStatus);
+        if (!Objects.equals(recipientContextKey, that.recipientContextKey)) return false;
+        if (!Objects.equals(contentLookupType, that.contentLookupType)) return false;
+        if (!Objects.equals(contentKey, that.contentKey)) return false;
+        if (!Objects.equals(deliveryCriteria, that.deliveryCriteria)) return false;
+        return Objects.equals(status, that.status);
     }
 
     @Override
@@ -97,7 +101,7 @@ public class MessageTemplate extends Tenanted {
         int result = super.hashCode();
         result += (eventSubject != null ? eventSubject.hashCode() : 0);
         result += (eventVerb != null ? eventVerb.hashCode() : 0);
-        result += (messageTemplateStatus != null ? messageTemplateStatus.hashCode() : 0);
+        result += (status != null ? status.hashCode() : 0);
         result += (recipientContextKey != null ? recipientContextKey.hashCode() : 0);
         result += (contentLookupType != null ? contentLookupType.hashCode() : 0);
         result += (contentKey != null ? contentKey.hashCode() : 0);

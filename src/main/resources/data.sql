@@ -1,7 +1,11 @@
 insert into notification_component_status (status, description)
 values ('A', 'Active'),
        ('I', 'Inactive'),
-       ('D', 'Deleted');
+       ('D', 'Deleted'),
+       ('V', 'Delivered'),
+       ('F', 'Fail'),
+       ('P', 'Pending')
+       ;
 insert into content_lookup_types(type, description)
 values ('URL', 'Static content HTML. Key should be http or https URL'),
        ('CONTENT_KEY', 'Using SolMod infrastructure, this content key should be used for content management'),

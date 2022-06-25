@@ -88,6 +88,7 @@ create table notification_deliveries
     id                  BIGINT auto_increment              not null,
     recipient           varchar(255)                       not null,
     message_template_id BIGINT                             not null,
+    status                varchar(1)                           not null,
     created_date        datetime DEFAULT CURRENT_TIMESTAMP not null,
     modified_date       datetime                           null,
     constraint notification_deliveries_pk
