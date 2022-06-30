@@ -86,7 +86,7 @@ public class MessageTemplatesRepository {
         // If the outcome of the request is an active status, we need to ensure there's !another active template to collide
         if (Optional.ofNullable(request.getStatus()).orElse(origById.getStatus()).equals(Status.ACTIVE)) {
             MessageTemplate existing = getMessageTemplate(request);
-            if (existing != null && existing.getStatus().equals(Status.ACTIVE)) {// getNotificationStatus should ensure active, but just in case...
+            if (existing != null && existing.getStatus().equals(Status.ACTIVE)) {// getMessageTemplate should ensure active, but just in case...
                 // There's been a change in one of the UniqueMessageTemplateId fields making it clash with an existing Template
                 // Logging is not important, as it doesn't signify an error herein or with the client
                 throw new MessageTemplateAlreadyExistsException(request, "Can not update Unique ID params for this MessageTemplate, one already exists");
@@ -161,9 +161,12 @@ public class MessageTemplatesRepository {
     }
 
     /**
-     * Get a single MessageTemplate
-     * @param id
-     * @return
+     * Get a single MessageTemplate, throwing a DataIntegrity error if more than one is found.
+     * This is meant to determine if there exists a conflicting MessageTemplate
+     *
+     * @param id {@link MessageTemplate} wherein values will be specified which should include all values which,
+     *                                      together, represent a MessageTemplate which should only occur once
+     * @return {@link MessageTemplate}, or null in the event of not found or multiple found
      */
     public MessageTemplate getMessageTemplate(@NotNull final MessageTemplate id) {
 
@@ -208,7 +211,7 @@ public class MessageTemplatesRepository {
         void buildForSelect() {
             StringBuilder builder = new StringBuilder();
             appendProperty("notification_context_id", msgTemplate.getNotificationContextId(), builder);
-            appendProperty("status", Optional.ofNullable(msgTemplate.getStatus()).orElse(null), builder);
+            appendProperty("status", msgTemplate.getStatus(), builder);
             appendProperty("recipient_context_key", msgTemplate.getRecipientContextKey(), builder);
             appendProperty("content_lookup_type", msgTemplate.getContentLookupType(), builder);
             appendProperty("content_key", msgTemplate.getContentKey(), builder);
@@ -234,7 +237,7 @@ public class MessageTemplatesRepository {
 
             // Disallow updating notificationContextId
 
-            updates.add(appendProperty("status", Optional.ofNullable(originalTemplate.getStatus()).orElse(null),
+            updates.add(appendProperty("status", originalTemplate.getStatus(),
                     msgTemplate.getStatus(),
                     builder));
             updates.add(appendProperty("recipient_context_key", originalTemplate.getRecipientContextKey(),

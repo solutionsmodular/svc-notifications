@@ -156,6 +156,14 @@ public class NotificationContextRepository {
         return template.query(sql, params.params, new RowMapperResultSetExtractor<>(new NotificationContextRowMapper()));
     }
 
+    /**
+     * Get a single NotificationContext, throwing a DataIntegrity error if more than one is found.
+     * This is meant to determine if there exists a conflicting NotificationContext
+     *
+     * @param id {@link NotificationContext} wherein values will be specified which should include all values which,
+     *                                      together, represent a NotificationContext which should only occur once
+     * @return {@link NotificationContext}, or null in the event of not found or multiple found
+     */
     public NotificationContext getNotificationContext(@NotNull final NotificationContext id) {
 
         NotificationContext uniqueCriteria = new NotificationContext();
