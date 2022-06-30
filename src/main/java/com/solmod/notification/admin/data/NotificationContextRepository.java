@@ -159,6 +159,7 @@ public class NotificationContextRepository {
     public NotificationContext getNotificationContext(@NotNull final NotificationContext id) {
 
         NotificationContext uniqueCriteria = new NotificationContext();
+        uniqueCriteria.setStatus(Status.ACTIVE); // Unique only counts for active
         uniqueCriteria.setEventSubject(id.getEventSubject());
         uniqueCriteria.setEventVerb(id.getEventVerb());
         uniqueCriteria.setTenantId(id.getTenantId());
