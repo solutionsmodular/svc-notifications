@@ -22,28 +22,26 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * This test will perform tests against a DB to assert bare requirements for DB statements.
- * For all other tests, see {@link NotificationAdminRepositoryTest} which will assert business logic and such
+ * For all other tests, see {@link MessageTemplatesRepositoryTest} which will assert business logic and such
  */
 @Sql(scripts = {"classpath:/scripts/notification-admin-tests.sql"})
 @SpringBootTest
 @Transactional
-class NotificationAdminRepositoryIntegrationTest {
+class MessageTemplatesRepositoryIntegrationTest {
 
     @Autowired
-    NotificationAdminRepository adminRepository;
+    MessageTemplatesRepository adminRepository;
 
     @Test
     @DisplayName("Testing create. Happy day case in integration test, only")
     @ExtendWith(OutputCaptureExtension.class)
     void testCreate(CapturedOutput output) throws MessageTemplateAlreadyExistsException {
         MessageTemplate request = new MessageTemplate();
-        request.setTenantId(1L);
-        request.setEventSubject("Something");
-        request.setEventVerb("Occurred");
+        request.setNotificationContextId(1L);
         request.setContentKey("some.summary.key");
         request.setContentLookupType(ContentLookupType.STATIC);
         request.setRecipientContextKey("some.recipient.context.key");
-        request.setMessageTemplateStatus(Status.ACTIVE);
+        request.setStatus(Status.ACTIVE);
 
         // Call
         adminRepository.create(request);
@@ -56,8 +54,6 @@ class NotificationAdminRepositoryIntegrationTest {
     @DisplayName("Testing Get by Criteria AND update. Happy day case in integration test, only. This test uses data from notification-admin-tests.sql")
     void testGetByCriteriaAndUpdate() throws MessageTemplateNonexistentException, MessageTemplateAlreadyExistsException {
         MessageTemplate criteria = new MessageTemplate();
-        criteria.setEventSubject("ORDER");
-        criteria.setEventVerb("CREATED");
         criteria.setRecipientContextKey("data.order.owner.email");
         criteria.setContentKey("ORDER_PLACED_OWNER_EMAIL");
 
@@ -65,20 +61,17 @@ class NotificationAdminRepositoryIntegrationTest {
         MessageTemplate request = new MessageTemplate();
         request.setId(existing.getId());
         request.setRecipientContextKey("data.different.order.owner.email");
-        request.setContentKey("ANOTHER_CONTENT_KEY");
-        request.setEventSubject("  "); // Empty field is not interpreted as a valid change and must be ignored
+        request.setContentKey("   ");
 
         Set<DataUtils.FieldUpdate> fieldsUpdated = adminRepository.update(request);
-        assertEquals(2, fieldsUpdated.size());
+        assertEquals(1, fieldsUpdated.size());
 
         MessageTemplate updated = adminRepository.getMessageTemplate(request.getId());
         // Assert intended fields are updated
         assertEquals(request.getRecipientContextKey(), updated.getRecipientContextKey());
-        assertEquals(request.getContentKey(), updated.getContentKey());
         // Assert other fields are changed
-        assertEquals(existing.getEventSubject(), updated.getEventSubject());
-        assertEquals(existing.getEventVerb(), updated.getEventVerb());
-        assertEquals(existing.getMessageTemplateStatus(), updated.getStatus());
+        assertEquals(existing.getContentKey(), updated.getContentKey());
+        assertEquals(existing.getStatus(), updated.getStatus());
         assertEquals(existing.getContentLookupType(), updated.getContentLookupType());
         assertTrue(updated.getDeliveryCriteria().entrySet().containsAll(updated.getDeliveryCriteria().entrySet()));
     }

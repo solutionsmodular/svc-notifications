@@ -25,20 +25,19 @@ import java.sql.Timestamp;
 import java.util.*;
 
 @Repository
-public class NotificationAdminRepository {
+public class MessageTemplatesRepository {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     private final NamedParameterJdbcTemplate template;
 
     @Autowired
-    public NotificationAdminRepository(NamedParameterJdbcTemplate template) {
+    public MessageTemplatesRepository(NamedParameterJdbcTemplate template) {
         this.template = template;
     }
 
     /**
-     * Create a new User and grant it the default authorities for the tenant for which it is being provisioned
-     * TODO: Prevent duplicates
+     * Create a new MessageTemplate
      *
      * @param request {@link MessageTemplate} representing the request.
      */
@@ -50,15 +49,13 @@ public class NotificationAdminRepository {
         }
 
         String sql = "INSERT INTO message_templates " +
-                "(tenant_id, event_subject, event_verb, status, recipient_context_key, " +
+                "(notification_context_id, status, recipient_context_key, " +
                 "content_lookup_type, content_key) " +
-                "VALUES (:tenant_id, :event_subject, :event_verb, :status, " +
+                "VALUES (:notification_context_id, :status, " +
                 ":recipient_context_key, :content_lookup_type, :content_key)";
         try {
             template.update(sql, Map.of(
-                    "tenant_id", request.getTenantId(),
-                    "event_subject", request.getEventSubject(),
-                    "event_verb", request.getEventVerb(),
+                    "notification_context_id", request.getNotificationContextId(),
                     "status", request.getStatus().code(),
                     "recipient_context_key", request.getRecipientContextKey(),
                     "content_lookup_type", request.getContentLookupType().name(),
@@ -86,10 +83,10 @@ public class NotificationAdminRepository {
             throw new MessageTemplateNonexistentException(request, "MessageTemplate was not found");
         }
 
-        // If the request template is active, we need to ensure there's !another active template to collide
-        if (request.getMessageTemplateStatus().equals(Status.ACTIVE)) {
+        // If the outcome of the request is an active status, we need to ensure there's !another active template to collide
+        if (Optional.ofNullable(request.getStatus()).orElse(origById.getStatus()).equals(Status.ACTIVE)) {
             MessageTemplate existing = getMessageTemplate(request);
-            if (existing != null) {
+            if (existing != null && existing.getStatus().equals(Status.ACTIVE)) {// getNotificationStatus should ensure active, but just in case...
                 // There's been a change in one of the UniqueMessageTemplateId fields making it clash with an existing Template
                 // Logging is not important, as it doesn't signify an error herein or with the client
                 throw new MessageTemplateAlreadyExistsException(request, "Can not update Unique ID params for this MessageTemplate, one already exists");
@@ -126,7 +123,7 @@ public class NotificationAdminRepository {
             return null;
         }
 
-        String sql = "select id, tenant_id, event_subject, event_verb, status, recipient_context_key, " +
+        String sql = "select id, notification_context_id, status, recipient_context_key, " +
                 "content_lookup_type, content_key, modified_date, created_date " +
                 "FROM message_templates where id = :id";
 
@@ -155,7 +152,7 @@ public class NotificationAdminRepository {
 
         SQLStatementParams params = new SQLStatementParams(crit);
         params.buildForSelect();
-        String sql = "select id, tenant_id, event_subject, event_verb, status, recipient_context_key, " +
+        String sql = "select id, notification_context_id, status, recipient_context_key, " +
                 "content_lookup_type, content_key, created_date, modified_date \n" +
                 "FROM message_templates \n" +
                 "WHERE " + params.statement;
@@ -163,16 +160,19 @@ public class NotificationAdminRepository {
         return template.query(sql, params.params, new RowMapperResultSetExtractor<>(new MessageTemplateRowMapper()));
     }
 
+    /**
+     * Get a single MessageTemplate
+     * @param id
+     * @return
+     */
     public MessageTemplate getMessageTemplate(@NotNull final MessageTemplate id) {
 
         MessageTemplate uniqueCriteria = new MessageTemplate();
-        uniqueCriteria.setMessageTemplateStatus(Status.ACTIVE);
-        uniqueCriteria.setEventSubject(id.getEventSubject());
-        uniqueCriteria.setEventVerb(id.getEventVerb());
+        uniqueCriteria.setStatus(Status.ACTIVE);
         uniqueCriteria.setDeliveryCriteria(id.getDeliveryCriteria());
         uniqueCriteria.setRecipientContextKey(id.getRecipientContextKey());
-        uniqueCriteria.setTenantId(id.getTenantId());
-        uniqueCriteria.setContentKey(id.getContentKey()); // TODO: at some point, this needs to consider sender strategy
+        uniqueCriteria.setNotificationContextId(id.getNotificationContextId());
+        uniqueCriteria.setContentKey(id.getContentKey());
 
         List<MessageTemplate> messageTemplates = getMessageTemplates(id);
         if (messageTemplates.size() > 1) {
@@ -207,10 +207,8 @@ public class NotificationAdminRepository {
          */
         void buildForSelect() {
             StringBuilder builder = new StringBuilder();
-            appendProperty("tenant_id", msgTemplate.getTenantId(), builder);
-            appendProperty("event_subject", msgTemplate.getEventSubject(), builder);
-            appendProperty("event_verb", msgTemplate.getEventVerb(), builder);
-            appendProperty("status", msgTemplate.getStatus().code(), builder);
+            appendProperty("notification_context_id", msgTemplate.getNotificationContextId(), builder);
+            appendProperty("status", Optional.ofNullable(msgTemplate.getStatus()).orElse(null), builder);
             appendProperty("recipient_context_key", msgTemplate.getRecipientContextKey(), builder);
             appendProperty("content_lookup_type", msgTemplate.getContentLookupType(), builder);
             appendProperty("content_key", msgTemplate.getContentKey(), builder);
@@ -224,7 +222,7 @@ public class NotificationAdminRepository {
          * this=that portion of an update statement and params
          * Note: Cheat here; that I'm taking this opportunity to build a map of old:new values for updated
          * templates, but we'll need that map for publishing to the bus
-         * Note: Herein, the rule disallowing the updating of tenantId is endforced
+         * Note: Herein, the rule disallowing the updating of notificationContextId is enforced
          *
          * @param originalTemplate {@link MessageTemplate} naming the original form of that being updated
          */
@@ -234,16 +232,10 @@ public class NotificationAdminRepository {
 
             params.put("id", originalTemplate.getId()); // always where clause for an update
 
-            // Disallow updating tenantId
+            // Disallow updating notificationContextId
 
-            updates.add(appendProperty("event_subject", originalTemplate.getEventSubject(),
-                    msgTemplate.getEventSubject(),
-                    builder));
-            updates.add(appendProperty("event_verb", originalTemplate.getEventVerb(),
-                    msgTemplate.getEventVerb(),
-                    builder));
-            updates.add(appendProperty("status", originalTemplate.getStatus().code(),
-                    msgTemplate.getStatus().code(),
+            updates.add(appendProperty("status", Optional.ofNullable(originalTemplate.getStatus()).orElse(null),
+                    msgTemplate.getStatus(),
                     builder));
             updates.add(appendProperty("recipient_context_key", originalTemplate.getRecipientContextKey(),
                     msgTemplate.getRecipientContextKey(),
@@ -301,10 +293,8 @@ public class NotificationAdminRepository {
         public MessageTemplate mapRow(ResultSet rs, int rowNum) throws SQLException {
             MessageTemplate messageTemplate = new MessageTemplate();
             messageTemplate.setId(rs.getLong("id"));
-            messageTemplate.setEventSubject(rs.getString("event_subject"));
-            messageTemplate.setEventVerb(rs.getString("event_verb"));
-            messageTemplate.setTenantId(rs.getLong("tenant_id"));
-            messageTemplate.setMessageTemplateStatus(Status.fromCode(rs.getString("status")));
+            messageTemplate.setNotificationContextId(rs.getLong("notification_context_id"));
+            messageTemplate.setStatus(Status.fromCode(rs.getString("status")));
             messageTemplate.setRecipientContextKey(rs.getString("recipient_context_key"));
             messageTemplate.setContentKey(rs.getString("content_key"));
             messageTemplate.setContentLookupType(ContentLookupType.valueOf(rs.getString("content_lookup_type")));

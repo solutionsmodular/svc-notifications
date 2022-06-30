@@ -28,9 +28,11 @@ create table local_static_content
 (
     id            BIGINT auto_increment,
     tenant_id     BIGINT,
-    namespace     varchar(255) not null,
-    content_key   varchar(255) not null,
-    content_block blob         not null,
+    namespace     varchar(255)                         not null,
+    content_key   varchar(255)                         not null,
+    content_block blob                                 not null,
+    created_date  datetime DEFAULT CURRENT_TIMESTAMP   not null,
+    modified_date datetime ON UPDATE CURRENT_TIMESTAMP null,
     constraint local_static_content_pk
         primary key (id)
 );
@@ -46,6 +48,22 @@ create table content_merge_fields
 );
 
 --
+create table notification_contexts
+(
+    id            BIGINT auto_increment,
+    tenant_id     BIGINT                               not null,
+    event_subject varchar(50)                          null,
+    event_verb    varchar(50)                          null,
+    status        varchar(1)                           not null,
+    created_date  datetime DEFAULT CURRENT_TIMESTAMP   not null,
+    modified_date datetime ON UPDATE CURRENT_TIMESTAMP null,
+    constraint message_templates_pk
+        primary key (id),
+    constraint notification_context_status_fk
+        FOREIGN KEY (status) references notification_component_status (status)
+);
+
+--
 -- Content type URL: key = URL
 -- Content type CONTEXT_KEY: Use CMS
 -- Content type STATIC: key refers to local_static_content
@@ -53,18 +71,18 @@ create table content_merge_fields
 -- indicating a constant)
 create table message_templates
 (
-    id                    BIGINT auto_increment,
-    tenant_id             BIGINT                               not null,
-    event_subject         varchar(50)                          null,
-    event_verb            varchar(50)                          null,
-    status                varchar(1)                           not null,
-    recipient_context_key varchar(255)                         null,
-    content_lookup_type   varchar(50)                          NOT NULL,
-    content_key           varchar(50)                          not null,
-    created_date          datetime DEFAULT CURRENT_TIMESTAMP   not null,
-    modified_date         datetime ON UPDATE CURRENT_TIMESTAMP null,
+    id                      BIGINT auto_increment,
+    notification_context_id BIGINT                               not null,
+    status                  varchar(1)                           not null,
+    recipient_context_key   varchar(255)                         null,
+    content_lookup_type     varchar(50)                          NOT NULL,
+    content_key             varchar(50)                          not null,
+    created_date            datetime DEFAULT CURRENT_TIMESTAMP   not null,
+    modified_date           datetime ON UPDATE CURRENT_TIMESTAMP null,
     constraint message_templates_pk
         primary key (id),
+    constraint message_templates_notification_context_fk
+        FOREIGN KEY (notification_context_id) references notification_contexts (id),
     constraint message_templates_status_fk
         FOREIGN KEY (status) references notification_component_status (status),
     constraint message_template_summary_content_lookup_type_fk
@@ -88,7 +106,7 @@ create table notification_deliveries
     id                  BIGINT auto_increment              not null,
     recipient           varchar(255)                       not null,
     message_template_id BIGINT                             not null,
-    status                varchar(1)                           not null,
+    status              varchar(1)                         not null,
     created_date        datetime DEFAULT CURRENT_TIMESTAMP not null,
     modified_date       datetime                           null,
     constraint notification_deliveries_pk
