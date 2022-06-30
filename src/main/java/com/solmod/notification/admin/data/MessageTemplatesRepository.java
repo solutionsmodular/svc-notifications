@@ -1,9 +1,7 @@
 package com.solmod.notification.admin.data;
 
 
-import com.solmod.notification.domain.ContentLookupType;
-import com.solmod.notification.domain.MessageTemplate;
-import com.solmod.notification.domain.Status;
+import com.solmod.notification.domain.*;
 import com.solmod.notification.exception.MessageTemplateAlreadyExistsException;
 import com.solmod.notification.exception.MessageTemplateNonexistentException;
 import org.apache.commons.lang3.StringUtils;
@@ -184,6 +182,10 @@ public class MessageTemplatesRepository {
         }
 
         return messageTemplates.isEmpty() ? null : messageTemplates.get(0);
+    }
+
+    public Set<MessageTemplate> getMessageTemplates(@NotNull final NotificationEvent notificationEvent, @NotNull final SolMessage triggerEvent) {
+        return null;
     }
 
     /**

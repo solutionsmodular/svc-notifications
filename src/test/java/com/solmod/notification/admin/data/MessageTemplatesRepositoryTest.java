@@ -2,7 +2,6 @@ package com.solmod.notification.admin.data;
 
 import com.solmod.notification.domain.ContentLookupType;
 import com.solmod.notification.domain.MessageTemplate;
-import com.solmod.notification.domain.NotificationContext;
 import com.solmod.notification.domain.Status;
 import com.solmod.notification.exception.MessageTemplateAlreadyExistsException;
 import com.solmod.notification.exception.MessageTemplateNonexistentException;

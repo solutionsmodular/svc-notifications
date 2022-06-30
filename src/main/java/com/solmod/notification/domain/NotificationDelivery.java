@@ -1,9 +1,14 @@
 package com.solmod.notification.domain;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class NotificationDelivery extends Audited {
     private String recipient;
     private Long messageTemplateId;
     private Status status;
+    private String messageBodyUri;
+    private Map<String, String> context = new HashMap<>();
 
     public String getRecipient() {
         return recipient;
@@ -27,5 +32,21 @@ public class NotificationDelivery extends Audited {
 
     public void setStatus(Status status) {
         this.status = status;
+    }
+
+    public String getMessageBodyUri() {
+        return messageBodyUri;
+    }
+
+    public void setMessageBodyUri(String messageBodyUri) {
+        this.messageBodyUri = messageBodyUri;
+    }
+
+    public Map<String, String> getContext() {
+        return context;
+    }
+
+    public void setContext(Map<String, String> context) {
+        this.context = context;
     }
 }

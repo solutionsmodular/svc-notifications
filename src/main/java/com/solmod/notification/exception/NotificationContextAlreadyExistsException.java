@@ -1,16 +1,16 @@
 package com.solmod.notification.exception;
 
-import com.solmod.notification.domain.NotificationContext;
+import com.solmod.notification.domain.NotificationEvent;
 
 public class NotificationContextAlreadyExistsException extends Exception {
-    private final NotificationContext context;
+    private final NotificationEvent context;
 
-    public NotificationContextAlreadyExistsException(NotificationContext template, String message) {
+    public NotificationContextAlreadyExistsException(NotificationEvent template, String message) {
         super(message + "\n  Collision with ID " + template);
         this.context = template;
     }
 
-    public NotificationContext getContext() {
+    public NotificationEvent getContext() {
         return context;
     }
 }

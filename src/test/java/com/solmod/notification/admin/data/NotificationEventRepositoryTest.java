@@ -1,6 +1,6 @@
 package com.solmod.notification.admin.data;
 
-import com.solmod.notification.domain.NotificationContext;
+import com.solmod.notification.domain.NotificationEvent;
 import com.solmod.notification.domain.Status;
 import com.solmod.notification.exception.NotificationContextAlreadyExistsException;
 import com.solmod.notification.exception.NotificationContextNonexistentException;
@@ -27,7 +27,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
-public class NotificationContextRepositoryTest {
+public class NotificationEventRepositoryTest {
 
     @Spy
     @InjectMocks
@@ -47,28 +47,28 @@ public class NotificationContextRepositoryTest {
     @Test
     @DisplayName("Assert that we can create a NotificationContext if it doesn't already exist per UniqueNotificationContextId")
     void create_allClear() throws NotificationContextAlreadyExistsException {
-        NotificationContext request = buildFullyPopulatedNotificationContext();
+        NotificationEvent request = buildFullyPopulatedNotificationContext();
 
-        doReturn(null, new NotificationContext()).when(repo).getNotificationContext(any(NotificationContext.class));
+        doReturn(null, new NotificationEvent()).when(repo).getNotificationContext(any(NotificationEvent.class));
         when(template.update(anyString(), anyMap())).thenReturn(1);
 
         // Call
         repo.create(request);
 
-        verify(repo, times(1)).create(any(NotificationContext.class));
+        verify(repo, times(1)).create(any(NotificationEvent.class));
         // Find first to ensure it doesn't exist, use same find to load after save
-        verify(repo, times(1)).getNotificationContext(any(NotificationContext.class));
+        verify(repo, times(1)).getNotificationContext(any(NotificationEvent.class));
     }
 
     @Test
     @DisplayName("Assert that we cannot create a NotificationContext and an error is logged if fields are missing")
     void create_MissingFields(CapturedOutput captured) throws NotificationContextAlreadyExistsException {
-        NotificationContext request = new NotificationContext();
+        NotificationEvent request = new NotificationEvent();
         request.setTenantId(345L);
 //        request.setEventSubject("Test"); Missing required field
         request.setEventVerb("Happening");
         request.setStatus(Status.ACTIVE);
-        doReturn(emptyList()).when(repo).getNotificationContexts(any(NotificationContext.class));
+        doReturn(emptyList()).when(repo).getNotificationContexts(any(NotificationEvent.class));
 
         // Call
         repo.create(request);
@@ -76,27 +76,27 @@ public class NotificationContextRepositoryTest {
         // Assert
         assertTrue(captured.getOut().contains("Failed attempt to save notification context"));
         // Find first to ensure it doesn't exist, use same find to load after save
-        verify(repo, times(1)).getNotificationContext(any(NotificationContext.class));
+        verify(repo, times(1)).getNotificationContext(any(NotificationEvent.class));
     }
 
     @Test
     @DisplayName("Assert we get an Exception if the NotificationContext already exists per UniqueNotificationContextId")
     void create_alreadyExists() throws NotificationContextAlreadyExistsException {
-        doReturn(new NotificationContext()).when(repo).getNotificationContext(any(NotificationContext.class));
-        assertThrows(NotificationContextAlreadyExistsException.class, () -> repo.create(new NotificationContext()));
-        verify(repo, times(1)).create(any(NotificationContext.class));
+        doReturn(new NotificationEvent()).when(repo).getNotificationContext(any(NotificationEvent.class));
+        assertThrows(NotificationContextAlreadyExistsException.class, () -> repo.create(new NotificationEvent()));
+        verify(repo, times(1)).create(any(NotificationEvent.class));
     }
 
     @Test
     @DisplayName("Assert only supplied values are registered as change request")
     void update_allClear() throws NotificationContextNonexistentException, NotificationContextAlreadyExistsException {
-        NotificationContext origFormOfRequest = new NotificationContext();
+        NotificationEvent origFormOfRequest = new NotificationEvent();
         origFormOfRequest.setId(155L);
         origFormOfRequest.setStatus(Status.INACTIVE);
         origFormOfRequest.setEventSubject("OG_subject");
         origFormOfRequest.setEventVerb("OG_verb");
 
-        NotificationContext request = new NotificationContext();
+        NotificationEvent request = new NotificationEvent();
         request.setId(155L);
         request.setStatus(Status.INACTIVE);
         request.setEventSubject("new_subject");
@@ -108,20 +108,20 @@ public class NotificationContextRepositoryTest {
         Set<DataUtils.FieldUpdate> result = repo.update(request);
 
         assertEquals(2, result.size());
-        verify(repo, never()).getNotificationContext(any(NotificationContext.class)); // No need to check dupes on inactive
+        verify(repo, never()).getNotificationContext(any(NotificationEvent.class)); // No need to check dupes on inactive
     }
 
     @Test
     @DisplayName("Assert we can update a NotificationContext when there are no rules broken")
     void update_allClear_ignoreMissingFields() throws NotificationContextNonexistentException, NotificationContextAlreadyExistsException {
-        NotificationContext origFormOfRequest = new NotificationContext();
+        NotificationEvent origFormOfRequest = new NotificationEvent();
         origFormOfRequest.setId(155L);
         origFormOfRequest.setStatus(Status.INACTIVE);
         origFormOfRequest.setEventSubject("OG_subject");
         origFormOfRequest.setEventVerb("OG_verb");
         origFormOfRequest.setTenantId(18L);
 
-        NotificationContext request = new NotificationContext();
+        NotificationEvent request = new NotificationEvent();
         request.setId(155L);
         request.setStatus(Status.INACTIVE);
         request.setEventSubject("new_subject");
@@ -137,19 +137,19 @@ public class NotificationContextRepositoryTest {
         assertEquals(2, result.size());
         assertTrue(stringArgCaptor.getValue().contains(":event_subject"));
         assertFalse(stringArgCaptor.getValue().contains(":status"));
-        verify(repo, never()).getNotificationContext(any(NotificationContext.class)); // No need to check dupes on inactive
+        verify(repo, never()).getNotificationContext(any(NotificationEvent.class)); // No need to check dupes on inactive
     }
 
     @Test
     @DisplayName("Assert no update is performed if there are no changes")
     void update_noChange() throws NotificationContextNonexistentException, NotificationContextAlreadyExistsException {
-        NotificationContext origFormOfRequest = new NotificationContext();
+        NotificationEvent origFormOfRequest = new NotificationEvent();
         origFormOfRequest.setId(155L);
         origFormOfRequest.setStatus(Status.INACTIVE);
         origFormOfRequest.setEventSubject("OG_subject");
         origFormOfRequest.setEventVerb("OG_verb");
 
-        NotificationContext request = new NotificationContext();
+        NotificationEvent request = new NotificationEvent();
         request.setId(origFormOfRequest.getId());
         request.setStatus(origFormOfRequest.getStatus());
         request.setEventSubject(origFormOfRequest.getEventSubject());
@@ -161,14 +161,14 @@ public class NotificationContextRepositoryTest {
 
         assertTrue(result.isEmpty());
         verify(template, never()).update(anyString(), anyMap());
-        verify(repo, never()).getNotificationContext(any(NotificationContext.class));
+        verify(repo, never()).getNotificationContext(any(NotificationEvent.class));
     }
 
     @Test
     @DisplayName("Assert we get an exception and log an error if we attempt to update a NotificationContext which doesn't exist per ID")
     @ExtendWith(OutputCaptureExtension.class)
     void update_contextNotFound(CapturedOutput out) {
-        NotificationContext request = new NotificationContext();
+        NotificationEvent request = new NotificationEvent();
         request.setId(15L);
         request.setStatus(Status.ACTIVE);
         doReturn(null).when(repo).getNotificationContext(request.getId());
@@ -183,19 +183,19 @@ public class NotificationContextRepositoryTest {
             "would collide with another per unique requirements")
     void update_resultInConflict() {
 
-        NotificationContext existing = new NotificationContext();
+        NotificationEvent existing = new NotificationEvent();
         existing.setId(155L);
         existing.setStatus(Status.ACTIVE);
         existing.setEventSubject("someOriginalSubject");
         existing.setEventVerb("someOriginalVerb");
 
-        NotificationContext request = new NotificationContext();
+        NotificationEvent request = new NotificationEvent();
         request.setId(155L);
         request.setStatus(Status.ACTIVE);
         request.setEventSubject("someChangedSubject");
         request.setEventVerb("someChangedVerb");
 
-        NotificationContext conflicting = new NotificationContext();
+        NotificationEvent conflicting = new NotificationEvent();
         conflicting.setId(156L);
         conflicting.setStatus(Status.ACTIVE);
         conflicting.setEventSubject(request.getEventSubject());
@@ -212,19 +212,19 @@ public class NotificationContextRepositoryTest {
     @CsvSource({"A,A,I", "I,I,A", "A,I,I"})
     @DisplayName("Assert that we can make 'colliding' changes to  NotificationContext so long as there is only one Active across all duplicates")
     void update_noConflictDueToStatus(String existingStatus, String requestStatus, String conflictingStatus) throws NotificationContextNonexistentException, NotificationContextAlreadyExistsException {
-        NotificationContext existing = new NotificationContext();
+        NotificationEvent existing = new NotificationEvent();
         existing.setId(155L);
         existing.setStatus(Status.fromCode(existingStatus));
         existing.setEventSubject("someOriginalSubject");
         existing.setEventVerb("someOriginalVerb");
 
-        NotificationContext request = new NotificationContext();
+        NotificationEvent request = new NotificationEvent();
         request.setId(155L);
         request.setStatus(Status.fromCode(requestStatus));
         request.setEventSubject("someChangedSubject");
         request.setEventVerb("someChangedVerb");
 
-        NotificationContext wouldBeConflicting = new NotificationContext();
+        NotificationEvent wouldBeConflicting = new NotificationEvent();
         wouldBeConflicting.setId(156L);
         wouldBeConflicting.setStatus(Status.fromCode(conflictingStatus));
         wouldBeConflicting.setEventSubject(request.getEventSubject());
@@ -239,9 +239,9 @@ public class NotificationContextRepositoryTest {
         Set<DataUtils.FieldUpdate> update = repo.update(request);
         assertTrue(update.size() >= 2);
         if (!request.getStatus().equals(Status.ACTIVE)) {
-            verify(repo, never()).getNotificationContext(any(NotificationContext.class));
+            verify(repo, never()).getNotificationContext(any(NotificationEvent.class));
         } else {
-            verify(repo, times(1)).getNotificationContext(any(NotificationContext.class));
+            verify(repo, times(1)).getNotificationContext(any(NotificationEvent.class));
         }
     }
 
@@ -251,10 +251,10 @@ public class NotificationContextRepositoryTest {
 
         long testId = 15L;
         when(template.query(anyString(), eq(Map.of("id", testId)), any(NotificationContextRepository.NotificationContextRowMapper.class)))
-                .thenReturn(List.of(new NotificationContext()));
+                .thenReturn(List.of(new NotificationEvent()));
 
         // Test call
-        NotificationContext result = repo.getNotificationContext(testId);
+        NotificationEvent result = repo.getNotificationContext(testId);
 
         assertNotNull(result);
         assertFalse(output.getOut().contains("WARN"));
@@ -271,7 +271,7 @@ public class NotificationContextRepositoryTest {
                 .thenReturn(emptyList());
 
         // Test call
-        NotificationContext result = repo.getNotificationContext(15L);
+        NotificationEvent result = repo.getNotificationContext(15L);
 
         assertNull(result);
         assertTrue(output.getOut().contains("WARN"));
@@ -284,7 +284,7 @@ public class NotificationContextRepositoryTest {
     @DisplayName("Assert we get a null and a log if getMessage(id) is supplied a null id")
     void getNotificationContext_byId_nullId(CapturedOutput output) {
         // Test call
-        NotificationContext result = repo.getNotificationContext((Long) null);
+        NotificationEvent result = repo.getNotificationContext((Long) null);
 
         assertNull(result);
         assertTrue(output.getOut().contains("WARN"));
@@ -296,10 +296,10 @@ public class NotificationContextRepositoryTest {
     @ExtendWith(OutputCaptureExtension.class)
     @DisplayName("Assert we get a null and a log if getMessage by unique ID results in multiple")
     void getNotificationContext_byUniqueId_multipleExist(CapturedOutput output) {
-        doReturn(List.of(new NotificationContext(), new NotificationContext())).when(repo).getNotificationContexts(any(NotificationContext.class));
+        doReturn(List.of(new NotificationEvent(), new NotificationEvent())).when(repo).getNotificationContexts(any(NotificationEvent.class));
 
         // test call
-        NotificationContext result = repo.getNotificationContext(new NotificationContext());
+        NotificationEvent result = repo.getNotificationContext(new NotificationEvent());
 
         assertNull(result);
         assertTrue(output.getOut().contains("ERROR"));
@@ -310,10 +310,10 @@ public class NotificationContextRepositoryTest {
     @ExtendWith(OutputCaptureExtension.class)
     @DisplayName("Assert there are no issues when a single NotificationContext is returned on getByUniqueId")
     void getNotificationContext_byUniqueId_exists(CapturedOutput output) {
-        doReturn(List.of(new NotificationContext())).when(repo).getNotificationContexts(any(NotificationContext.class));
+        doReturn(List.of(new NotificationEvent())).when(repo).getNotificationContexts(any(NotificationEvent.class));
 
         // test call
-        NotificationContext result = repo.getNotificationContext(new NotificationContext());
+        NotificationEvent result = repo.getNotificationContext(new NotificationEvent());
 
         assertNotNull(result);
         assertFalse(output.getOut().contains("ERROR"));
@@ -323,10 +323,10 @@ public class NotificationContextRepositoryTest {
     @Test
     @ExtendWith(OutputCaptureExtension.class)
     void getNotificationContext_byUniqueId_notExists(CapturedOutput output) {
-        doReturn(emptyList()).when(repo).getNotificationContexts(any(NotificationContext.class));
+        doReturn(emptyList()).when(repo).getNotificationContexts(any(NotificationEvent.class));
 
         // test call
-        NotificationContext result = repo.getNotificationContext(new NotificationContext());
+        NotificationEvent result = repo.getNotificationContext(new NotificationEvent());
 
         assertNull(result);
         assertFalse(output.getOut().contains("ERROR"));
@@ -342,7 +342,7 @@ public class NotificationContextRepositoryTest {
     @Test
     @DisplayName("Assert a SQL statement contains any non-null criteria supplied in the criteria. By criteria ignores ID")
     void getNotificationContexts_byCrit() {
-        NotificationContext crit = new NotificationContext();
+        NotificationEvent crit = new NotificationEvent();
         crit.setTenantId(55L);
         crit.setEventSubject("event_subject");
         crit.setEventVerb("event_verb");
@@ -361,8 +361,8 @@ public class NotificationContextRepositoryTest {
         assertFalse(stringArgCaptor.getValue().contains(":status"));
     }
 
-    private NotificationContext buildFullyPopulatedNotificationContext() {
-        NotificationContext request = new NotificationContext();
+    private NotificationEvent buildFullyPopulatedNotificationContext() {
+        NotificationEvent request = new NotificationEvent();
         request.setTenantId(1L);
         request.setEventSubject("All");
         request.setEventVerb("Cleared");
