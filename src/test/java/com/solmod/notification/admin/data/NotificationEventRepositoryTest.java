@@ -31,7 +31,7 @@ public class NotificationEventRepositoryTest {
 
     @Spy
     @InjectMocks
-    NotificationContextRepository repo;
+    NotificationEventsRepository repo;
 
     @Mock
     NamedParameterJdbcTemplate template;
@@ -250,7 +250,7 @@ public class NotificationEventRepositoryTest {
     void getNotificationContext_byId_exists(CapturedOutput output) {
 
         long testId = 15L;
-        when(template.query(anyString(), eq(Map.of("id", testId)), any(NotificationContextRepository.NotificationContextRowMapper.class)))
+        when(template.query(anyString(), eq(Map.of("id", testId)), any(NotificationEventsRepository.NotificationContextRowMapper.class)))
                 .thenReturn(List.of(new NotificationEvent()));
 
         // Test call
@@ -258,7 +258,7 @@ public class NotificationEventRepositoryTest {
 
         assertNotNull(result);
         assertFalse(output.getOut().contains("WARN"));
-        verify(template, times(1)).query(anyString(), anyMap(), any(NotificationContextRepository.NotificationContextRowMapper.class));
+        verify(template, times(1)).query(anyString(), anyMap(), any(NotificationEventsRepository.NotificationContextRowMapper.class));
     }
 
     @Test
@@ -267,7 +267,7 @@ public class NotificationEventRepositoryTest {
     void getNotificationContext_byId_notExists(CapturedOutput output) {
 
         long testId = 15L;
-        when(template.query(anyString(), eq(Map.of("id", testId)), any(NotificationContextRepository.NotificationContextRowMapper.class)))
+        when(template.query(anyString(), eq(Map.of("id", testId)), any(NotificationEventsRepository.NotificationContextRowMapper.class)))
                 .thenReturn(emptyList());
 
         // Test call
@@ -276,7 +276,7 @@ public class NotificationEventRepositoryTest {
         assertNull(result);
         assertTrue(output.getOut().contains("WARN"));
         assertTrue(output.getOut().contains("no results"));
-        verify(template, times(1)).query(anyString(), eq(Map.of("id", testId)), any(NotificationContextRepository.NotificationContextRowMapper.class));
+        verify(template, times(1)).query(anyString(), eq(Map.of("id", testId)), any(NotificationEventsRepository.NotificationContextRowMapper.class));
     }
 
     @Test
@@ -289,7 +289,7 @@ public class NotificationEventRepositoryTest {
         assertNull(result);
         assertTrue(output.getOut().contains("WARN"));
         assertTrue(output.getOut().contains("null id"));
-        verify(template, never()).query(anyString(), anyMap(), any(NotificationContextRepository.NotificationContextRowMapper.class));
+        verify(template, never()).query(anyString(), anyMap(), any(NotificationEventsRepository.NotificationContextRowMapper.class));
     }
 
     @Test
@@ -352,7 +352,7 @@ public class NotificationEventRepositoryTest {
         repo.getNotificationContexts(crit);
 
         verify(template, times(1)).query(stringArgCaptor.capture(), anyMap(),
-                ArgumentMatchers.<RowMapperResultSetExtractor<NotificationContextRepository.NotificationContextRowMapper>>any());
+                ArgumentMatchers.<RowMapperResultSetExtractor<NotificationEventsRepository.NotificationContextRowMapper>>any());
 
         assertFalse(stringArgCaptor.getValue().contains(":id"));
         assertTrue(stringArgCaptor.getValue().contains(":tenant_id"));

@@ -3,8 +3,11 @@ values ('A', 'Active'),
        ('I', 'Inactive'),
        ('D', 'Deleted'),
        ('V', 'Delivered'),
+       ('V', 'Canceled'),
        ('F', 'Fail'),
-       ('P', 'Pending')
+       ('PP', 'Pending Permission'),
+       ('PC', 'Pending Context'),
+       ('PD', 'Pending Delivery')
        ;
 insert into content_lookup_types(type, description)
 values ('URL', 'Static content HTML. Key should be http or https URL'),

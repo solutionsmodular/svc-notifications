@@ -14,7 +14,9 @@ public enum Status {
     DELIVERED("V"),
     CANCELED("C"),
     FAILED("F"),
-    PENDING("P");
+    PENDING_PERMISSION("PP"),
+    PENDING_CONTEXT("PC"),
+    PENDING_DELIVERY("PD");
 
     private final String code;
 
@@ -30,6 +32,7 @@ public enum Status {
 
         return null;
     }
+
     @JsonValue
     public String code() {
         return code;

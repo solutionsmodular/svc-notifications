@@ -37,7 +37,7 @@ class MessageTemplatesRepositoryIntegrationTest {
     @ExtendWith(OutputCaptureExtension.class)
     void testCreate(CapturedOutput output) throws MessageTemplateAlreadyExistsException {
         MessageTemplate request = new MessageTemplate();
-        request.setNotificationContextId(1L);
+        request.setNotificationEventId(1L);
         request.setContentKey("some.summary.key");
         request.setContentLookupType(ContentLookupType.STATIC);
         request.setRecipientContextKey("some.recipient.context.key");

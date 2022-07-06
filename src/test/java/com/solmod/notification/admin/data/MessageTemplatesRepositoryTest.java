@@ -65,7 +65,7 @@ public class MessageTemplatesRepositoryTest {
     @DisplayName("Assert that we cannot create a MessageTemplate and an error is logged if fields are missing")
     void create_MissingFields(CapturedOutput captured) throws MessageTemplateAlreadyExistsException {
         MessageTemplate request = new MessageTemplate();
-        request.setNotificationContextId(345L);
+        request.setNotificationEventId(345L);
         request.setContentLookupType(ContentLookupType.STATIC);
         request.setStatus(Status.ACTIVE);
         doReturn(emptyList()).when(repo).getMessageTemplates(any(MessageTemplate.class));
@@ -93,7 +93,7 @@ public class MessageTemplatesRepositoryTest {
         MessageTemplate origFormOfRequest = new MessageTemplate();
         origFormOfRequest.setId(155L);
         origFormOfRequest.setStatus(Status.ACTIVE);
-        origFormOfRequest.setNotificationContextId(155L);
+        origFormOfRequest.setNotificationEventId(155L);
         origFormOfRequest.setContentLookupType(ContentLookupType.URL);
         origFormOfRequest.setContentKey("OG-content-key");
         origFormOfRequest.setRecipientContextKey("a-recipient-context-key");
@@ -117,7 +117,7 @@ public class MessageTemplatesRepositoryTest {
     void update_allClear_ignoreMissingFields() throws MessageTemplateNonexistentException, MessageTemplateAlreadyExistsException {
         MessageTemplate origFormOfRequest = new MessageTemplate();
         origFormOfRequest.setId(155L);
-        origFormOfRequest.setNotificationContextId(155L);
+        origFormOfRequest.setNotificationEventId(155L);
         origFormOfRequest.setStatus(Status.ACTIVE);
         origFormOfRequest.setContentLookupType(ContentLookupType.URL);
         origFormOfRequest.setContentKey("OG-content-key");
@@ -125,7 +125,7 @@ public class MessageTemplatesRepositoryTest {
 
         MessageTemplate request = new MessageTemplate();
         request.setId(155L);
-        request.setNotificationContextId(155L);
+        request.setNotificationEventId(155L);
         request.setStatus(Status.INACTIVE);
         request.setContentLookupType(ContentLookupType.STATIC);
         request.setContentKey("new-content-key");
@@ -350,7 +350,7 @@ public class MessageTemplatesRepositoryTest {
     @DisplayName("Assert a SQL statement contains any non-null criteria supplied in the criteria. By criteria ignores ID")
     void getMessageTemplates_byCrit() {
         MessageTemplate crit = new MessageTemplate();
-        crit.setNotificationContextId(55L);
+        crit.setNotificationEventId(55L);
         crit.setRecipientContextKey("recipient_context_key");
         crit.setContentKey("content_key");
         crit.setContentLookupType(ContentLookupType.STATIC);
@@ -372,7 +372,7 @@ public class MessageTemplatesRepositoryTest {
 
     private MessageTemplate buildFullyPopulatedMessageTemplate() {
         MessageTemplate request = new MessageTemplate();
-        request.setNotificationContextId(1L);
+        request.setNotificationEventId(1L);
         request.setRecipientContextKey("find.recipient.address.here");
         request.setStatus(Status.ACTIVE);
         request.setContentLookupType(ContentLookupType.STATIC);

@@ -91,6 +91,12 @@
                     <type>test-jar</type>
                 </dependency>
         -->
+        <dependency>
+        <!-- Supporting doc: https://github.com/wnameless/json-flattener -->
+            <groupId>com.github.wnameless.json</groupId>
+            <artifactId>json-flattener</artifactId>
+            <version>0.13.0</version>
+        </dependency>
     </dependencies>
 
     <build>

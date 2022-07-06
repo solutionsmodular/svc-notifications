@@ -48,7 +48,7 @@ create table content_merge_fields
 );
 
 --
-create table notification_contexts
+create table notification_events
 (
     id            BIGINT auto_increment,
     tenant_id     BIGINT                               not null,
@@ -57,7 +57,7 @@ create table notification_contexts
     status        varchar(1)                           not null,
     created_date  datetime DEFAULT CURRENT_TIMESTAMP   not null,
     modified_date datetime ON UPDATE CURRENT_TIMESTAMP null,
-    constraint message_templates_pk
+    constraint notification_events_pk
         primary key (id),
     constraint notification_context_status_fk
         FOREIGN KEY (status) references notification_component_status (status)
@@ -71,18 +71,18 @@ create table notification_contexts
 -- indicating a constant)
 create table message_templates
 (
-    id                      BIGINT auto_increment,
-    notification_context_id BIGINT                               not null,
-    status                  varchar(1)                           not null,
-    recipient_context_key   varchar(255)                         null,
-    content_lookup_type     varchar(50)                          NOT NULL,
-    content_key             varchar(50)                          not null,
-    created_date            datetime DEFAULT CURRENT_TIMESTAMP   not null,
-    modified_date           datetime ON UPDATE CURRENT_TIMESTAMP null,
+    id                    BIGINT auto_increment,
+    notification_event_id BIGINT                               not null,
+    recipient_context_key varchar(255)                         null,
+    content_lookup_type   varchar(50)                          NOT NULL,
+    content_key           varchar(50)                          not null,
+    status                varchar(1)                           not null,
+    created_date          datetime DEFAULT CURRENT_TIMESTAMP   not null,
+    modified_date         datetime ON UPDATE CURRENT_TIMESTAMP null,
     constraint message_templates_pk
         primary key (id),
     constraint message_templates_notification_context_fk
-        FOREIGN KEY (notification_context_id) references notification_contexts (id),
+        FOREIGN KEY (notification_event_id) references notification_events (id),
     constraint message_templates_status_fk
         FOREIGN KEY (status) references notification_component_status (status),
     constraint message_template_summary_content_lookup_type_fk
@@ -99,6 +99,40 @@ create table delivery_criteria
     value               varchar(100) not null,
     constraint delivery_criteria_pk
         primary key (id)
+);
+
+--
+-- notification_triggers - Instances of a notification being triggered. All asynchronous calls will be able to key
+-- off this baseline
+create table notification_triggers
+(
+    id                    BIGINT auto_increment              not null,
+    notification_event_id BIGINT                             not null,
+    uid                   varchar(255)                       not null,
+    status                varchar(1)                         not null,
+    created_date          datetime DEFAULT CURRENT_TIMESTAMP not null,
+    modified_date         datetime                           null,
+    constraint notification_events_pk
+        primary key (id),
+    constraint notification_triggers_notification_event_fk
+        FOREIGN KEY (notification_event_id) references notification_events (id),
+    constraint notification_context_status_fk
+        FOREIGN KEY (status) references notification_component_status (status)
+);
+
+--
+-- The context values needed to initiate the context builder calls
+create table notification_trigger_metadata
+(
+    id                      BIGINT auto_increment              not null,
+    notification_trigger_id BIGINT                             not null,
+    metadata_key            varchar(255)                       not null,
+    metadata_value          varchar(255)                       not null,
+    created_date            datetime DEFAULT CURRENT_TIMESTAMP not null,
+    constraint notification_trigger_metadata_pk
+        primary key (id),
+    constraint notification_trigger_metadata_notification_event_fk
+        FOREIGN KEY (notification_trigger_id) references notification_triggers (id)
 );
 
 create table notification_deliveries

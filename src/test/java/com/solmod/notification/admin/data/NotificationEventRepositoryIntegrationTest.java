@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class NotificationEventRepositoryIntegrationTest {
 
     @Autowired
-    NotificationContextRepository contextRepository;
+    NotificationEventsRepository contextRepository;
 
     @Test
     @DisplayName("Testing create. Happy day case in integration test, only")

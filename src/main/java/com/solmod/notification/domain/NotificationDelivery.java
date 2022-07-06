@@ -8,7 +8,7 @@ public class NotificationDelivery extends Audited {
     private Long messageTemplateId;
     private Status status;
     private String messageBodyUri;
-    private Map<String, String> context = new HashMap<>();
+    private Map<String, Object> context = new HashMap<>();
 
     public String getRecipient() {
         return recipient;
@@ -42,11 +42,11 @@ public class NotificationDelivery extends Audited {
         this.messageBodyUri = messageBodyUri;
     }
 
-    public Map<String, String> getContext() {
+    public Map<String, Object> getContext() {
         return context;
     }
 
-    public void setContext(Map<String, String> context) {
+    public void setContext(Map<String, Object> context) {
         this.context = context;
     }
 }

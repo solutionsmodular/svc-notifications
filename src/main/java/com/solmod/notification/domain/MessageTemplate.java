@@ -9,7 +9,7 @@ import java.util.Objects;
 
 public class MessageTemplate extends Audited {
 
-    private Long notificationContextId;
+    private Long notificationEventId;
     private Status status;
     private String recipientContextKey;
     private ContentLookupType contentLookupType;
@@ -20,12 +20,12 @@ public class MessageTemplate extends Audited {
         return status;
     }
 
-    public Long getNotificationContextId() {
-        return notificationContextId;
+    public Long getNotificationEventId() {
+        return notificationEventId;
     }
 
-    public void setNotificationContextId(Long notificationContextId) {
-        this.notificationContextId = notificationContextId;
+    public void setNotificationEventId(Long notificationEventId) {
+        this.notificationEventId = notificationEventId;
     }
 
     public void setStatus(Status status) {
@@ -74,7 +74,7 @@ public class MessageTemplate extends Audited {
 
         MessageTemplate that = (MessageTemplate) o;
 
-        if (!Objects.equals(notificationContextId, that.notificationContextId)) return false;
+        if (!Objects.equals(notificationEventId, that.notificationEventId)) return false;
         if (!Objects.equals(recipientContextKey, that.recipientContextKey)) return false;
         if (!Objects.equals(contentLookupType, that.contentLookupType)) return false;
         if (!Objects.equals(contentKey, that.contentKey)) return false;

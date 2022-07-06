@@ -53,7 +53,7 @@ public class MessageTemplatesRepository {
                 ":recipient_context_key, :content_lookup_type, :content_key)";
         try {
             template.update(sql, Map.of(
-                    "notification_context_id", request.getNotificationContextId(),
+                    "notification_context_id", request.getNotificationEventId(),
                     "status", request.getStatus().code(),
                     "recipient_context_key", request.getRecipientContextKey(),
                     "content_lookup_type", request.getContentLookupType().name(),
@@ -163,7 +163,7 @@ public class MessageTemplatesRepository {
      * This is meant to determine if there exists a conflicting MessageTemplate
      *
      * @param id {@link MessageTemplate} wherein values will be specified which should include all values which,
-     *                                      together, represent a MessageTemplate which should only occur once
+     *           together, represent a MessageTemplate which should only occur once
      * @return {@link MessageTemplate}, or null in the event of not found or multiple found
      */
     public MessageTemplate getMessageTemplate(@NotNull final MessageTemplate id) {
@@ -172,7 +172,7 @@ public class MessageTemplatesRepository {
         uniqueCriteria.setStatus(Status.ACTIVE);
         uniqueCriteria.setDeliveryCriteria(id.getDeliveryCriteria());
         uniqueCriteria.setRecipientContextKey(id.getRecipientContextKey());
-        uniqueCriteria.setNotificationContextId(id.getNotificationContextId());
+        uniqueCriteria.setNotificationEventId(id.getNotificationEventId());
         uniqueCriteria.setContentKey(id.getContentKey());
 
         List<MessageTemplate> messageTemplates = getMessageTemplates(id);
@@ -182,10 +182,6 @@ public class MessageTemplatesRepository {
         }
 
         return messageTemplates.isEmpty() ? null : messageTemplates.get(0);
-    }
-
-    public Set<MessageTemplate> getMessageTemplates(@NotNull final NotificationEvent notificationEvent, @NotNull final SolMessage triggerEvent) {
-        return null;
     }
 
     /**
@@ -212,7 +208,7 @@ public class MessageTemplatesRepository {
          */
         void buildForSelect() {
             StringBuilder builder = new StringBuilder();
-            appendProperty("notification_context_id", msgTemplate.getNotificationContextId(), builder);
+            appendProperty("notification_context_id", msgTemplate.getNotificationEventId(), builder);
             appendProperty("status", msgTemplate.getStatus(), builder);
             appendProperty("recipient_context_key", msgTemplate.getRecipientContextKey(), builder);
             appendProperty("content_lookup_type", msgTemplate.getContentLookupType(), builder);
@@ -293,12 +289,12 @@ public class MessageTemplatesRepository {
         }
     }
 
-    public  static class MessageTemplateRowMapper implements RowMapper<MessageTemplate> {
+    public static class MessageTemplateRowMapper implements RowMapper<MessageTemplate> {
         @Override
         public MessageTemplate mapRow(ResultSet rs, int rowNum) throws SQLException {
             MessageTemplate messageTemplate = new MessageTemplate();
             messageTemplate.setId(rs.getLong("id"));
-            messageTemplate.setNotificationContextId(rs.getLong("notification_context_id"));
+            messageTemplate.setNotificationEventId(rs.getLong("notification_context_id"));
             messageTemplate.setStatus(Status.fromCode(rs.getString("status")));
             messageTemplate.setRecipientContextKey(rs.getString("recipient_context_key"));
             messageTemplate.setContentKey(rs.getString("content_key"));

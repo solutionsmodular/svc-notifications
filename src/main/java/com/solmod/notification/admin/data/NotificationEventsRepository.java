@@ -24,14 +24,14 @@ import java.sql.Timestamp;
 import java.util.*;
 
 @Repository
-public class NotificationContextRepository {
+public class NotificationEventsRepository {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     private final NamedParameterJdbcTemplate template;
 
     @Autowired
-    public NotificationContextRepository(NamedParameterJdbcTemplate template) {
+    public NotificationEventsRepository(NamedParameterJdbcTemplate template) {
         this.template = template;
     }
 
