@@ -2,8 +2,8 @@ package com.solmod.notification.admin.data;
 
 import com.solmod.notification.domain.NotificationEvent;
 import com.solmod.notification.domain.Status;
-import com.solmod.notification.exception.NotificationContextAlreadyExistsException;
-import com.solmod.notification.exception.NotificationContextNonexistentException;
+import com.solmod.notification.exception.NotificationEventAlreadyExistsException;
+import com.solmod.notification.exception.NotificationEventNonexistentException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,7 +34,7 @@ class NotificationEventRepositoryIntegrationTest {
     @Test
     @DisplayName("Testing create. Happy day case in integration test, only")
     @ExtendWith(OutputCaptureExtension.class)
-    void testCreate(CapturedOutput output) throws NotificationContextAlreadyExistsException {
+    void testCreate(CapturedOutput output) throws NotificationEventAlreadyExistsException {
         NotificationEvent request = new NotificationEvent();
         request.setTenantId(1L);
         request.setEventSubject("Something");
@@ -50,7 +50,7 @@ class NotificationEventRepositoryIntegrationTest {
 
     @Test
     @DisplayName("Testing Get by Criteria AND update. Happy day case in integration test, only. This test uses data from notification-admin-tests.sql")
-    void testGetByCriteriaAndUpdate() throws NotificationContextNonexistentException, NotificationContextAlreadyExistsException {
+    void testGetByCriteriaAndUpdate() throws NotificationEventNonexistentException, NotificationEventAlreadyExistsException {
         NotificationEvent criteria = new NotificationEvent();
         criteria.setEventSubject("ORDER");
         criteria.setEventVerb("CREATED");
@@ -64,7 +64,7 @@ class NotificationEventRepositoryIntegrationTest {
         Set<DataUtils.FieldUpdate> fieldsUpdated = contextRepository.update(request);
         assertEquals(1, fieldsUpdated.size());
 
-        NotificationEvent updated = contextRepository.getNotificationContext(request.getId());
+        NotificationEvent updated = contextRepository.getNotificationEvent(request.getId());
         // Assert intended fields are updated
         assertEquals(request.getEventVerb(), updated.getEventVerb());
         // Assert other fields are changed
@@ -73,7 +73,7 @@ class NotificationEventRepositoryIntegrationTest {
     }
 
     private NotificationEvent getLiveTestContext(NotificationEvent criteria) {
-        NotificationEvent existing = contextRepository.getNotificationContext(criteria);
+        NotificationEvent existing = contextRepository.getNotificationEvent(criteria);
         return existing;
     }
 }
