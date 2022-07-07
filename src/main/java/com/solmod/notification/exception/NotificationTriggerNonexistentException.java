@@ -1,16 +1,16 @@
 package com.solmod.notification.exception;
 
-import com.solmod.notification.domain.NotificationEvent;
+import com.solmod.notification.domain.NotificationTrigger;
 
-public class NotificationContextNonexistentException extends Exception {
-    private final NotificationEvent context;
+public class NotificationTriggerNonexistentException extends Exception {
+    private final NotificationTrigger context;
 
-    public NotificationContextNonexistentException(NotificationEvent context, String message) {
+    public NotificationTriggerNonexistentException(NotificationTrigger context, String message) {
         super(message);
         this.context = context;
     }
 
-    public NotificationEvent getContext() {
+    public NotificationTrigger getContext() {
         return context;
     }
 }

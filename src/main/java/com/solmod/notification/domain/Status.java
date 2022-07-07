@@ -12,10 +12,10 @@ public enum Status {
     DELETED("D"),
     // Used by Notification Delivery
     DELIVERED("V"),
-    CANCELED("C"),
     FAILED("F"),
-    PENDING_PERMISSION("PP"),
+    NO_OP("NO"),
     PENDING_CONTEXT("PC"),
+    PENDING_PERMISSION("PP"),
     PENDING_DELIVERY("PD");
 
     private final String code;

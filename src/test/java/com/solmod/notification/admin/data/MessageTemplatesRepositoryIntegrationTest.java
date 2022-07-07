@@ -39,7 +39,7 @@ class MessageTemplatesRepositoryIntegrationTest {
         MessageTemplate request = new MessageTemplate();
         request.setNotificationEventId(1L);
         request.setContentKey("some.summary.key");
-        request.setContentLookupType(ContentLookupType.STATIC);
+        request.setContentLookupType(ContentLookupType.LOCAL);
         request.setRecipientContextKey("some.recipient.context.key");
         request.setStatus(Status.ACTIVE);
 

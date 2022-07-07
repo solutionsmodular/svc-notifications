@@ -27,7 +27,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
-public class NotificationEventRepositoryTest {
+public class NotificationEventsRepositoryTest {
 
     @Spy
     @InjectMocks
@@ -74,7 +74,7 @@ public class NotificationEventRepositoryTest {
         repo.create(request);
 
         // Assert
-        assertTrue(captured.getOut().contains("Failed attempt to save notification context"));
+        assertTrue(captured.getOut().contains("Failed attempt to save NotificationEvent"));
         // Find first to ensure it doesn't exist, use same find to load after save
         verify(repo, times(1)).getNotificationEvent(any(NotificationEvent.class));
     }

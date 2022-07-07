@@ -66,7 +66,7 @@ public class MessageTemplatesRepositoryTest {
     void create_MissingFields(CapturedOutput captured) throws MessageTemplateAlreadyExistsException {
         MessageTemplate request = new MessageTemplate();
         request.setNotificationEventId(345L);
-        request.setContentLookupType(ContentLookupType.STATIC);
+        request.setContentLookupType(ContentLookupType.LOCAL);
         request.setStatus(Status.ACTIVE);
         doReturn(emptyList()).when(repo).getMessageTemplates(any(MessageTemplate.class));
 
@@ -127,7 +127,7 @@ public class MessageTemplatesRepositoryTest {
         request.setId(155L);
         request.setNotificationEventId(155L);
         request.setStatus(Status.INACTIVE);
-        request.setContentLookupType(ContentLookupType.STATIC);
+        request.setContentLookupType(ContentLookupType.LOCAL);
         request.setContentKey("new-content-key");
         request.setRecipientContextKey(origFormOfRequest.getRecipientContextKey());
 
@@ -187,21 +187,21 @@ public class MessageTemplatesRepositoryTest {
         MessageTemplate original = new MessageTemplate();
         original.setId(155L);
         original.setStatus(Status.ACTIVE);
-        original.setContentLookupType(ContentLookupType.STATIC);
+        original.setContentLookupType(ContentLookupType.LOCAL);
         original.setContentKey("a-content-key");
         original.setRecipientContextKey("a-recipient-context-key");
 
         MessageTemplate request = new MessageTemplate();
         request.setId(155L);
         request.setStatus(Status.ACTIVE);
-        request.setContentLookupType(ContentLookupType.STATIC);
+        request.setContentLookupType(ContentLookupType.LOCAL);
         request.setContentKey("b-content-key");
         request.setRecipientContextKey("b-recipient-context-key");
 
         MessageTemplate conflicting = new MessageTemplate();
         conflicting.setId(156L);
         conflicting.setStatus(Status.ACTIVE);
-        conflicting.setContentLookupType(ContentLookupType.STATIC);
+        conflicting.setContentLookupType(ContentLookupType.LOCAL);
         conflicting.setContentKey(request.getContentKey());
         conflicting.setRecipientContextKey(request.getRecipientContextKey());
 
@@ -219,21 +219,21 @@ public class MessageTemplatesRepositoryTest {
         MessageTemplate original = new MessageTemplate();
         original.setId(155L);
         original.setStatus(Status.fromCode(existingStatus));
-        original.setContentLookupType(ContentLookupType.STATIC);
+        original.setContentLookupType(ContentLookupType.LOCAL);
         original.setContentKey("a-content-key");
         original.setRecipientContextKey("a-recipient-context-key");
 
         MessageTemplate request = new MessageTemplate();
         request.setId(155L);
         request.setStatus(Status.fromCode(requestStatus));
-        request.setContentLookupType(ContentLookupType.STATIC);
+        request.setContentLookupType(ContentLookupType.LOCAL);
         request.setContentKey("b-content-key");
         request.setRecipientContextKey("b-recipient-context-key");
 
         MessageTemplate conflicting = new MessageTemplate();
         conflicting.setId(156L);
         conflicting.setStatus(Status.fromCode(conflictingStatus));
-        conflicting.setContentLookupType(ContentLookupType.STATIC);
+        conflicting.setContentLookupType(ContentLookupType.LOCAL);
         conflicting.setContentKey(request.getContentKey());
         conflicting.setRecipientContextKey(request.getRecipientContextKey());
 
@@ -353,7 +353,7 @@ public class MessageTemplatesRepositoryTest {
         crit.setNotificationEventId(55L);
         crit.setRecipientContextKey("recipient_context_key");
         crit.setContentKey("content_key");
-        crit.setContentLookupType(ContentLookupType.STATIC);
+        crit.setContentLookupType(ContentLookupType.LOCAL);
         crit.setStatus(null);
 
         // Test call
@@ -363,7 +363,7 @@ public class MessageTemplatesRepositoryTest {
                 ArgumentMatchers.<RowMapperResultSetExtractor<MessageTemplatesRepository.MessageTemplateRowMapper>>any());
 
         assertFalse(stringArgCaptor.getValue().contains(":id"));
-        assertTrue(stringArgCaptor.getValue().contains(":notification_context_id"));
+        assertTrue(stringArgCaptor.getValue().contains(":notification_event_id"));
         assertTrue(stringArgCaptor.getValue().contains(":recipient_context_key"));
         assertTrue(stringArgCaptor.getValue().contains(":content_key"));
         assertTrue(stringArgCaptor.getValue().contains(":content_lookup_type"));
@@ -375,7 +375,7 @@ public class MessageTemplatesRepositoryTest {
         request.setNotificationEventId(1L);
         request.setRecipientContextKey("find.recipient.address.here");
         request.setStatus(Status.ACTIVE);
-        request.setContentLookupType(ContentLookupType.STATIC);
+        request.setContentLookupType(ContentLookupType.LOCAL);
         request.setContentKey("TEST_CONTENT_KEY");
 
         return request;

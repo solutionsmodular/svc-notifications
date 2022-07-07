@@ -23,8 +23,8 @@ create table content_lookup_types
 );
 
 -- In systems not using Content Manager, Notification Engine can store its own content
--- TODO: CMS vs Static is flagged by tenant configuration. See https://solutionsmodular.atlassian.net/browse/NE-12
-create table local_static_content
+-- TODO: CMS vs Local is flagged by tenant configuration. See https://solutionsmodular.atlassian.net/browse/NE-12
+create table local_content
 (
     id            BIGINT auto_increment,
     tenant_id     BIGINT,
@@ -33,18 +33,18 @@ create table local_static_content
     content_block blob                                 not null,
     created_date  datetime DEFAULT CURRENT_TIMESTAMP   not null,
     modified_date datetime ON UPDATE CURRENT_TIMESTAMP null,
-    constraint local_static_content_pk
+    constraint local_content_pk
         primary key (id)
 );
 
 -- When content is saved, merge fields are parsed out and cataloged for ease of reference
-create table content_merge_fields
+create table local_content_merge_fields
 (
-    local_static_content_id BIGINT,
-    content_key             varchar(50)  not null,
-    merge_field_name        varchar(255) not null,
-    constraint content_merge_fields_local_static_content_id_fk
-        FOREIGN KEY (local_static_content_id) references local_static_content (id)
+    local_content_id BIGINT,
+    content_key      varchar(50)  not null,
+    merge_field_name varchar(255) not null,
+    constraint content_merge_fields_local_content_id_fk
+        FOREIGN KEY (local_content_id) references local_content (id)
 );
 
 --
@@ -66,7 +66,7 @@ create table notification_events
 --
 -- Content type URL: key = URL
 -- Content type CONTEXT_KEY: Use CMS
--- Content type STATIC: key refers to local_static_content
+-- Content type LOCAL: key refers to local_content
 -- recipient_context_key - context value holding the value to be used as recipient (or prefix with two underscores,
 -- indicating a constant)
 create table message_templates
@@ -116,18 +116,18 @@ create table notification_triggers
         primary key (id),
     constraint notification_triggers_notification_event_fk
         FOREIGN KEY (notification_event_id) references notification_events (id),
-    constraint notification_context_status_fk
+    constraint notification_trigger_status_fk
         FOREIGN KEY (status) references notification_component_status (status)
 );
 
 --
 -- The context values needed to initiate the context builder calls
-create table notification_trigger_metadata
+create table notification_trigger_context
 (
     id                      BIGINT auto_increment              not null,
     notification_trigger_id BIGINT                             not null,
-    metadata_key            varchar(255)                       not null,
-    metadata_value          varchar(255)                       not null,
+    context_key             varchar(255)                       not null,
+    context_value           varchar(255)                       not null,
     created_date            datetime DEFAULT CURRENT_TIMESTAMP not null,
     constraint notification_trigger_metadata_pk
         primary key (id),

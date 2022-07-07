@@ -1,191 +1,148 @@
 package com.solmod.notification.admin.data;
 
 
-import com.solmod.notification.domain.NotificationEvent;
+import com.solmod.notification.domain.NotificationTrigger;
 import com.solmod.notification.domain.Status;
-import com.solmod.notification.exception.NotificationContextAlreadyExistsException;
-import com.solmod.notification.exception.NotificationContextNonexistentException;
+import com.solmod.notification.exception.DBRequestFailureException;
+import com.solmod.notification.exception.NotificationTriggerNonexistentException;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.RowMapperResultSetExtractor;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.validation.constraints.NotNull;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.*;
 
 @Repository
-public class NotificationEventsRepository {
+public class NotificationTriggersRepository {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     private final NamedParameterJdbcTemplate template;
 
     @Autowired
-    public NotificationEventsRepository(NamedParameterJdbcTemplate template) {
+    public NotificationTriggersRepository(NamedParameterJdbcTemplate template) {
         this.template = template;
     }
 
     /**
-     * Create a new Notification Context.
+     * Create a new NotificationTrigger, which is an instance of receipt of an event with a subject/verb for which there
+     * is a NotificationEvent.
      *
-     * @param request {@link NotificationEvent} representing the request.
-     * @throws NotificationContextAlreadyExistsException In the event an existing Notification Context would be duplicated
+     * @param request {@link NotificationTrigger} representing the request.
      */
-    public void create(@NotNull final NotificationEvent request) throws NotificationContextAlreadyExistsException {
-        NotificationEvent existing = getNotificationContext(request);
-        if (existing != null) {
-            throw new NotificationContextAlreadyExistsException(existing,
-                    "Cannot create this Notification Context; it would collide with existing Notification Context.");
-        }
-
-        String sql = "INSERT INTO notification_contexts " +
-                "(tenant_id, event_subject, event_verb, status) " +
-                "VALUES (:tenant_id, :event_subject, :event_verb, :status)";
+    public void create(@NotNull final NotificationTrigger request) throws DBRequestFailureException {
+        String sql = "INSERT INTO notification_triggers " +
+                "(notification_event_id, uid, status) " +
+                "values(:notification_event_id, :uid, :status)";
         try {
             template.update(sql, Map.of(
-                    "tenant_id", request.getTenantId(),
-                    "event_subject", request.getEventSubject(),
-                    "event_verb", request.getEventVerb(),
+                    "notification_event_id", request.getNotificationEventId(),
+                    "uid", request.getUid(),
                     "status", request.getStatus().code()
                     ));
 
-            log.info("Notification Context created per request");
-        } catch (DataAccessException e) {
-            log.warn("DAE: Failed attempt to save notification context: {}\n{}", e.getMessage(), request);
+            log.info("NotificationTrigger created per request");
         } catch (NullPointerException e) {
-            log.warn("NPE: Failed attempt to save notification context with missing fields: {}\n{}", e.getMessage(), request);
+            log.warn("NPE: Failed attempt to save NotificationTrigger with missing fields: {}\n{}", e.getMessage(), request);
+            throw new DBRequestFailureException("DB failure creating NotificationTrigger");
         }
     }
 
     /**
-     * Update NotificationContext details
+     * Update NotificationTrigger details
      *
-     * @param request {@link NotificationEvent} representing the request to make updates to an existing NotificationContext
+     * @param request {@link NotificationTrigger} representing the request to make updates to an existing
+     *                                           NotificationTrigger
      */
-    public Set<DataUtils.FieldUpdate> update(@NotNull final NotificationEvent request)
-            throws NotificationContextNonexistentException, NotificationContextAlreadyExistsException {
-        log.debug("Updating NotificationContext {}", request.getId());
-        NotificationEvent origById = getNotificationContext(request.getId());
+    public Set<DataUtils.FieldUpdate> update(@NotNull final NotificationTrigger request)
+            throws NotificationTriggerNonexistentException {
+        log.debug("Updating NotificationTrigger {}", request.getId());
+        NotificationTrigger origById = getNotificationTrigger(request.getId());
         if (origById == null) {
-            log.warn("Attempt to update a NotificationContext which does not exist: {}. Pretty weird.", request);
-            throw new NotificationContextNonexistentException(request, "NotificationContext was not found");
-        }
-
-        // If the outcome of the request is an active status, we need to ensure there's !another active template to collide
-        if (Optional.ofNullable(request.getStatus()).orElse(origById.getStatus()).equals(Status.ACTIVE)) {
-            NotificationEvent existing = getNotificationContext(request);
-            if (existing != null && existing.getStatus().equals(Status.ACTIVE)) { // getNotificationStatus should ensure active, but just in case...
-                // There's been a change in one of the UniqueNotificationContextId fields making it clash with an existing Template
-                // Logging is not important, as it doesn't signify an error herein or with the client
-                throw new NotificationContextAlreadyExistsException(request, "Can not update Unique ID params for this NotificationContext, one already exists");
-            }
+            log.warn("Attempt to update a NotificationTrigger which does not exist: {}. Pretty weird.", request);
+            throw new NotificationTriggerNonexistentException(request, "NotificationTrigger was not found");
         }
 
         SQLStatementParams statementParams = new SQLStatementParams(request);
         Set<DataUtils.FieldUpdate> fieldUpdates = statementParams.buildForUpdate(origById);
 
         if (fieldUpdates.isEmpty()) {
-            log.info("Update request for NotificationContext where no fields changed. Kinda weird.");
+            log.info("Update request for NotificationTrigger where no fields changed. Kinda weird.");
             return Collections.emptySet();
         }
 
-        String sql = "UPDATE notification_contexts SET " +
+        String sql = "UPDATE notification_triggers SET " +
                 statementParams.statement +
                 " WHERE id = :id";
 
         template.update(sql, statementParams.params);
 
-        log.info("Updated {} fields in NotificationContext {}", fieldUpdates.size(), request.getId());
+        log.info("Updated {} fields in NotificationTemplate {}", fieldUpdates.size(), request.getId());
         return fieldUpdates;
     }
 
     /**
-     * Get a NotificationContext by ID
+     * Get a NotificationTemplate by ID
      *
      * @param id {@code Long} ID
-     * @return {@link NotificationEvent}, or null if a NotificationContext cannot be found with the given ID
+     * @return {@link NotificationTrigger}, or null if a NotificationTemplate cannot be found with the given ID
      */
-    public NotificationEvent getNotificationContext(final Long id) {
+    public NotificationTrigger getNotificationTrigger(final Long id) {
         if (id == null) {
-            log.warn("Request to get message template with null id. That's weird.");
+            log.warn("Request to get NotificationTrigger with null id. That's weird.");
             return null;
         }
 
-        String sql = "select id, tenant_id, event_subject, event_verb, status, modified_date, created_date " +
-                "FROM notification_contexts where id = :id";
+        String sql = "select id, notification_event_id, uid, status, created_date " +
+                "FROM notification_triggers where id = :id";
 
-        List<NotificationEvent> results = template.query(sql, Map.of("id", id), new NotificationContextRowMapper());
+        List<NotificationTrigger> results = template.query(sql, Map.of("id", id), new NotificationTriggerRowMapper());
 
-        if (results.size() != 1) {
-            log.warn("Fetch by ID returned no results");
-            return null;
+        switch (results.size()) {
+            case 0:
+                log.warn("Fetch NotificationTrigger by ID returned no results");
+                return null;
+            case 1:
+                return results.get(0);
+            default:
+                log.error("DATA INTEGRITY ERROR: Multiple triggers found with the same ID");
+                return null;
         }
-
-        return results.get(0);
     }
 
     /**
-     * Retrieve {@link NotificationEvent}s by criteria. ID will be ignored by this method and will return all which
+     * Retrieve {@link NotificationTrigger}s by criteria. ID will be ignored by this method and will return all which
      * qualify, an empty list otherwise.
-     * For search which assumes only one NotificationContext should exist per the criteria provided, (e.g. duplicate), see
-     * getNotificationContext({@link NotificationEvent})
      *
-     * @param crit {@link NotificationEvent} doubling as criteria for a query. Downside: Can't use null or empty string
+     * @param crit {@link NotificationTrigger} doubling as criteria for a query. Downside: Can't use null or empty string
      *             as criteria value
-     * @return List of matching {@link NotificationEvent}s
+     * @return List of matching {@link NotificationTrigger}s
      */
-    @Transactional
-    public List<NotificationEvent> getNotificationContexts(@NotNull final NotificationEvent crit) {
+    public List<NotificationTrigger> getNotificationTriggers(@NotNull final NotificationTrigger crit) {
 
         SQLStatementParams params = new SQLStatementParams(crit);
         params.buildForSelect();
-        String sql = "select id, tenant_id, event_subject, event_verb, status, created_date, modified_date \n" +
-                "FROM notification_contexts \n" +
+        String sql = "select id, notification_event_id, uid, status, created_date \n" +
+                "FROM notification_triggers \n" +
                 "WHERE " + params.statement;
 
-        return template.query(sql, params.params, new RowMapperResultSetExtractor<>(new NotificationContextRowMapper()));
+        return template.query(sql, params.params, new RowMapperResultSetExtractor<>(new NotificationTriggerRowMapper()));
     }
 
-    /**
-     * Get a single NotificationContext, throwing a DataIntegrity error if more than one is found.
-     * This is meant to determine if there exists a conflicting NotificationContext
-     *
-     * @param id {@link NotificationEvent} wherein values will be specified which should include all values which,
-     *                                      together, represent a NotificationContext which should only occur once
-     * @return {@link NotificationEvent}, or null in the event of not found or multiple found
-     */
-    public NotificationEvent getNotificationContext(@NotNull final NotificationEvent id) {
-
-        NotificationEvent uniqueCriteria = new NotificationEvent();
-        uniqueCriteria.setStatus(Status.ACTIVE); // Unique only counts for active
-        uniqueCriteria.setEventSubject(id.getEventSubject());
-        uniqueCriteria.setEventVerb(id.getEventVerb());
-        uniqueCriteria.setTenantId(id.getTenantId());
-
-        List<NotificationEvent> messageTemplates = getNotificationContexts(id);
-        if (messageTemplates.size() > 1) {
-            log.error("DATA INTEGRITY ERROR: more than one NotificationContext found for {}", id);
-            return null;
-        }
-
-        return messageTemplates.isEmpty() ? null : messageTemplates.get(0);
-    }
 
     /**
      * Encapsulate statement params building these in queries/updates
      */
     private static class SQLStatementParams {
-        NotificationEvent notContext;
+        NotificationTrigger nTrigger;
 
         /**
          * As the statement in the context of a statement param, this is the statement representing the sub portion of
@@ -194,51 +151,49 @@ public class NotificationEventsRepository {
         private String statement;
         private final Map<String, Object> params = new HashMap<>();
 
-        public SQLStatementParams(NotificationEvent notContext) {
-            this.notContext = notContext;
+        public SQLStatementParams(NotificationTrigger nTrigger) {
+            this.nTrigger = nTrigger;
         }
 
         /**
-         * When {@link NotificationEvent} is used as a criteria for a statement, this helper will build the where clause
+         * When {@link NotificationTrigger} is used as a criteria for a statement, this helper will build the where clause
          * and package the interpreted params needed for those. Using this build, this instance can be used to glean
          * where clause for select statement and supporting params
          */
         void buildForSelect() {
             StringBuilder builder = new StringBuilder();
-            appendProperty("tenant_id", notContext.getTenantId(), builder);
-            appendProperty("event_subject", notContext.getEventSubject(), builder);
-            appendProperty("event_verb", notContext.getEventVerb(), builder);
-            appendProperty("status", notContext.getStatus(), builder);
+            appendProperty("notification_event_id", nTrigger.getNotificationEventId(), builder);
+            appendProperty("uid", nTrigger.getUid(), builder);
+            appendProperty("status", nTrigger.getStatus(), builder);
 
             statement = builder.toString();
         }
 
         /**
-         * When {@link NotificationEvent} is used as a criteria for a statement, this helper will build the where clause
+         * When {@link NotificationTrigger} is used as a criteria for a statement, this helper will build the where clause
          * and package the interpreted params needed for those. Using this build, this instance can be used to glean
          * this=that portion of an update statement and params
          * Note: Cheat here; that I'm taking this opportunity to build a map of old:new values for updated
          * templates, but we'll need that map for publishing to the bus
          * Note: Herein, the rule disallowing the updating of tenantId is endforced
          *
-         * @param originalTemplate {@link NotificationEvent} naming the original form of that being updated
+         * @param originalTemplate {@link NotificationTrigger} naming the original form of that being updated
          */
-        Set<DataUtils.FieldUpdate> buildForUpdate(NotificationEvent originalTemplate) {
+        Set<DataUtils.FieldUpdate> buildForUpdate(NotificationTrigger originalTemplate) {
             Set<DataUtils.FieldUpdate> updates = new HashSet<>();
             StringBuilder builder = new StringBuilder();
 
             params.put("id", originalTemplate.getId()); // always where clause for an update
 
             // Disallow updating tenantId
-
-            updates.add(appendProperty("event_subject", originalTemplate.getEventSubject(),
-                    notContext.getEventSubject(),
+            updates.add(appendProperty("notification_event_id", originalTemplate.getNotificationEventId(),
+                    nTrigger.getNotificationEventId(),
                     builder));
-            updates.add(appendProperty("event_verb", originalTemplate.getEventVerb(),
-                    notContext.getEventVerb(),
+            updates.add(appendProperty("uid", originalTemplate.getUid(),
+                    nTrigger.getUid(),
                     builder));
-            updates.add(appendProperty("status", notContext.getStatus(),
-                    notContext.getStatus(),
+            updates.add(appendProperty("status", nTrigger.getStatus(),
+                    nTrigger.getStatus(),
                     builder));
 
             statement = builder.toString();
@@ -282,19 +237,14 @@ public class NotificationEventsRepository {
         }
     }
 
-    public static class NotificationContextRowMapper implements RowMapper<NotificationEvent> {
+    public static class NotificationTriggerRowMapper implements RowMapper<NotificationTrigger> {
         @Override
-        public NotificationEvent mapRow(ResultSet rs, int rowNum) throws SQLException {
-            NotificationEvent messageTemplate = new NotificationEvent();
+        public NotificationTrigger mapRow(ResultSet rs, int rowNum) throws SQLException {
+            NotificationTrigger messageTemplate = new NotificationTrigger();
             messageTemplate.setId(rs.getLong("id"));
-            messageTemplate.setEventSubject(rs.getString("event_subject"));
-            messageTemplate.setEventVerb(rs.getString("event_verb"));
-            messageTemplate.setTenantId(rs.getLong("tenant_id"));
+            messageTemplate.setNotificationEventId(rs.getLong("notification_event_id"));
+            messageTemplate.setUid(rs.getString("uid"));
             messageTemplate.setStatus(Status.fromCode(rs.getString("status")));
-
-            Timestamp dateTime = rs.getTimestamp("modified_date");
-            if (dateTime != null)
-                messageTemplate.setModifiedDate(new DateTime(dateTime.getTime()));
             messageTemplate.setCreatedDate(new DateTime(rs.getTimestamp("created_date").getTime()));
             return messageTemplate;
         }

@@ -47,13 +47,13 @@ public class MessageTemplatesRepository {
         }
 
         String sql = "INSERT INTO message_templates " +
-                "(notification_context_id, status, recipient_context_key, " +
+                "(notification_event_id, status, recipient_context_key, " +
                 "content_lookup_type, content_key) " +
-                "VALUES (:notification_context_id, :status, " +
+                "VALUES (:notification_event_id, :status, " +
                 ":recipient_context_key, :content_lookup_type, :content_key)";
         try {
             template.update(sql, Map.of(
-                    "notification_context_id", request.getNotificationEventId(),
+                    "notification_event_id", request.getNotificationEventId(),
                     "status", request.getStatus().code(),
                     "recipient_context_key", request.getRecipientContextKey(),
                     "content_lookup_type", request.getContentLookupType().name(),
@@ -121,7 +121,7 @@ public class MessageTemplatesRepository {
             return null;
         }
 
-        String sql = "select id, notification_context_id, status, recipient_context_key, " +
+        String sql = "select id, notification_event_id, status, recipient_context_key, " +
                 "content_lookup_type, content_key, modified_date, created_date " +
                 "FROM message_templates where id = :id";
 
@@ -150,7 +150,7 @@ public class MessageTemplatesRepository {
 
         SQLStatementParams params = new SQLStatementParams(crit);
         params.buildForSelect();
-        String sql = "select id, notification_context_id, status, recipient_context_key, " +
+        String sql = "select id, notification_event_id, status, recipient_context_key, " +
                 "content_lookup_type, content_key, created_date, modified_date \n" +
                 "FROM message_templates \n" +
                 "WHERE " + params.statement;
@@ -208,7 +208,7 @@ public class MessageTemplatesRepository {
          */
         void buildForSelect() {
             StringBuilder builder = new StringBuilder();
-            appendProperty("notification_context_id", msgTemplate.getNotificationEventId(), builder);
+            appendProperty("notification_event_id", msgTemplate.getNotificationEventId(), builder);
             appendProperty("status", msgTemplate.getStatus(), builder);
             appendProperty("recipient_context_key", msgTemplate.getRecipientContextKey(), builder);
             appendProperty("content_lookup_type", msgTemplate.getContentLookupType(), builder);
@@ -294,7 +294,7 @@ public class MessageTemplatesRepository {
         public MessageTemplate mapRow(ResultSet rs, int rowNum) throws SQLException {
             MessageTemplate messageTemplate = new MessageTemplate();
             messageTemplate.setId(rs.getLong("id"));
-            messageTemplate.setNotificationEventId(rs.getLong("notification_context_id"));
+            messageTemplate.setNotificationEventId(rs.getLong("notification_event_id"));
             messageTemplate.setStatus(Status.fromCode(rs.getString("status")));
             messageTemplate.setRecipientContextKey(rs.getString("recipient_context_key"));
             messageTemplate.setContentKey(rs.getString("content_key"));

@@ -3,8 +3,10 @@ package com.solmod.notification.engine.service;
 import com.solmod.commons.StringifyException;
 import com.solmod.notification.admin.data.MessageTemplatesRepository;
 import com.solmod.notification.admin.data.NotificationEventsRepository;
+import com.solmod.notification.admin.data.NotificationTriggersRepository;
 import com.solmod.notification.domain.*;
 import com.solmod.notification.exception.InsufficientContextException;
+import com.solmod.notification.exception.NotificationTriggerNonexistentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +26,7 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
 
     NotificationEventsRepository neRepo;
     MessageTemplatesRepository mtRepo;
+    NotificationTriggersRepository ntRepo;
 
     Logger log = LoggerFactory.getLogger(getClass());
 
@@ -88,6 +91,7 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
 
         NotificationContext context = new NotificationContext();
         context.addBuildContext("message", eventMessage);
+        Set<NotificationDelivery> deliveries = new HashSet<>();
 
         // 4. For each qualifying MessageTemplate, create a Notification/Message delivery
         for (MessageTemplate messageTemplate : unfilteredTemplates) {
@@ -118,16 +122,16 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
             delivery.setContext(context.getEventContext()); // TODO: Whittle this down to what's needed instead
             // Persist delivery
 
-            //
-            // When the governor is put together, we'll shoot out a request for permission
+            deliveries.add(delivery);
+        }
 
-/*
-TODO: This should happen when permission is granted
-
-            // Save message body to S3
-            delivery.setMessageBodyUri("S3-addy"); // TODO: Make this the content itself and integrate with S3 later
-            // Persist delivery
-*/
+        if (deliveries.isEmpty()) {
+            trigger.setStatus(Status.DELETED);
+            try {
+                ntRepo.update(trigger);
+            } catch (NotificationTriggerNonexistentException e) {
+                log.error("Somehow managed a missing NotificationTrigger when trying to update status to DELETED: {}", trigger );
+            }
         }
 
         // TODO: Persist, relative to the NotificationDelivery, the context needed for the message templates that qualify
@@ -181,7 +185,7 @@ TODO: This should happen when permission is granted
         ntSearchCriteria.setEventVerb(solMessage.getVerb());
         ntSearchCriteria.setEventSubject(solMessage.getSubject());
 
-        NotificationEvent notificationEvent = neRepo.getNotificationContext(ntSearchCriteria);
+        NotificationEvent notificationEvent = neRepo.getNotificationEvent(ntSearchCriteria);
         return notificationEvent;
     }
 

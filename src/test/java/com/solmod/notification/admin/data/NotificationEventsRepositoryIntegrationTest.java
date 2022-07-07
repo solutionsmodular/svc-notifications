@@ -21,12 +21,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * This test will perform tests against a DB to assert bare requirements for DB statements.
- * For all other tests, see {@link NotificationEventRepositoryTest} which will assert business logic and such
+ * For all other tests, see {@link NotificationEventsRepositoryTest} which will assert business logic and such
  */
 @Sql(scripts = {"classpath:/scripts/notification-admin-tests.sql"})
 @SpringBootTest
 @Transactional
-class NotificationEventRepositoryIntegrationTest {
+class NotificationEventsRepositoryIntegrationTest {
 
     @Autowired
     NotificationEventsRepository contextRepository;
