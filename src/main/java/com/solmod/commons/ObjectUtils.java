@@ -69,7 +69,7 @@ public class ObjectUtils {
      * the use of context keys such as {@code parent.child.property}
      *
      * @param context {@code Object} of any sort, to flatten
-     * @return {@code Map&lt;String, object&gt;}
+     * @return Map of String key Object value context
      * @throws StringifyException In the event there's something funky with the specified context
      */
     public static Map<String, Object> flatten(Object context) throws StringifyException {

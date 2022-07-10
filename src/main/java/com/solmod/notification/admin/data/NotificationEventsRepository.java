@@ -3,9 +3,9 @@ package com.solmod.notification.admin.data;
 
 import com.solmod.notification.domain.NotificationEvent;
 import com.solmod.notification.domain.Status;
+import com.solmod.notification.exception.DBRequestFailureException;
 import com.solmod.notification.exception.NotificationEventAlreadyExistsException;
 import com.solmod.notification.exception.NotificationEventNonexistentException;
-import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +42,7 @@ public class NotificationEventsRepository {
      * @param request {@link NotificationEvent} representing the request.
      * @throws NotificationEventAlreadyExistsException In the event an existing NotificationEvent would be duplicated
      */
-    public void create(@NotNull final NotificationEvent request) throws NotificationEventAlreadyExistsException {
+    public void create(@NotNull final NotificationEvent request) throws NotificationEventAlreadyExistsException, DBRequestFailureException {
         NotificationEvent existing = getNotificationEvent(request);
         if (existing != null) {
             throw new NotificationEventAlreadyExistsException(existing,
@@ -62,9 +62,11 @@ public class NotificationEventsRepository {
 
             log.info("NotificationEvent created per request");
         } catch (DataAccessException e) {
-            log.warn("DAE: Failed attempt to save NotificationEvent: {}\n{}", e.getMessage(), request);
-        } catch (NullPointerException e) {
-            log.warn("NPE: Failed attempt to save NotificationEvent with missing fields: {}\n{}", e.getMessage(), request);
+            log.error("DAE: Failed attempt to save component with missing fields: {}\n{}", e.getMessage(), request);
+            throw new DBRequestFailureException("DB failure creating NotificationEvent: " + e.getMessage());
+        }  catch (NullPointerException e) {
+            log.warn("NPE: Failed attempt to save component with missing fields\n    {}", request);
+            throw new DBRequestFailureException("DB failure creating NotificationEvent: " + e.getMessage());
         }
     }
 
@@ -92,8 +94,12 @@ public class NotificationEventsRepository {
             }
         }
 
-        SQLStatementParams statementParams = new SQLStatementParams(request);
-        Set<DataUtils.FieldUpdate> fieldUpdates = statementParams.buildForUpdate(origById);
+        SQLUpdateStatementParams statementParams = new SQLUpdateStatementParams(request.getId());
+        statementParams.addField("event_subject", origById.getEventSubject(), request.getEventSubject());
+        statementParams.addField("event_verb", origById.getEventVerb(), request.getEventVerb());
+        statementParams.addField("status", origById.getStatus(), request.getStatus());
+
+        Set<DataUtils.FieldUpdate> fieldUpdates = statementParams.getUpdates();
 
         if (fieldUpdates.isEmpty()) {
             log.info("Update request for NotificationEvent where no fields changed. Kinda weird.");
@@ -101,10 +107,10 @@ public class NotificationEventsRepository {
         }
 
         String sql = "UPDATE notification_events SET " +
-                statementParams.statement +
+                statementParams.getStatement() +
                 " WHERE id = :id";
 
-        template.update(sql, statementParams.params);
+        template.update(sql, statementParams.getParams());
 
         log.info("Updated {} fields in NotificationEvent {}", fieldUpdates.size(), request.getId());
         return fieldUpdates;
@@ -148,13 +154,17 @@ public class NotificationEventsRepository {
     @Transactional
     public List<NotificationEvent> getNotificationEvents(@NotNull final NotificationEvent crit) {
 
-        SQLStatementParams params = new SQLStatementParams(crit);
-        params.buildForSelect();
+        SQLSelectStatementParams params = new SQLSelectStatementParams();
+        params.addField("tenant_id", crit.getTenantId());
+        params.addField("event_subject", crit.getEventSubject());
+        params.addField("event_verb", crit.getEventVerb());
+        params.addField("status", crit.getStatus());
+
         String sql = "select id, tenant_id, event_subject, event_verb, status, created_date, modified_date \n" +
                 "FROM notification_events \n" +
-                "WHERE " + params.statement;
+                "WHERE " + params.getStatement();
 
-        return template.query(sql, params.params, new RowMapperResultSetExtractor<>(new NotificationEventRowMapper()));
+        return template.query(sql, params.getParams(), new RowMapperResultSetExtractor<>(new NotificationEventRowMapper()));
     }
 
     /**
@@ -180,107 +190,6 @@ public class NotificationEventsRepository {
         }
 
         return messageTemplates.isEmpty() ? null : messageTemplates.get(0);
-    }
-
-    /**
-     * Encapsulate statement params building these in queries/updates
-     */
-    private static class SQLStatementParams {
-        NotificationEvent nEvent;
-
-        /**
-         * As the statement in the context of a statement param, this is the statement representing the sub portion of
-         * the statement listing the properties (WHERE clause for SELECT, SET clause for UPDATE)
-         */
-        private String statement;
-        private final Map<String, Object> params = new HashMap<>();
-
-        public SQLStatementParams(NotificationEvent nEvent) {
-            this.nEvent = nEvent;
-        }
-
-        /**
-         * When {@link NotificationEvent} is used as a criteria for a statement, this helper will build the where clause
-         * and package the interpreted params needed for those. Using this build, this instance can be used to glean
-         * where clause for select statement and supporting params
-         */
-        void buildForSelect() {
-            StringBuilder builder = new StringBuilder();
-            appendProperty("tenant_id", nEvent.getTenantId(), builder);
-            appendProperty("event_subject", nEvent.getEventSubject(), builder);
-            appendProperty("event_verb", nEvent.getEventVerb(), builder);
-            appendProperty("status", nEvent.getStatus(), builder);
-
-            statement = builder.toString();
-        }
-
-        /**
-         * When {@link NotificationEvent} is used as a criteria for a statement, this helper will build the where clause
-         * and package the interpreted params needed for those. Using this build, this instance can be used to glean
-         * this=that portion of an update statement and params
-         * Note: Cheat here; that I'm taking this opportunity to build a map of old:new values for updated
-         * templates, but we'll need that map for publishing to the bus
-         * Note: Herein, the rule disallowing the updating of tenantId is endforced
-         *
-         * @param originalTemplate {@link NotificationEvent} naming the original form of that being updated
-         */
-        Set<DataUtils.FieldUpdate> buildForUpdate(NotificationEvent originalTemplate) {
-            Set<DataUtils.FieldUpdate> updates = new HashSet<>();
-            StringBuilder builder = new StringBuilder();
-
-            params.put("id", originalTemplate.getId()); // always where clause for an update
-
-            // Disallow updating tenantId
-
-            updates.add(appendProperty("event_subject", originalTemplate.getEventSubject(),
-                    nEvent.getEventSubject(),
-                    builder));
-            updates.add(appendProperty("event_verb", originalTemplate.getEventVerb(),
-                    nEvent.getEventVerb(),
-                    builder));
-            updates.add(appendProperty("status", nEvent.getStatus(),
-                    nEvent.getStatus(),
-                    builder));
-
-            statement = builder.toString();
-
-            updates.remove(null);
-            return updates;
-        }
-
-        /**
-         * This busy body helper takes old and new values and a field name (matching the DB column name), as well as
-         * the statement presumed to be being built. It will return null if there is no difference in values, but will
-         * construct a {@link DataUtils.FieldUpdate} and return it
-         * Note: The rule that any value has to be replaced with a non-empty value is enforced here. If there is a
-         * requirement to blank out a value, that needs to be architected
-         *
-         * @return DataUtils.FieldUpdate if there is a diff in value. null otherwise
-         */
-        private DataUtils.FieldUpdate appendProperty(String fieldName, Object originalValue, Object newValue, StringBuilder statement) {
-            if (newValue != null && !StringUtils.isBlank(newValue.toString()) &&
-                    !Objects.equals(newValue, originalValue)) {
-                delimCriteria(statement, ", ").append(fieldName).append("= :").append(fieldName);
-                params.put(fieldName, newValue);
-                return new DataUtils.FieldUpdate(fieldName, originalValue, newValue);
-            }
-
-            return null;
-        }
-
-        private void appendProperty(String fieldName, Object value, StringBuilder statement) {
-            if (value != null) {
-                delimCriteria(statement, " AND ").append(fieldName).append("= :").append(fieldName);
-                params.put(fieldName, value);
-            }
-        }
-
-        private StringBuilder delimCriteria(StringBuilder builder, String delim) {
-            if (builder.length() > 0)
-                builder.append(delim);
-
-            return builder;
-        }
     }
 
     public static class NotificationEventRowMapper implements RowMapper<NotificationEvent> {

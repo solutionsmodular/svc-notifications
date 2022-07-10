@@ -54,7 +54,7 @@ public class NotificationTriggersRepositoryTest {
         assertThrows(DBRequestFailureException.class, () -> repo.create(request));
 
         // Assert
-        assertTrue(captured.getOut().contains("Failed attempt to save NotificationTrigger"));
+        assertTrue(captured.getOut().contains("Failed attempt to save component"));
     }
 
     @Test
@@ -140,6 +140,26 @@ public class NotificationTriggersRepositoryTest {
     }
 
     @Test
+    @DisplayName("Assert all criteria is considered in SQL statement when supplied. By criteria ignores ID")
+    void getNotificationTriggers_byAllCrit() {
+        NotificationTrigger crit = new NotificationTrigger();
+        crit.setNotificationEventId(55L);
+        crit.setUid("some-uid");
+        crit.setStatus(Status.ACTIVE);
+
+        // Test call
+        List<NotificationTrigger> notificationTriggers = repo.getNotificationTriggers(crit);
+
+        verify(template, times(1)).query(stringArgCaptor.capture(), anyMap(),
+                ArgumentMatchers.<RowMapperResultSetExtractor<NotificationTriggersRepository.NotificationTriggerRowMapper>>any());
+
+        assertFalse(stringArgCaptor.getValue().contains(":id"));
+        assertTrue(stringArgCaptor.getValue().contains(":notification_event_id"));
+        assertTrue(stringArgCaptor.getValue().contains(":uid"));
+        assertTrue(stringArgCaptor.getValue().contains(":status"));
+    }
+
+    @Test
     @DisplayName("Assert a SQL statement contains any non-null criteria supplied in the criteria. By criteria ignores ID")
     void getNotificationTriggers_byCrit() {
         NotificationTrigger crit = new NotificationTrigger();
@@ -148,7 +168,7 @@ public class NotificationTriggersRepositoryTest {
         crit.setStatus(null);
 
         // Test call
-        repo.getNotificationTriggers(crit);
+        List<NotificationTrigger> notificationTriggers = repo.getNotificationTriggers(crit);
 
         verify(template, times(1)).query(stringArgCaptor.capture(), anyMap(),
                 ArgumentMatchers.<RowMapperResultSetExtractor<NotificationTriggersRepository.NotificationTriggerRowMapper>>any());

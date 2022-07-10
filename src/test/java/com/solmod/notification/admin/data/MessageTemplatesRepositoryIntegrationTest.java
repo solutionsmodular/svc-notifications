@@ -3,6 +3,7 @@ package com.solmod.notification.admin.data;
 import com.solmod.notification.domain.ContentLookupType;
 import com.solmod.notification.domain.MessageTemplate;
 import com.solmod.notification.domain.Status;
+import com.solmod.notification.exception.DBRequestFailureException;
 import com.solmod.notification.exception.MessageTemplateAlreadyExistsException;
 import com.solmod.notification.exception.MessageTemplateNonexistentException;
 import org.junit.jupiter.api.DisplayName;
@@ -35,7 +36,7 @@ class MessageTemplatesRepositoryIntegrationTest {
     @Test
     @DisplayName("Testing create. Happy day case in integration test, only")
     @ExtendWith(OutputCaptureExtension.class)
-    void testCreate(CapturedOutput output) throws MessageTemplateAlreadyExistsException {
+    void testCreate(CapturedOutput output) throws MessageTemplateAlreadyExistsException, DBRequestFailureException {
         MessageTemplate request = new MessageTemplate();
         request.setNotificationEventId(1L);
         request.setContentKey("some.summary.key");
@@ -69,10 +70,10 @@ class MessageTemplatesRepositoryIntegrationTest {
         MessageTemplate updated = adminRepository.getMessageTemplate(request.getId());
         // Assert intended fields are updated
         assertEquals(request.getRecipientContextKey(), updated.getRecipientContextKey());
-        // Assert other fields are changed
+        // Assert other fields are as they were
         assertEquals(existing.getContentKey(), updated.getContentKey());
         assertEquals(existing.getStatus(), updated.getStatus());
         assertEquals(existing.getContentLookupType(), updated.getContentLookupType());
-        assertTrue(updated.getDeliveryCriteria().entrySet().containsAll(updated.getDeliveryCriteria().entrySet()));
+        assertTrue(updated.getDeliveryCriteria().entrySet().containsAll(existing.getDeliveryCriteria().entrySet()));
     }
 }

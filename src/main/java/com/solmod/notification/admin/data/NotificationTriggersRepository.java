@@ -5,14 +5,18 @@ import com.solmod.notification.domain.NotificationTrigger;
 import com.solmod.notification.domain.Status;
 import com.solmod.notification.exception.DBRequestFailureException;
 import com.solmod.notification.exception.NotificationTriggerNonexistentException;
-import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.RowMapperResultSetExtractor;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import javax.validation.constraints.NotNull;
@@ -38,21 +42,30 @@ public class NotificationTriggersRepository {
      *
      * @param request {@link NotificationTrigger} representing the request.
      */
-    public void create(@NotNull final NotificationTrigger request) throws DBRequestFailureException {
+    public Long create(@NotNull final NotificationTrigger request) throws DBRequestFailureException {
         String sql = "INSERT INTO notification_triggers " +
                 "(notification_event_id, uid, status) " +
                 "values(:notification_event_id, :uid, :status)";
         try {
-            template.update(sql, Map.of(
+            KeyHolder keyHolder = new GeneratedKeyHolder();
+
+            SqlParameterSource paramSource = new MapSqlParameterSource(Map.of(
                     "notification_event_id", request.getNotificationEventId(),
                     "uid", request.getUid(),
-                    "status", request.getStatus().code()
-                    ));
+                    "status", request.getStatus().code()));
+
+            template.update(sql, paramSource, keyHolder);
 
             log.info("NotificationTrigger created per request");
-        } catch (NullPointerException e) {
-            log.warn("NPE: Failed attempt to save NotificationTrigger with missing fields: {}\n{}", e.getMessage(), request);
-            throw new DBRequestFailureException("DB failure creating NotificationTrigger");
+
+            // TODO: NOW STORE THE CONTEXT?
+            return keyHolder.getKey() == null ? null : keyHolder.getKey().longValue();
+        } catch (DataAccessException e) {
+            log.error("DAE: Failed attempt to save component with missing fields: {}\n{}", e.getMessage(), request);
+            throw new DBRequestFailureException("DB failure creating NotificationTrigger: " + e.getMessage());
+        }  catch (NullPointerException e) {
+            log.warn("NPE: Failed attempt to save component with missing fields\n    {}", request);
+            throw new DBRequestFailureException("DB failure creating NotificationTrigger: " + e.getMessage());
         }
     }
 
@@ -60,7 +73,7 @@ public class NotificationTriggersRepository {
      * Update NotificationTrigger details
      *
      * @param request {@link NotificationTrigger} representing the request to make updates to an existing
-     *                                           NotificationTrigger
+     *                NotificationTrigger
      */
     public Set<DataUtils.FieldUpdate> update(@NotNull final NotificationTrigger request)
             throws NotificationTriggerNonexistentException {
@@ -71,8 +84,12 @@ public class NotificationTriggersRepository {
             throw new NotificationTriggerNonexistentException(request, "NotificationTrigger was not found");
         }
 
-        SQLStatementParams statementParams = new SQLStatementParams(request);
-        Set<DataUtils.FieldUpdate> fieldUpdates = statementParams.buildForUpdate(origById);
+        SQLUpdateStatementParams statementParams = new SQLUpdateStatementParams(request.getId());
+        statementParams.addField("notification_event_id", origById.getNotificationEventId(), request.getNotificationEventId());
+        statementParams.addField("uid", origById.getUid(), request.getUid());
+        statementParams.addField("status", origById.getStatus(), request.getStatus());
+
+        Set<DataUtils.FieldUpdate> fieldUpdates = statementParams.getUpdates();
 
         if (fieldUpdates.isEmpty()) {
             log.info("Update request for NotificationTrigger where no fields changed. Kinda weird.");
@@ -80,10 +97,10 @@ public class NotificationTriggersRepository {
         }
 
         String sql = "UPDATE notification_triggers SET " +
-                statementParams.statement +
+                statementParams.getStatement() +
                 " WHERE id = :id";
 
-        template.update(sql, statementParams.params);
+        template.update(sql, statementParams.getParams());
 
         log.info("Updated {} fields in NotificationTemplate {}", fieldUpdates.size(), request.getId());
         return fieldUpdates;
@@ -122,119 +139,22 @@ public class NotificationTriggersRepository {
      * Retrieve {@link NotificationTrigger}s by criteria. ID will be ignored by this method and will return all which
      * qualify, an empty list otherwise.
      *
-     * @param crit {@link NotificationTrigger} doubling as criteria for a query. Downside: Can't use null or empty string
-     *             as criteria value
+     * @param criteria {@link NotificationTrigger} doubling as criteria for a query. Downside: Can't use null or empty string
+     *                 as criteria value
      * @return List of matching {@link NotificationTrigger}s
      */
-    public List<NotificationTrigger> getNotificationTriggers(@NotNull final NotificationTrigger crit) {
+    public List<NotificationTrigger> getNotificationTriggers(@NotNull final NotificationTrigger criteria) {
 
-        SQLStatementParams params = new SQLStatementParams(crit);
-        params.buildForSelect();
+        SQLSelectStatementParams params = new SQLSelectStatementParams();
+        params.addField("notification_event_id", criteria.getNotificationEventId());
+        params.addField("uid", criteria.getUid());
+        params.addField("status", criteria.getStatus());
+
         String sql = "select id, notification_event_id, uid, status, created_date \n" +
                 "FROM notification_triggers \n" +
-                "WHERE " + params.statement;
+                "WHERE " + params.getStatement();
 
-        return template.query(sql, params.params, new RowMapperResultSetExtractor<>(new NotificationTriggerRowMapper()));
-    }
-
-
-    /**
-     * Encapsulate statement params building these in queries/updates
-     */
-    private static class SQLStatementParams {
-        NotificationTrigger nTrigger;
-
-        /**
-         * As the statement in the context of a statement param, this is the statement representing the sub portion of
-         * the statement listing the properties (WHERE clause for SELECT, SET clause for UPDATE)
-         */
-        private String statement;
-        private final Map<String, Object> params = new HashMap<>();
-
-        public SQLStatementParams(NotificationTrigger nTrigger) {
-            this.nTrigger = nTrigger;
-        }
-
-        /**
-         * When {@link NotificationTrigger} is used as a criteria for a statement, this helper will build the where clause
-         * and package the interpreted params needed for those. Using this build, this instance can be used to glean
-         * where clause for select statement and supporting params
-         */
-        void buildForSelect() {
-            StringBuilder builder = new StringBuilder();
-            appendProperty("notification_event_id", nTrigger.getNotificationEventId(), builder);
-            appendProperty("uid", nTrigger.getUid(), builder);
-            appendProperty("status", nTrigger.getStatus(), builder);
-
-            statement = builder.toString();
-        }
-
-        /**
-         * When {@link NotificationTrigger} is used as a criteria for a statement, this helper will build the where clause
-         * and package the interpreted params needed for those. Using this build, this instance can be used to glean
-         * this=that portion of an update statement and params
-         * Note: Cheat here; that I'm taking this opportunity to build a map of old:new values for updated
-         * templates, but we'll need that map for publishing to the bus
-         * Note: Herein, the rule disallowing the updating of tenantId is endforced
-         *
-         * @param originalTemplate {@link NotificationTrigger} naming the original form of that being updated
-         */
-        Set<DataUtils.FieldUpdate> buildForUpdate(NotificationTrigger originalTemplate) {
-            Set<DataUtils.FieldUpdate> updates = new HashSet<>();
-            StringBuilder builder = new StringBuilder();
-
-            params.put("id", originalTemplate.getId()); // always where clause for an update
-
-            // Disallow updating tenantId
-            updates.add(appendProperty("notification_event_id", originalTemplate.getNotificationEventId(),
-                    nTrigger.getNotificationEventId(),
-                    builder));
-            updates.add(appendProperty("uid", originalTemplate.getUid(),
-                    nTrigger.getUid(),
-                    builder));
-            updates.add(appendProperty("status", nTrigger.getStatus(),
-                    nTrigger.getStatus(),
-                    builder));
-
-            statement = builder.toString();
-
-            updates.remove(null);
-            return updates;
-        }
-
-        /**
-         * This busy body helper takes old and new values and a field name (matching the DB column name), as well as
-         * the statement presumed to be being built. It will return null if there is no difference in values, but will
-         * construct a {@link DataUtils.FieldUpdate} and return it
-         * Note: The rule that any value has to be replaced with a non-empty value is enforced here. If there is a
-         * requirement to blank out a value, that needs to be architected
-         *
-         * @return DataUtils.FieldUpdate if there is a diff in value. null otherwise
-         */
-        private DataUtils.FieldUpdate appendProperty(String fieldName, Object originalValue, Object newValue, StringBuilder statement) {
-            if (newValue != null && !StringUtils.isBlank(newValue.toString()) &&
-                    !Objects.equals(newValue, originalValue)) {
-                delimCriteria(statement, ", ").append(fieldName).append("= :").append(fieldName);
-                params.put(fieldName, newValue);
-                return new DataUtils.FieldUpdate(fieldName, originalValue, newValue);
-            }
-
-            return null;
-        }
-
-        private void appendProperty(String fieldName, Object value, StringBuilder statement) {
-            if (value != null) {
-                delimCriteria(statement, " AND ").append(fieldName).append("= :").append(fieldName);
-                params.put(fieldName, value);
-            }
-        }
-
-        private StringBuilder delimCriteria(StringBuilder builder, String delim) {
-            if (builder.length() > 0)
-                builder.append(delim);
-
-            return builder;
-        }
+        return template.query(sql, params.getParams(), new RowMapperResultSetExtractor<>(new NotificationTriggerRowMapper()));
     }
 
     public static class NotificationTriggerRowMapper implements RowMapper<NotificationTrigger> {

@@ -5,21 +5,23 @@ import com.solmod.notification.admin.data.MessageTemplatesRepository;
 import com.solmod.notification.admin.data.NotificationEventsRepository;
 import com.solmod.notification.admin.data.NotificationTriggersRepository;
 import com.solmod.notification.domain.*;
+import com.solmod.notification.exception.DBRequestFailureException;
 import com.solmod.notification.exception.InsufficientContextException;
 import com.solmod.notification.exception.NotificationTriggerNonexistentException;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.function.Function;
 
-import static com.solmod.commons.StringUtils.bytesToHex;
+import static com.solmod.commons.ObjectUtils.flatten;
+import static com.solmod.commons.SolStringUtils.bytesToHex;
 
 @Service("NotificationDispatcher")
 public class NotificationDispatcher implements Function<SolMessage, List<SolCommunication>> {
@@ -36,26 +38,54 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
     }
 
     /**
-     * Handler for messages on the SolBus
-     * @param solMessage
-     * @return
+     * Message Bus Subscriber
+     * This signature accepts messages from the message bus which may trigger a notification. Assumes no context
+     * already exists for the given trigger.
+     *
+     * @param solMessage {@link SolMessage} event message from off the bus
+     * @return List of {@link SolCommunication}s suited to send to the sender
      */
     @Override
     public List<SolCommunication> apply(SolMessage solMessage) {
-        log.info("Running NotificationDispatcher for {}:{}", solMessage.getSubject(), solMessage.getVerb());
 
-        // 1. Find the appropriate event for the given message subject and verb
+        // Find the appropriate event for the given message subject and verb
         NotificationEvent notificationEvent = getNotificationEvent(solMessage); // TODO: cache these
         if (notificationEvent == null) {
-            return null; // No contexts found, so we can bail
+            return null; // No notifications configured for this event, so we can bail
         }
 
-        try {
-            NotificationTrigger trigger = logNotificationTrigger(notificationEvent);
+        log.info("Running NotificationDispatcher for {}:{}", solMessage.getSubject(), solMessage.getVerb());
 
-            persistTemplateRelatedContext(trigger, solMessage);
-        } catch (StringifyException | NoSuchAlgorithmException | UnsupportedEncodingException e) {
+        NotificationTrigger trigger = null;
+
+        try {
+            trigger = logNotificationTrigger(notificationEvent);
+
+            try {
+                List<MessageTemplate> qualifyingTemplates = getRelatedMessageTemplates(trigger);
+                if (qualifyingTemplates.isEmpty()) {
+                    log.warn("NotificationEvent with no MessageTemplates: {}:{}. Should it be disabled??", notificationEvent.getEventSubject(), notificationEvent.getEventVerb());
+
+                    trigger.setStatus(Status.DELETED);
+                    ntRepo.update(trigger);
+                    return Collections.emptyList();
+                }
+
+                Map<String, Object> context = flatten(solMessage);
+                Map<String, Object> relevantContext = persistRelevantContext(trigger, context, qualifyingTemplates);
+
+                // Should only be here if all needed context exists
+                Set<NotificationDelivery> notificationDeliveries = determineAndBuildDeliveries(qualifyingTemplates, relevantContext);
+                log.debug("Found {} deliveries for the given trigger", notificationDeliveries.size());
+                // TODO: send deliveries to be delivered
+            } catch (InsufficientContextException e) {
+                trigger.setStatus(Status.PENDING_CONTEXT);
+                ntRepo.update(trigger);
+            }
+        } catch (NoSuchAlgorithmException | StringifyException e) {
             // TODO: handle this
+        } catch (NotificationTriggerNonexistentException e) {
+            log.error("Somehow managed a missing NotificationTrigger when trying to update status: {}", trigger);
         }
 
         // That should be the end of it. A Job should poll notification deliveries
@@ -64,100 +94,127 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
     }
 
     /**
+     * <p>From whatever context has been built in the supplied {@link NotificationTrigger} - which is presumed to be
+     * pre-filtered per its relevance to filtering and processing qualifying templates - store the context which
+     * is relevant to processing {@link MessageTemplate}s subscribing to the {@link NotificationEvent} triggered.</p>
      * <p>The context that is needed for a given NotificationEvent is determined by the MessageTemplates.
      * Message Templates need context for a number of different things, such as merge field in the message content, or
      * context based criteria.</p>
      * <p>So, this method will handle getting all MessageTemplates under the specified NotificationEvent and will build
-     * an exhaustive list of the context properties needed to satisfy all references to context properties.</p>
-     * <p><em>Since</em> we have all of this all loaded up here to do all that, then, we should trigger the delivery
-     * of those MessageTemplates if the context contains all that's needed. Otherwise, this same thing has to happen
-     * each time a callback from the CPI is received</p>
-     * MessageTemplates need context data for the following reasons:
-     * <ul>
-     *     <li>Content merge fields</li>
-     *     <li>Recipient</li>
-     *     <li>Criteria</li>
-     *     <li>Context builders</li>
-     * </ul>
+     * and return an exhaustive list of the context properties needed to satisfy all references to context properties.
+     * </p>
      *
-     * @param trigger {@link NotificationTrigger}
-     * @param eventMessage {@link SolMessage}
-     * @throws InsufficientContextException The message is missing context params needed for properly evaluating
-     * MessageTemplates, supplying needed merge fields...
+     * @param trigger             {@link NotificationTrigger}
+     * @param context             Map<String, Object>
+     * @param qualifyingTemplates List of {@link MessageTemplate}s predetermined will be sent
+     * @return Context Map containing the context properties relevant to the {@link MessageTemplate}s
+     * @throws InsufficientContextException If the given Context Map is missing fields needed to process
+     *                                      {@link MessageTemplate}s
      */
-    void persistTemplateRelatedContext(NotificationTrigger trigger, SolMessage eventMessage)
-            throws StringifyException {
-        List<MessageTemplate> unfilteredTemplates = getRelatedMessageTemplates(trigger);
+    Map<String, Object> persistRelevantContext(NotificationTrigger trigger,
+                                               Map<String, Object> context,
+                                               List<MessageTemplate> qualifyingTemplates)
+            throws InsufficientContextException {
 
-        NotificationContext context = new NotificationContext();
-        context.addBuildContext("message", eventMessage);
+        Set<String> propertiesNeeded = new HashSet<>();
+
+        for (MessageTemplate qualifyingTemplate : qualifyingTemplates) {
+            propertiesNeeded.add(qualifyingTemplate.getRecipientContextKey());
+            propertiesNeeded.addAll(qualifyingTemplate.getDeliveryCriteria().keySet());
+            // TODO: propertiesNeeded.addAll(cms.getMergeFields())
+        }
+
+        HashMap<String, Object> relevantContext = new HashMap<>();
+        StringBuilder errorMessage = new StringBuilder();
+        for (String neededProp : propertiesNeeded) {
+            if (context.get(neededProp) != null) {
+                relevantContext.put(neededProp, context.get(neededProp));
+            } else {
+                errorMessage.append(errorMessage.length() > 0 ? ", " : "").append(neededProp);
+            }
+        }
+
+        // TODO: batch save whatever relevant context we have for the trigger
+
+        // Now, ensure the keys in context contain all that are needed
+        if (errorMessage.length() > 0) {
+            throw new InsufficientContextException(String.format(
+                    "InsufficientContext: Templates for NotificationTrigger %s missing the following context: %s",
+                    trigger.getId(), errorMessage));
+        }
+
+        return relevantContext;
+    }
+
+    /**
+     * @param templates       List of {@link MessageTemplate}s for which to initialize deliveries
+     * @param relevantContext Context needed for processing any part of the {@link MessageTemplate}s
+     * @return Set of {@link NotificationDelivery}s encapsulating what should be delivered given the params supplied
+     */
+    Set<NotificationDelivery> determineAndBuildDeliveries(List<MessageTemplate> templates, Map<String, Object> relevantContext)
+            throws InsufficientContextException {
+        // Get all active MessageTemplates that apply to given NotificationTrigger
+
         Set<NotificationDelivery> deliveries = new HashSet<>();
 
-        // 4. For each qualifying MessageTemplate, create a Notification/Message delivery
-        for (MessageTemplate messageTemplate : unfilteredTemplates) {
+        for (MessageTemplate messageTemplate : templates) {
+            //
+            // DETERMINE
             NotificationDelivery delivery = new NotificationDelivery();
             delivery.setStatus(Status.PENDING_PERMISSION);
 
-            try {
-                boolean criteriaMatches = filterByContext(messageTemplate, context);
-                if (!criteriaMatches) {
-                    continue;
-                }
+            // filterByContext will throw an exception if there's not enough context
+            boolean criteriaMatches = filterByContext(messageTemplate, relevantContext);
+            if (!criteriaMatches) {
+                continue;
+            }
 
-                // 1. We may not have enough context for a recipient address. The resulting status must be PENDING_CONTEXT
-                Object recipientAddy = context.getEventContext().get(messageTemplate.getRecipientContextKey());
-                if (recipientAddy != null) {
-                    delivery.setRecipient(recipientAddy.toString());
-                } else {
-                    throw new InsufficientContextException("Not enough context to determine recipient addy");
-                }
-            } catch (InsufficientContextException e) {
-                log.warn(e.getMessage());
-                delivery.setStatus(Status.PENDING_CONTEXT);
-
-                // Future: we should proactively see if we can expect the expected context to be built by builders
+            //
+            // BUILD
+            Object recipientAddy = relevantContext.get(messageTemplate.getRecipientContextKey());
+            // Per orig design, this shouldn't be null, but could actually be blank, which would be bad
+            if (recipientAddy != null && StringUtils.isBlank(recipientAddy.toString())) {
+                delivery.setRecipient(recipientAddy.toString());
+            } else {
+                throw new InsufficientContextException("Not enough context to determine recipient addy");
             }
 
             delivery.setMessageTemplateId(messageTemplate.getId());
-            delivery.setContext(context.getEventContext()); // TODO: Whittle this down to what's needed instead
-            // Persist delivery
-
+            delivery.setContext(relevantContext);
+            // TODO: Persist delivery. In persist, could generate uid so we don't have to go get it
             deliveries.add(delivery);
         }
 
-        if (deliveries.isEmpty()) {
-            trigger.setStatus(Status.DELETED);
-            try {
-                ntRepo.update(trigger);
-            } catch (NotificationTriggerNonexistentException e) {
-                log.error("Somehow managed a missing NotificationTrigger when trying to update status to DELETED: {}", trigger );
-            }
-        }
-
-        // TODO: Persist, relative to the NotificationDelivery, the context needed for the message templates that qualify
+        return deliveries;
     }
+
+    /**
+     * Helper method to get all active MessageTemplates that apply to the given NotificationTrigger
+     *
+     * @param trigger {@link NotificationTrigger} Instance of an event for which there is a notification configured
+     * @return List of {@link MessageTemplate}s which subscribe to the given {@link NotificationTrigger}
+     */
 
     List<MessageTemplate> getRelatedMessageTemplates(NotificationTrigger trigger) {
         MessageTemplate criteria = new MessageTemplate();
         criteria.setNotificationEventId(trigger.getNotificationEventId());
         criteria.setStatus(Status.ACTIVE);
-        List<MessageTemplate> unfilteredTemplates = mtRepo.getMessageTemplates(criteria);
-        return unfilteredTemplates;
+        return mtRepo.getMessageTemplates(criteria);
     }
 
 
-    boolean filterByContext(MessageTemplate messageTemplate, NotificationContext context)
-        throws InsufficientContextException {
+    boolean filterByContext(MessageTemplate messageTemplate, Map<String, Object> context)
+            throws InsufficientContextException {
         if (messageTemplate.getDeliveryCriteria().isEmpty())
             return true;
 
         boolean meetsCriteria = true;
         for (Map.Entry<String, Object> criterion : messageTemplate.getDeliveryCriteria().entrySet()) {
-            if (!context.getEventContext().containsKey(criterion.getKey())) {
+            if (!context.containsKey(criterion.getKey())) {
                 throw new InsufficientContextException("Can not filter Message Template. No value in context for " + criterion.getKey());
             }
 
-            meetsCriteria = Objects.equals(context.getEventContext().get(criterion.getKey()), criterion.getValue());
+            meetsCriteria = Objects.equals(context.get(criterion.getKey()), criterion.getValue());
 
             if (!meetsCriteria) {
                 break;
@@ -167,15 +224,28 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
         return meetsCriteria;
     }
 
-    private NotificationTrigger logNotificationTrigger(NotificationEvent notificationEvent) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+    private NotificationTrigger logNotificationTrigger(NotificationEvent notificationEvent)
+            throws NoSuchAlgorithmException {
+        String uid = generateUid();
+
         NotificationTrigger trigger = new NotificationTrigger();
         trigger.setNotificationEventId(notificationEvent.getId());
+        trigger.setUid(uid);
+        trigger.setStatus(Status.NO_OP); // For now...
+
+        try {
+            trigger.setId(ntRepo.create(trigger));
+        } catch (DBRequestFailureException e) {
+            log.error("Failure attempting to logNotificationTrigger! A whole event is LOST!", e);
+        }
+
+        return trigger;
+    }
+
+    private String generateUid() throws NoSuchAlgorithmException {
         MessageDigest salt = MessageDigest.getInstance("SHA-256"); // TODO: extract this into a method away from here
         salt.update(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8));
-        String digest = bytesToHex(salt.digest());
-        trigger.setUid(digest);
-        // neRepo.create(trigger); TODO
-        return trigger;
+        return bytesToHex(salt.digest());
     }
 
     private NotificationEvent getNotificationEvent(SolMessage solMessage) {
@@ -185,8 +255,7 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
         ntSearchCriteria.setEventVerb(solMessage.getVerb());
         ntSearchCriteria.setEventSubject(solMessage.getSubject());
 
-        NotificationEvent notificationEvent = neRepo.getNotificationEvent(ntSearchCriteria);
-        return notificationEvent;
+        return neRepo.getNotificationEvent(ntSearchCriteria);
     }
 
 }

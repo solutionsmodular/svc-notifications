@@ -10,10 +10,15 @@ public enum Status {
     INACTIVE("I"),
     ACTIVE("A"),
     DELETED("D"),
-    // Used by Notification Delivery
+
+    // MessageTrigger statuses
+    NO_OP("NO"), // If, in the end, no MessageTemplates qualify/exist to send
+    PROCESSING("P"),
+    COMPLETE("CP"),
+
+    // MessageDelivery statuses
     DELIVERED("V"),
     FAILED("F"),
-    NO_OP("NO"),
     PENDING_CONTEXT("PC"),
     PENDING_PERMISSION("PP"),
     PENDING_DELIVERY("PD");

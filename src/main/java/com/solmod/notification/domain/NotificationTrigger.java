@@ -3,6 +3,7 @@ package com.solmod.notification.domain;
 import com.solmod.commons.ObjectUtils;
 import com.solmod.commons.StringifyException;
 
+import java.util.Map;
 import java.util.Objects;
 
 public class NotificationTrigger extends Audited {
@@ -10,6 +11,7 @@ public class NotificationTrigger extends Audited {
     private Long notificationEventId;
     private String uid;
     private Status status;
+    private Map<String, Object> context;
 
     public Long getNotificationEventId() {
         return notificationEventId;
@@ -33,6 +35,14 @@ public class NotificationTrigger extends Audited {
 
     public void setStatus(Status status) {
         this.status = status;
+    }
+
+    public Map<String, Object> getContext() {
+        return context;
+    }
+
+    public void setContext(Map<String, Object> context) {
+        this.context = context;
     }
 
     @Override

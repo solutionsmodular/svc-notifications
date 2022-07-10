@@ -3,6 +3,7 @@ package com.solmod.notification.admin.data;
 import com.solmod.notification.domain.ContentLookupType;
 import com.solmod.notification.domain.MessageTemplate;
 import com.solmod.notification.domain.Status;
+import com.solmod.notification.exception.DBRequestFailureException;
 import com.solmod.notification.exception.MessageTemplateAlreadyExistsException;
 import com.solmod.notification.exception.MessageTemplateNonexistentException;
 import org.junit.jupiter.api.DisplayName;
@@ -47,7 +48,7 @@ public class MessageTemplatesRepositoryTest {
 
     @Test
     @DisplayName("Assert that we can create a MessageTemplate if it doesn't already exist per UniqueMessageTemplateId")
-    void create_allClear() throws MessageTemplateAlreadyExistsException {
+    void create_allClear() throws MessageTemplateAlreadyExistsException, DBRequestFailureException {
         MessageTemplate request = buildFullyPopulatedMessageTemplate();
 
         doReturn(null, new MessageTemplate()).when(repo).getMessageTemplate(any(MessageTemplate.class));
@@ -63,7 +64,7 @@ public class MessageTemplatesRepositoryTest {
 
     @Test
     @DisplayName("Assert that we cannot create a MessageTemplate and an error is logged if fields are missing")
-    void create_MissingFields(CapturedOutput captured) throws MessageTemplateAlreadyExistsException {
+    void create_MissingFields(CapturedOutput captured) {
         MessageTemplate request = new MessageTemplate();
         request.setNotificationEventId(345L);
         request.setContentLookupType(ContentLookupType.LOCAL);
@@ -71,17 +72,17 @@ public class MessageTemplatesRepositoryTest {
         doReturn(emptyList()).when(repo).getMessageTemplates(any(MessageTemplate.class));
 
         // Call
-        repo.create(request);
+        assertThrows(DBRequestFailureException.class, () -> repo.create(request));
 
         // Assert
-        assertTrue(captured.getOut().contains("Failed attempt to save message template"));
+        assertTrue(captured.getOut().contains("Failed attempt to save component"));
         // Find first to ensure it doesn't exist, use same find to load after save
         verify(repo, times(1)).getMessageTemplate(any(MessageTemplate.class));
     }
 
     @Test
     @DisplayName("Assert we get an Exception if the MessageTemplate already exists per UniqueMessageTemplateId")
-    void create_alreadyExists() throws MessageTemplateAlreadyExistsException {
+    void create_alreadyExists() throws MessageTemplateAlreadyExistsException, DBRequestFailureException {
         doReturn(new MessageTemplate()).when(repo).getMessageTemplate(any(MessageTemplate.class));
         assertThrows(MessageTemplateAlreadyExistsException.class, () -> repo.create(new MessageTemplate()));
         verify(repo, times(1)).create(any(MessageTemplate.class));
@@ -344,6 +345,30 @@ public class MessageTemplatesRepositoryTest {
     @DisplayName("Assert for getMessageTemplate by null ID test not needed; @NonNull")
     void getMessageTemplate_byUniqueId_nullId() {
         assertTrue(true);
+    }
+
+    @Test
+    @DisplayName("Assert all fields are considered in SQL statement when provided")
+    void getMessageTemplates_byAllCriteria() {
+        MessageTemplate crit = new MessageTemplate();
+        crit.setNotificationEventId(55L);
+        crit.setRecipientContextKey("recipient_context_key");
+        crit.setContentKey("content_key");
+        crit.setContentLookupType(ContentLookupType.LOCAL);
+        crit.setStatus(Status.ACTIVE);
+
+        // Test call
+        repo.getMessageTemplates(crit);
+
+        verify(template, times(1)).query(stringArgCaptor.capture(), anyMap(),
+                ArgumentMatchers.<RowMapperResultSetExtractor<MessageTemplatesRepository.MessageTemplateRowMapper>>any());
+
+        assertFalse(stringArgCaptor.getValue().contains(":id"));
+        assertTrue(stringArgCaptor.getValue().contains(":notification_event_id"));
+        assertTrue(stringArgCaptor.getValue().contains(":recipient_context_key"));
+        assertTrue(stringArgCaptor.getValue().contains(":content_key"));
+        assertTrue(stringArgCaptor.getValue().contains(":content_lookup_type"));
+        assertTrue(stringArgCaptor.getValue().contains(":status"));
     }
 
     @Test

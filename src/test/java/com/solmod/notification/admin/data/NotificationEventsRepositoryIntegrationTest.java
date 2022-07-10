@@ -2,6 +2,7 @@ package com.solmod.notification.admin.data;
 
 import com.solmod.notification.domain.NotificationEvent;
 import com.solmod.notification.domain.Status;
+import com.solmod.notification.exception.DBRequestFailureException;
 import com.solmod.notification.exception.NotificationEventAlreadyExistsException;
 import com.solmod.notification.exception.NotificationEventNonexistentException;
 import org.junit.jupiter.api.DisplayName;
@@ -34,7 +35,7 @@ class NotificationEventsRepositoryIntegrationTest {
     @Test
     @DisplayName("Testing create. Happy day case in integration test, only")
     @ExtendWith(OutputCaptureExtension.class)
-    void testCreate(CapturedOutput output) throws NotificationEventAlreadyExistsException {
+    void testCreate(CapturedOutput output) throws NotificationEventAlreadyExistsException, DBRequestFailureException {
         NotificationEvent request = new NotificationEvent();
         request.setTenantId(1L);
         request.setEventSubject("Something");
@@ -67,7 +68,7 @@ class NotificationEventsRepositoryIntegrationTest {
         NotificationEvent updated = contextRepository.getNotificationEvent(request.getId());
         // Assert intended fields are updated
         assertEquals(request.getEventVerb(), updated.getEventVerb());
-        // Assert other fields are changed
+        // Assert other fields are as they were
         assertEquals(live.getStatus(), updated.getStatus());
         assertEquals(live.getEventSubject(), updated.getEventSubject());
     }

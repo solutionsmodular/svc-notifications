@@ -1,6 +1,6 @@
 package com.solmod.commons;
 
-public class StringUtils {
+public class SolStringUtils {
 
     public static String bytesToHex(byte[] bytes) {
         char[] hexArray = "0123456789ABCDEF".toCharArray();

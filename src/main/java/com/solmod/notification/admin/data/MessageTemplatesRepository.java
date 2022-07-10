@@ -2,9 +2,9 @@ package com.solmod.notification.admin.data;
 
 
 import com.solmod.notification.domain.*;
+import com.solmod.notification.exception.DBRequestFailureException;
 import com.solmod.notification.exception.MessageTemplateAlreadyExistsException;
 import com.solmod.notification.exception.MessageTemplateNonexistentException;
-import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +39,7 @@ public class MessageTemplatesRepository {
      *
      * @param request {@link MessageTemplate} representing the request.
      */
-    public void create(@NotNull final MessageTemplate request) throws MessageTemplateAlreadyExistsException {
+    public void create(@NotNull final MessageTemplate request) throws MessageTemplateAlreadyExistsException, DBRequestFailureException {
         MessageTemplate existing = getMessageTemplate(request);
         if (existing != null) {
             throw new MessageTemplateAlreadyExistsException(existing,
@@ -62,9 +62,11 @@ public class MessageTemplatesRepository {
 
             log.info("Message template created per request");
         } catch (DataAccessException e) {
-            log.warn("DAE: Failed attempt to save message template: {}\n{}", e.getMessage(), request);
-        } catch (NullPointerException e) {
-            log.warn("NPE: Failed attempt to save message template with missing fields: {}\n{}", e.getMessage(), request);
+            log.error("DAE: Failed attempt to save component with missing fields: {}\n{}", e.getMessage(), request);
+            throw new DBRequestFailureException("DB failure creating MessageTemplate: " + e.getMessage());
+        }  catch (NullPointerException e) {
+            log.warn("NPE: Failed attempt to save component with missing fields\n    {}", request);
+            throw new DBRequestFailureException("DB failure creating MessageTemplate: " + e.getMessage());
         }
     }
 
@@ -91,8 +93,12 @@ public class MessageTemplatesRepository {
             }
         }
 
-        SQLStatementParams statementParams = new SQLStatementParams(request);
-        Set<DataUtils.FieldUpdate> fieldUpdates = statementParams.buildForUpdate(origById);
+        SQLUpdateStatementParams statementParams = new SQLUpdateStatementParams(request.getId());
+        statementParams.addField("status", origById.getStatus(), request.getStatus());
+        statementParams.addField("recipient_context_key", origById.getRecipientContextKey(), request.getRecipientContextKey());
+        statementParams.addField("content_lookup_type", origById.getContentLookupType(), request.getContentLookupType());
+        statementParams.addField("content_key", origById.getContentKey(), request.getContentKey());
+        Set<DataUtils.FieldUpdate> fieldUpdates = statementParams.getUpdates();
 
         if (fieldUpdates.isEmpty()) {
             log.info("Update request for MessageTemplate where no fields changed. Kinda weird.");
@@ -100,10 +106,10 @@ public class MessageTemplatesRepository {
         }
 
         String sql = "UPDATE message_templates SET " +
-                statementParams.statement +
+                statementParams.getStatement() +
                 " WHERE id = :id";
 
-        template.update(sql, statementParams.params);
+        template.update(sql, statementParams.getParams());
 
         log.info("Updated {} fields in MessageTemplate {}", fieldUpdates.size(), request.getId());
         return fieldUpdates;
@@ -148,19 +154,26 @@ public class MessageTemplatesRepository {
     @Transactional
     public List<MessageTemplate> getMessageTemplates(@NotNull final MessageTemplate crit) {
 
-        SQLStatementParams params = new SQLStatementParams(crit);
-        params.buildForSelect();
+        SQLSelectStatementParams params = new SQLSelectStatementParams();
+        params.addField("status", crit.getStatus());
+        params.addField("notification_event_id", crit.getNotificationEventId());
+        params.addField("recipient_context_key", crit.getRecipientContextKey());
+        params.addField("content_lookup_type", crit.getContentLookupType());
+        params.addField("content_key", crit.getContentKey());
+
         String sql = "select id, notification_event_id, status, recipient_context_key, " +
                 "content_lookup_type, content_key, created_date, modified_date \n" +
                 "FROM message_templates \n" +
-                "WHERE " + params.statement;
+                "WHERE " + params.getStatement();
 
-        return template.query(sql, params.params, new RowMapperResultSetExtractor<>(new MessageTemplateRowMapper()));
+        return template.query(sql, params.getParams(), new RowMapperResultSetExtractor<>(new MessageTemplateRowMapper()));
     }
 
     /**
      * Get a single MessageTemplate, throwing a DataIntegrity error if more than one is found.
      * This is meant to determine if there exists a conflicting MessageTemplate
+     * NOTE: Only non-blank values will be used as criteria. Any value for which there is a blank, then, will result
+     * in tha field not being filtered, which may result in multiple templates mistakenly
      *
      * @param id {@link MessageTemplate} wherein values will be specified which should include all values which,
      *           together, represent a MessageTemplate which should only occur once
@@ -182,111 +195,6 @@ public class MessageTemplatesRepository {
         }
 
         return messageTemplates.isEmpty() ? null : messageTemplates.get(0);
-    }
-
-    /**
-     * Encapsulate statement params building these in queries/updates
-     */
-    private static class SQLStatementParams {
-        MessageTemplate msgTemplate;
-
-        /**
-         * As the statement in the context of a statement param, this is the statement representing the sub portion of
-         * the statement listing the properties (WHERE clause for SELECT, SET clause for UPDATE)
-         */
-        private String statement;
-        private final Map<String, Object> params = new HashMap<>();
-
-        public SQLStatementParams(MessageTemplate msgTemplate) {
-            this.msgTemplate = msgTemplate;
-        }
-
-        /**
-         * When {@link MessageTemplate} is used as a criteria for a statement, this helper will build the where clause
-         * and package the interpreted params needed for those. Using this build, this instance can be used to glean
-         * where clause for select statement and supporting params
-         */
-        void buildForSelect() {
-            StringBuilder builder = new StringBuilder();
-            appendProperty("notification_event_id", msgTemplate.getNotificationEventId(), builder);
-            appendProperty("status", msgTemplate.getStatus(), builder);
-            appendProperty("recipient_context_key", msgTemplate.getRecipientContextKey(), builder);
-            appendProperty("content_lookup_type", msgTemplate.getContentLookupType(), builder);
-            appendProperty("content_key", msgTemplate.getContentKey(), builder);
-
-            statement = builder.toString();
-        }
-
-        /**
-         * When {@link MessageTemplate} is used as a criteria for a statement, this helper will build the where clause
-         * and package the interpreted params needed for those. Using this build, this instance can be used to glean
-         * this=that portion of an update statement and params
-         * Note: Cheat here; that I'm taking this opportunity to build a map of old:new values for updated
-         * templates, but we'll need that map for publishing to the bus
-         * Note: Herein, the rule disallowing the updating of notificationContextId is enforced
-         *
-         * @param originalTemplate {@link MessageTemplate} naming the original form of that being updated
-         */
-        Set<DataUtils.FieldUpdate> buildForUpdate(MessageTemplate originalTemplate) {
-            Set<DataUtils.FieldUpdate> updates = new HashSet<>();
-            StringBuilder builder = new StringBuilder();
-
-            params.put("id", originalTemplate.getId()); // always where clause for an update
-
-            // Disallow updating notificationContextId
-
-            updates.add(appendProperty("status", originalTemplate.getStatus(),
-                    msgTemplate.getStatus(),
-                    builder));
-            updates.add(appendProperty("recipient_context_key", originalTemplate.getRecipientContextKey(),
-                    msgTemplate.getRecipientContextKey(),
-                    builder));
-            updates.add(appendProperty("content_lookup_type", originalTemplate.getContentLookupType(),
-                    msgTemplate.getContentLookupType(),
-                    builder));
-            updates.add(appendProperty("content_key", originalTemplate.getContentKey(),
-                    msgTemplate.getContentKey(),
-                    builder));
-
-            statement = builder.toString();
-
-            updates.remove(null);
-            return updates;
-        }
-
-        /**
-         * This busy body helper takes old and new values and a field name (matching the DB column name), as well as
-         * the statement presumed to be being built. It will return null if there is no difference in values, but will
-         * construct a {@link DataUtils.FieldUpdate} and return it
-         * Note: The rule that any value has to be replaced with a non-empty value is enforced here. If there is a
-         * requirement to blank out a value, that needs to be architected
-         *
-         * @return DataUtils.FieldUpdate if there is a diff in value. null otherwise
-         */
-        private DataUtils.FieldUpdate appendProperty(String fieldName, Object originalValue, Object newValue, StringBuilder statement) {
-            if (newValue != null && !StringUtils.isBlank(newValue.toString()) &&
-                    !Objects.equals(newValue, originalValue)) {
-                delimCriteria(statement, ", ").append(fieldName).append("= :").append(fieldName);
-                params.put(fieldName, newValue);
-                return new DataUtils.FieldUpdate(fieldName, originalValue, newValue);
-            }
-
-            return null;
-        }
-
-        private void appendProperty(String fieldName, Object value, StringBuilder statement) {
-            if (value != null) {
-                delimCriteria(statement, " AND ").append(fieldName).append("= :").append(fieldName);
-                params.put(fieldName, value);
-            }
-        }
-
-        private StringBuilder delimCriteria(StringBuilder builder, String delim) {
-            if (builder.length() > 0)
-                builder.append(delim);
-
-            return builder;
-        }
     }
 
     public static class MessageTemplateRowMapper implements RowMapper<MessageTemplate> {

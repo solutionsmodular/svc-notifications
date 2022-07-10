@@ -2,6 +2,7 @@ package com.solmod.notification.admin.data;
 
 import com.solmod.notification.domain.NotificationEvent;
 import com.solmod.notification.domain.Status;
+import com.solmod.notification.exception.DBRequestFailureException;
 import com.solmod.notification.exception.NotificationEventAlreadyExistsException;
 import com.solmod.notification.exception.NotificationEventNonexistentException;
 import org.junit.jupiter.api.DisplayName;
@@ -46,7 +47,7 @@ public class NotificationEventsRepositoryTest {
 
     @Test
     @DisplayName("Assert that we can create a NotificationEvent if it doesn't already exist per UniqueNotificationEventId")
-    void create_allClear() throws NotificationEventAlreadyExistsException {
+    void create_allClear() throws NotificationEventAlreadyExistsException, DBRequestFailureException {
         NotificationEvent request = buildFullyPopulatedNotificationEvent();
 
         doReturn(null, new NotificationEvent()).when(repo).getNotificationEvent(any(NotificationEvent.class));
@@ -62,7 +63,7 @@ public class NotificationEventsRepositoryTest {
 
     @Test
     @DisplayName("Assert that we cannot create a NotificationEvent and an error is logged if fields are missing")
-    void create_MissingFields(CapturedOutput captured) throws NotificationEventAlreadyExistsException {
+    void create_MissingFields(CapturedOutput captured) {
         NotificationEvent request = new NotificationEvent();
         request.setTenantId(345L);
 //        request.setEventSubject("Test"); Missing required field
@@ -71,17 +72,17 @@ public class NotificationEventsRepositoryTest {
         doReturn(emptyList()).when(repo).getNotificationEvents(any(NotificationEvent.class));
 
         // Call
-        repo.create(request);
+        assertThrows(DBRequestFailureException.class, () -> repo.create(request));
 
         // Assert
-        assertTrue(captured.getOut().contains("Failed attempt to save NotificationEvent"));
+        assertTrue(captured.getOut().contains("Failed attempt to save component"));
         // Find first to ensure it doesn't exist, use same find to load after save
         verify(repo, times(1)).getNotificationEvent(any(NotificationEvent.class));
     }
 
     @Test
     @DisplayName("Assert we get an Exception if the NotificationEvent already exists per UniqueNotificationEventId")
-    void create_alreadyExists() throws NotificationEventAlreadyExistsException {
+    void create_alreadyExists() throws NotificationEventAlreadyExistsException, DBRequestFailureException {
         doReturn(new NotificationEvent()).when(repo).getNotificationEvent(any(NotificationEvent.class));
         assertThrows(NotificationEventAlreadyExistsException.class, () -> repo.create(new NotificationEvent()));
         verify(repo, times(1)).create(any(NotificationEvent.class));
@@ -337,6 +338,28 @@ public class NotificationEventsRepositoryTest {
     @DisplayName("Assert for getNotificationEvent by null ID test not needed; @NonNull")
     void getNotificationEvent_byUniqueId_nullId() {
         assertTrue(true);
+    }
+
+    @Test
+    @DisplayName("Assert all params are considered in SQL statement when provided. By criteria ignores ID")
+    void getNotificationEvents_byAllCrit() {
+        NotificationEvent crit = new NotificationEvent();
+        crit.setTenantId(55L);
+        crit.setEventSubject("event_subject");
+        crit.setEventVerb("event_verb");
+        crit.setStatus(Status.ACTIVE);
+
+        // Test call
+        repo.getNotificationEvents(crit);
+
+        verify(template, times(1)).query(stringArgCaptor.capture(), anyMap(),
+                ArgumentMatchers.<RowMapperResultSetExtractor<NotificationEventsRepository.NotificationEventRowMapper>>any());
+
+        assertFalse(stringArgCaptor.getValue().contains(":id"));
+        assertTrue(stringArgCaptor.getValue().contains(":tenant_id"));
+        assertTrue(stringArgCaptor.getValue().contains(":event_subject"));
+        assertTrue(stringArgCaptor.getValue().contains(":event_verb"));
+        assertTrue(stringArgCaptor.getValue().contains(":status"));
     }
 
     @Test

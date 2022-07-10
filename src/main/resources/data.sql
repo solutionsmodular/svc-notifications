@@ -69,7 +69,8 @@ values (1, 'ORDER', 'CREATED', 'A'),
        (1, 'ORDER', 'RETURNED', 'A'),
        (1, 'CAL_EVENT', 'RSVPED', 'A'),
        (1, 'CAL_EVENT', 'STARTING', 'A'),
-       (1, 'CAL_EVENT', 'ENDING', 'A');
+       (1, 'CAL_EVENT', 'ENDING', 'A')
+;
 
 insert into message_templates(notification_event_id, status, recipient_context_key, content_lookup_type, content_key)
 select id, 'A', 'data.order.owner.email', 'LOCAL', 'ORDER_PLACED_OWNER_EMAIL' from notification_events
@@ -90,3 +91,8 @@ UNION
 select id, 'A', 'data.order.owner.email', 'LOCAL', 'CALEVENT_ENDING_EMAIL' from notification_events
 where event_subject = 'CAL_EVENT' and event_verb = 'ENDING'
 ;
+
+insert into notification_triggers(notification_event_id, uid, status)
+select id, 'existing-uid', 'A' from notification_events where event_subject = 'ORDER' and event_verb = 'CREATED'
+;
+
