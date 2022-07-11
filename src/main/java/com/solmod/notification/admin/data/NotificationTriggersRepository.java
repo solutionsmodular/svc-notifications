@@ -57,8 +57,6 @@ public class NotificationTriggersRepository {
             template.update(sql, paramSource, keyHolder);
 
             log.info("NotificationTrigger created per request");
-
-            // TODO: NOW STORE THE CONTEXT?
             return keyHolder.getKey() == null ? null : keyHolder.getKey().longValue();
         } catch (DataAccessException e) {
             log.error("DAE: Failed attempt to save component with missing fields: {}\n{}", e.getMessage(), request);

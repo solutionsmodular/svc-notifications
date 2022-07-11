@@ -49,7 +49,7 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
     public List<SolCommunication> apply(SolMessage solMessage) {
 
         // Find the appropriate event for the given message subject and verb
-        NotificationEvent notificationEvent = getNotificationEvent(solMessage); // TODO: cache these
+        NotificationEvent notificationEvent = getNotificationEvent(solMessage);
         if (notificationEvent == null) {
             return null; // No notifications configured for this event, so we can bail
         }
@@ -62,8 +62,8 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
             trigger = logNotificationTrigger(notificationEvent);
 
             try {
-                List<MessageTemplate> qualifyingTemplates = getRelatedMessageTemplates(trigger);
-                if (qualifyingTemplates.isEmpty()) {
+                List<MessageTemplate> allEventTemplates = getRelatedMessageTemplates(trigger);
+                if (allEventTemplates.isEmpty()) {
                     log.warn("NotificationEvent with no MessageTemplates: {}:{}. Should it be disabled??", notificationEvent.getEventSubject(), notificationEvent.getEventVerb());
 
                     trigger.setStatus(Status.DELETED);
@@ -72,10 +72,10 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
                 }
 
                 Map<String, Object> context = flatten(solMessage);
-                Map<String, Object> relevantContext = persistRelevantContext(trigger, context, qualifyingTemplates);
+                Map<String, Object> relevantContext = persistRelevantContext(trigger, context, allEventTemplates);
 
                 // Should only be here if all needed context exists
-                Set<NotificationDelivery> notificationDeliveries = determineAndBuildDeliveries(qualifyingTemplates, relevantContext);
+                Set<NotificationDelivery> notificationDeliveries = determineAndBuildDeliveries(allEventTemplates, relevantContext);
                 log.debug("Found {} deliveries for the given trigger", notificationDeliveries.size());
                 // TODO: send deliveries to be delivered
             } catch (InsufficientContextException e) {
@@ -153,7 +153,6 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
      */
     Set<NotificationDelivery> determineAndBuildDeliveries(List<MessageTemplate> templates, Map<String, Object> relevantContext)
             throws InsufficientContextException {
-        // Get all active MessageTemplates that apply to given NotificationTrigger
 
         Set<NotificationDelivery> deliveries = new HashSet<>();
 
@@ -171,16 +170,15 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
 
             //
             // BUILD
-            Object recipientAddy = relevantContext.get(messageTemplate.getRecipientContextKey());
+            Object recipient = relevantContext.get(messageTemplate.getRecipientContextKey());
             // Per orig design, this shouldn't be null, but could actually be blank, which would be bad
-            if (recipientAddy != null && StringUtils.isBlank(recipientAddy.toString())) {
-                delivery.setRecipient(recipientAddy.toString());
+            if (recipient != null && StringUtils.isBlank(recipient.toString())) {
+                delivery.setRecipient(recipient.toString());
             } else {
                 throw new InsufficientContextException("Not enough context to determine recipient addy");
             }
 
             delivery.setMessageTemplateId(messageTemplate.getId());
-            delivery.setContext(relevantContext);
             // TODO: Persist delivery. In persist, could generate uid so we don't have to go get it
             deliveries.add(delivery);
         }
