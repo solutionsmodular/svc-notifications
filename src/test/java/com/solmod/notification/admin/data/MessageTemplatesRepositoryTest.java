@@ -1,6 +1,6 @@
 package com.solmod.notification.admin.data;
 
-import com.solmod.notification.domain.ContentLookupType;
+import com.solmod.notification.domain.MessageContentPurpose;
 import com.solmod.notification.domain.MessageTemplate;
 import com.solmod.notification.domain.Status;
 import com.solmod.notification.exception.DBRequestFailureException;
@@ -67,7 +67,7 @@ public class MessageTemplatesRepositoryTest {
     void create_MissingFields(CapturedOutput captured) {
         MessageTemplate request = new MessageTemplate();
         request.setNotificationEventId(345L);
-        request.setContentLookupType(ContentLookupType.LOCAL);
+        request.setMessageContentPurpose(MessageContentPurpose.SMS);
         request.setStatus(Status.ACTIVE);
         doReturn(emptyList()).when(repo).getMessageTemplates(any(MessageTemplate.class));
 
@@ -95,7 +95,7 @@ public class MessageTemplatesRepositoryTest {
         origFormOfRequest.setId(155L);
         origFormOfRequest.setStatus(Status.ACTIVE);
         origFormOfRequest.setNotificationEventId(155L);
-        origFormOfRequest.setContentLookupType(ContentLookupType.URL);
+        origFormOfRequest.setMessageContentPurpose(MessageContentPurpose.EMAIL);
         origFormOfRequest.setContentKey("OG-content-key");
         origFormOfRequest.setRecipientContextKey("a-recipient-context-key");
 
@@ -120,7 +120,7 @@ public class MessageTemplatesRepositoryTest {
         origFormOfRequest.setId(155L);
         origFormOfRequest.setNotificationEventId(155L);
         origFormOfRequest.setStatus(Status.ACTIVE);
-        origFormOfRequest.setContentLookupType(ContentLookupType.URL);
+        origFormOfRequest.setMessageContentPurpose(MessageContentPurpose.EMAIL);
         origFormOfRequest.setContentKey("OG-content-key");
         origFormOfRequest.setRecipientContextKey("a-recipient-context-key");
 
@@ -128,7 +128,7 @@ public class MessageTemplatesRepositoryTest {
         request.setId(155L);
         request.setNotificationEventId(155L);
         request.setStatus(Status.INACTIVE);
-        request.setContentLookupType(ContentLookupType.LOCAL);
+        request.setMessageContentPurpose(MessageContentPurpose.SMS);
         request.setContentKey("new-content-key");
         request.setRecipientContextKey(origFormOfRequest.getRecipientContextKey());
 
@@ -146,14 +146,14 @@ public class MessageTemplatesRepositoryTest {
         MessageTemplate origFormOfRequest = new MessageTemplate();
         origFormOfRequest.setId(155L);
         origFormOfRequest.setStatus(Status.INACTIVE);
-        origFormOfRequest.setContentLookupType(ContentLookupType.URL);
+        origFormOfRequest.setMessageContentPurpose(MessageContentPurpose.EMAIL);
         origFormOfRequest.setContentKey("OG-content-key");
         origFormOfRequest.setRecipientContextKey("a-recipient-context-key");
 
         MessageTemplate request = new MessageTemplate();
         request.setId(origFormOfRequest.getId());
         request.setStatus(origFormOfRequest.getStatus());
-        request.setContentLookupType(origFormOfRequest.getContentLookupType());
+        request.setMessageContentPurpose(origFormOfRequest.getMessageContentPurpose());
         request.setContentKey(origFormOfRequest.getContentKey());
         request.setRecipientContextKey(origFormOfRequest.getRecipientContextKey());
 
@@ -188,21 +188,21 @@ public class MessageTemplatesRepositoryTest {
         MessageTemplate original = new MessageTemplate();
         original.setId(155L);
         original.setStatus(Status.ACTIVE);
-        original.setContentLookupType(ContentLookupType.LOCAL);
+        original.setMessageContentPurpose(MessageContentPurpose.SMS);
         original.setContentKey("a-content-key");
         original.setRecipientContextKey("a-recipient-context-key");
 
         MessageTemplate request = new MessageTemplate();
         request.setId(155L);
         request.setStatus(Status.ACTIVE);
-        request.setContentLookupType(ContentLookupType.LOCAL);
+        request.setMessageContentPurpose(MessageContentPurpose.SMS);
         request.setContentKey("b-content-key");
         request.setRecipientContextKey("b-recipient-context-key");
 
         MessageTemplate conflicting = new MessageTemplate();
         conflicting.setId(156L);
         conflicting.setStatus(Status.ACTIVE);
-        conflicting.setContentLookupType(ContentLookupType.LOCAL);
+        conflicting.setMessageContentPurpose(MessageContentPurpose.SMS);
         conflicting.setContentKey(request.getContentKey());
         conflicting.setRecipientContextKey(request.getRecipientContextKey());
 
@@ -220,21 +220,21 @@ public class MessageTemplatesRepositoryTest {
         MessageTemplate original = new MessageTemplate();
         original.setId(155L);
         original.setStatus(Status.fromCode(existingStatus));
-        original.setContentLookupType(ContentLookupType.LOCAL);
+        original.setMessageContentPurpose(MessageContentPurpose.SMS);
         original.setContentKey("a-content-key");
         original.setRecipientContextKey("a-recipient-context-key");
 
         MessageTemplate request = new MessageTemplate();
         request.setId(155L);
         request.setStatus(Status.fromCode(requestStatus));
-        request.setContentLookupType(ContentLookupType.LOCAL);
+        request.setMessageContentPurpose(MessageContentPurpose.SMS);
         request.setContentKey("b-content-key");
         request.setRecipientContextKey("b-recipient-context-key");
 
         MessageTemplate conflicting = new MessageTemplate();
         conflicting.setId(156L);
         conflicting.setStatus(Status.fromCode(conflictingStatus));
-        conflicting.setContentLookupType(ContentLookupType.LOCAL);
+        conflicting.setMessageContentPurpose(MessageContentPurpose.SMS);
         conflicting.setContentKey(request.getContentKey());
         conflicting.setRecipientContextKey(request.getRecipientContextKey());
 
@@ -354,7 +354,7 @@ public class MessageTemplatesRepositoryTest {
         crit.setNotificationEventId(55L);
         crit.setRecipientContextKey("recipient_context_key");
         crit.setContentKey("content_key");
-        crit.setContentLookupType(ContentLookupType.LOCAL);
+        crit.setMessageContentPurpose(MessageContentPurpose.SMS);
         crit.setStatus(Status.ACTIVE);
 
         // Test call
@@ -367,7 +367,7 @@ public class MessageTemplatesRepositoryTest {
         assertTrue(stringArgCaptor.getValue().contains(":notification_event_id"));
         assertTrue(stringArgCaptor.getValue().contains(":recipient_context_key"));
         assertTrue(stringArgCaptor.getValue().contains(":content_key"));
-        assertTrue(stringArgCaptor.getValue().contains(":content_lookup_type"));
+        assertTrue(stringArgCaptor.getValue().contains(":message_content_purpose"));
         assertTrue(stringArgCaptor.getValue().contains(":status"));
     }
 
@@ -378,7 +378,7 @@ public class MessageTemplatesRepositoryTest {
         crit.setNotificationEventId(55L);
         crit.setRecipientContextKey("recipient_context_key");
         crit.setContentKey("content_key");
-        crit.setContentLookupType(ContentLookupType.LOCAL);
+        crit.setMessageContentPurpose(MessageContentPurpose.SMS);
         crit.setStatus(null);
 
         // Test call
@@ -391,7 +391,7 @@ public class MessageTemplatesRepositoryTest {
         assertTrue(stringArgCaptor.getValue().contains(":notification_event_id"));
         assertTrue(stringArgCaptor.getValue().contains(":recipient_context_key"));
         assertTrue(stringArgCaptor.getValue().contains(":content_key"));
-        assertTrue(stringArgCaptor.getValue().contains(":content_lookup_type"));
+        assertTrue(stringArgCaptor.getValue().contains(":message_content_purpose"));
         assertFalse(stringArgCaptor.getValue().contains(":status"));
     }
 
@@ -400,7 +400,7 @@ public class MessageTemplatesRepositoryTest {
         request.setNotificationEventId(1L);
         request.setRecipientContextKey("find.recipient.address.here");
         request.setStatus(Status.ACTIVE);
-        request.setContentLookupType(ContentLookupType.LOCAL);
+        request.setMessageContentPurpose(MessageContentPurpose.SMS);
         request.setContentKey("TEST_CONTENT_KEY");
 
         return request;

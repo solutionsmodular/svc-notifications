@@ -9,10 +9,12 @@ values ('A', 'Active'),
        ('PP', 'Pending Permission'),
        ('PD', 'Pending Delivery')
        ;
-insert into content_lookup_types(type, description)
-values ('URL', 'Local content HTML. Key should be http or https URL'),
-       ('CONTENT_KEY', 'Using SolMod infrastructure, this content key should be used for content management'),
-       ('LOCAL', 'Reference the local_content table by content key');
+insert into message_content_purposes(type, description)
+values ('EMAIL', 'Suited to Email'),
+       ('SMS', 'Suited to SMS'),
+       ('PUSH', 'Suited to Push Notifications'),
+       ('TIMELINE', 'Suited to Timeline entry')
+       ;
 
 
 insert into local_content(tenant_id, namespace, content_key, content_block)
@@ -72,23 +74,23 @@ values (1, 'ORDER', 'CREATED', 'A'),
        (1, 'CAL_EVENT', 'ENDING', 'A')
 ;
 
-insert into message_templates(notification_event_id, status, recipient_context_key, content_lookup_type, content_key)
-select id, 'A', 'data.order.owner.email', 'LOCAL', 'ORDER_PLACED_OWNER_EMAIL' from notification_events
+insert into message_templates(notification_event_id, status, recipient_context_key, message_content_purpose, content_key)
+select id, 'A', 'data.order.owner.email', 'EMAIL', 'ORDER_PLACED_OWNER_EMAIL' from notification_events
 where event_subject = 'ORDER' and event_verb = 'CREATED'
 UNION
-select id, 'A', 'data.order.owner.sponsor.email', 'LOCAL', 'ORDER_PLACED_SPONSOR_EMAIL' from notification_events
+select id, 'A', 'data.order.owner.sponsor.email', 'EMAIL', 'ORDER_PLACED_SPONSOR_EMAIL' from notification_events
 where event_subject = 'ORDER' and event_verb = 'CREATED'
 UNION
-select id, 'A', 'data.order.owner.email', 'LOCAL', 'ORDER_RETURNED_OWNER_EMAIL' from notification_events
+select id, 'A', 'data.order.owner.email', 'EMAIL', 'ORDER_RETURNED_OWNER_EMAIL' from notification_events
 where event_subject = 'ORDER' and event_verb = 'RETURNED'
 UNION
-select id, 'A', 'data.order.owner.email', 'LOCAL', 'CALEVENT_RSVPED_INVITEE_EMAIL' from notification_events
+select id, 'A', 'data.order.owner.email', 'EMAIL', 'CALEVENT_RSVPED_INVITEE_EMAIL' from notification_events
 where event_subject = 'CAL_EVENT' and event_verb = 'RSVPED'
 UNION
-select id, 'A', 'data.order.owner.email', 'LOCAL', 'CALEVENT_STARTING_EMAIL' from notification_events
+select id, 'A', 'data.order.owner.email', 'EMAIL', 'CALEVENT_STARTING_EMAIL' from notification_events
 where event_subject = 'CAL_EVENT' and event_verb = 'STARTING'
 UNION
-select id, 'A', 'data.order.owner.email', 'LOCAL', 'CALEVENT_ENDING_EMAIL' from notification_events
+select id, 'A', 'data.order.owner.email', 'EMAIL', 'CALEVENT_ENDING_EMAIL' from notification_events
 where event_subject = 'CAL_EVENT' and event_verb = 'ENDING'
 ;
 

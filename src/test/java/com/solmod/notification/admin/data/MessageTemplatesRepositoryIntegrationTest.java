@@ -1,6 +1,6 @@
 package com.solmod.notification.admin.data;
 
-import com.solmod.notification.domain.ContentLookupType;
+import com.solmod.notification.domain.MessageContentPurpose;
 import com.solmod.notification.domain.MessageTemplate;
 import com.solmod.notification.domain.Status;
 import com.solmod.notification.exception.DBRequestFailureException;
@@ -40,7 +40,7 @@ class MessageTemplatesRepositoryIntegrationTest {
         MessageTemplate request = new MessageTemplate();
         request.setNotificationEventId(1L);
         request.setContentKey("some.summary.key");
-        request.setContentLookupType(ContentLookupType.LOCAL);
+        request.setMessageContentPurpose(MessageContentPurpose.EMAIL);
         request.setRecipientContextKey("some.recipient.context.key");
         request.setStatus(Status.ACTIVE);
 
@@ -73,7 +73,7 @@ class MessageTemplatesRepositoryIntegrationTest {
         // Assert other fields are as they were
         assertEquals(existing.getContentKey(), updated.getContentKey());
         assertEquals(existing.getStatus(), updated.getStatus());
-        assertEquals(existing.getContentLookupType(), updated.getContentLookupType());
+        assertEquals(existing.getMessageContentPurpose(), updated.getMessageContentPurpose());
         assertTrue(updated.getDeliveryCriteria().entrySet().containsAll(existing.getDeliveryCriteria().entrySet()));
     }
 }

@@ -14,16 +14,15 @@ create table notification_component_status
 -- Describes the manner by which the content for a notification subject or body should be obtained
 -- Notification Engine should allow managing its own content, without features, outside the context of Content Mgr
 -- Also allow for URL
-create table content_lookup_types
+create table message_content_purposes
 (
     type        varchar(50) unique not null,
     description varchar(255)       not null,
-    constraint content_lookup_types_pk
+    constraint message_content_purposes_pk
         primary key (type)
 );
 
 -- In systems not using Content Manager, Notification Engine can store its own content
--- TODO: CMS vs Local is flagged by tenant configuration. See https://solutionsmodular.atlassian.net/browse/NE-12
 create table local_content
 (
     id            BIGINT auto_increment,
@@ -71,22 +70,22 @@ create table notification_events
 -- indicating a constant)
 create table message_templates
 (
-    id                    BIGINT auto_increment,
-    notification_event_id BIGINT                               not null,
-    recipient_context_key varchar(255)                         null,
-    content_lookup_type   varchar(50)                          NOT NULL,
-    content_key           varchar(50)                          not null,
-    status                varchar(1)                           not null,
-    created_date          datetime DEFAULT CURRENT_TIMESTAMP   not null,
-    modified_date         datetime ON UPDATE CURRENT_TIMESTAMP null,
+    id                      BIGINT auto_increment,
+    notification_event_id   BIGINT                               not null,
+    recipient_context_key   varchar(255)                         null,
+    message_content_purpose varchar(50)                          NOT NULL,
+    content_key             varchar(50)                          not null,
+    status                  varchar(1)                           not null,
+    created_date            datetime DEFAULT CURRENT_TIMESTAMP   not null,
+    modified_date           datetime ON UPDATE CURRENT_TIMESTAMP null,
     constraint message_templates_pk
         primary key (id),
     constraint message_templates_notification_context_fk
         FOREIGN KEY (notification_event_id) references notification_events (id),
     constraint message_templates_status_fk
         FOREIGN KEY (status) references notification_component_status (status),
-    constraint message_template_summary_content_lookup_type_fk
-        FOREIGN KEY (content_lookup_type) references content_lookup_types (type)
+    constraint message_template_summary_message_content_purpose_fk
+        FOREIGN KEY (message_content_purpose) references message_content_purposes (type)
 );
 
 --

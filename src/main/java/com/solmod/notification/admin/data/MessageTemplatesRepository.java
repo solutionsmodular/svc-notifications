@@ -48,15 +48,15 @@ public class MessageTemplatesRepository {
 
         String sql = "INSERT INTO message_templates " +
                 "(notification_event_id, status, recipient_context_key, " +
-                "content_lookup_type, content_key) " +
+                "message_content_purpose, content_key) " +
                 "VALUES (:notification_event_id, :status, " +
-                ":recipient_context_key, :content_lookup_type, :content_key)";
+                ":recipient_context_key, :message_content_purpose, :content_key)";
         try {
             template.update(sql, Map.of(
                     "notification_event_id", request.getNotificationEventId(),
                     "status", request.getStatus().code(),
                     "recipient_context_key", request.getRecipientContextKey(),
-                    "content_lookup_type", request.getContentLookupType().name(),
+                    "message_content_purpose", request.getMessageContentPurpose().name(),
                     "content_key", request.getContentKey()
             ));
 
@@ -96,7 +96,7 @@ public class MessageTemplatesRepository {
         SQLUpdateStatementParams statementParams = new SQLUpdateStatementParams(request.getId());
         statementParams.addField("status", origById.getStatus(), request.getStatus());
         statementParams.addField("recipient_context_key", origById.getRecipientContextKey(), request.getRecipientContextKey());
-        statementParams.addField("content_lookup_type", origById.getContentLookupType(), request.getContentLookupType());
+        statementParams.addField("message_content_purpose", origById.getMessageContentPurpose(), request.getMessageContentPurpose());
         statementParams.addField("content_key", origById.getContentKey(), request.getContentKey());
         Set<DataUtils.FieldUpdate> fieldUpdates = statementParams.getUpdates();
 
@@ -128,7 +128,7 @@ public class MessageTemplatesRepository {
         }
 
         String sql = "select id, notification_event_id, status, recipient_context_key, " +
-                "content_lookup_type, content_key, modified_date, created_date " +
+                "message_content_purpose, content_key, modified_date, created_date " +
                 "FROM message_templates where id = :id";
 
         List<MessageTemplate> results = template.query(sql, Map.of("id", id), new MessageTemplateRowMapper());
@@ -158,11 +158,11 @@ public class MessageTemplatesRepository {
         params.addField("status", crit.getStatus());
         params.addField("notification_event_id", crit.getNotificationEventId());
         params.addField("recipient_context_key", crit.getRecipientContextKey());
-        params.addField("content_lookup_type", crit.getContentLookupType());
+        params.addField("message_content_purpose", crit.getMessageContentPurpose());
         params.addField("content_key", crit.getContentKey());
 
         String sql = "select id, notification_event_id, status, recipient_context_key, " +
-                "content_lookup_type, content_key, created_date, modified_date \n" +
+                "message_content_purpose, content_key, created_date, modified_date \n" +
                 "FROM message_templates \n" +
                 "WHERE " + params.getStatement();
 
@@ -206,7 +206,7 @@ public class MessageTemplatesRepository {
             messageTemplate.setStatus(Status.fromCode(rs.getString("status")));
             messageTemplate.setRecipientContextKey(rs.getString("recipient_context_key"));
             messageTemplate.setContentKey(rs.getString("content_key"));
-            messageTemplate.setContentLookupType(ContentLookupType.valueOf(rs.getString("content_lookup_type")));
+            messageTemplate.setMessageContentPurpose(MessageContentPurpose.valueOf(rs.getString("message_content_purpose")));
 
             Timestamp dateTime = rs.getTimestamp("modified_date");
             if (dateTime != null)

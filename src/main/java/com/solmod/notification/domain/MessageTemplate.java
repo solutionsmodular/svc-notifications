@@ -12,7 +12,7 @@ public class MessageTemplate extends Audited {
     private Long notificationEventId;
     private Status status;
     private String recipientContextKey;
-    private ContentLookupType contentLookupType;
+    private MessageContentPurpose messageContentPurpose;
     private String contentKey;
     private Map<String, Object> deliveryCriteria = new HashMap<>();
 
@@ -40,12 +40,12 @@ public class MessageTemplate extends Audited {
         this.recipientContextKey = recipientContextKey;
     }
 
-    public ContentLookupType getContentLookupType() {
-        return contentLookupType;
+    public MessageContentPurpose getMessageContentPurpose() {
+        return messageContentPurpose;
     }
 
-    public void setContentLookupType(ContentLookupType contentLookupType) {
-        this.contentLookupType = contentLookupType;
+    public void setMessageContentPurpose(MessageContentPurpose messageContentPurpose) {
+        this.messageContentPurpose = messageContentPurpose;
     }
 
     public String getContentKey() {
@@ -76,7 +76,7 @@ public class MessageTemplate extends Audited {
 
         if (!Objects.equals(notificationEventId, that.notificationEventId)) return false;
         if (!Objects.equals(recipientContextKey, that.recipientContextKey)) return false;
-        if (!Objects.equals(contentLookupType, that.contentLookupType)) return false;
+        if (!Objects.equals(messageContentPurpose, that.messageContentPurpose)) return false;
         if (!Objects.equals(contentKey, that.contentKey)) return false;
         if (!Objects.equals(status, that.status)) return false;
         return Objects.equals(deliveryCriteria, that.deliveryCriteria);
@@ -87,7 +87,7 @@ public class MessageTemplate extends Audited {
         int result = super.hashCode();
         result += (status != null ? status.hashCode() : 0);
         result += (recipientContextKey != null ? recipientContextKey.hashCode() : 0);
-        result += (contentLookupType != null ? contentLookupType.hashCode() : 0);
+        result += (messageContentPurpose != null ? messageContentPurpose.hashCode() : 0);
         result += (contentKey != null ? contentKey.hashCode() : 0);
         result += (deliveryCriteria != null ? deliveryCriteria.hashCode() : 0);
 
