@@ -39,6 +39,7 @@ public class NotificationTriggersRepository {
     /**
      * Create a new NotificationTrigger, which is an instance of receipt of an event with a subject/verb for which there
      * is a NotificationEvent.
+     * NOTE: This method will update the given request with the resulting ID
      *
      * @param request {@link NotificationTrigger} representing the request.
      */
@@ -57,13 +58,15 @@ public class NotificationTriggersRepository {
             template.update(sql, paramSource, keyHolder);
 
             log.info("NotificationTrigger created per request");
-            return keyHolder.getKey() == null ? null : keyHolder.getKey().longValue();
+            Long id = keyHolder.getKey() == null ? null : keyHolder.getKey().longValue();
+            request.setId(id);
+            return id;
         } catch (DataAccessException e) {
             log.error("DAE: Failed attempt to save component with missing fields: {}\n{}", e.getMessage(), request);
             throw new DBRequestFailureException("DB failure creating NotificationTrigger: " + e.getMessage());
         }  catch (NullPointerException e) {
             log.warn("NPE: Failed attempt to save component with missing fields\n    {}", request);
-            throw new DBRequestFailureException("DB failure creating NotificationTrigger: " + e.getMessage());
+            throw new DBRequestFailureException("DB failure creating NotificationTrigger: " + request);
         }
     }
 

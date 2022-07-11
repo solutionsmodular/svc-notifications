@@ -66,7 +66,7 @@ public class NotificationEventsRepository {
             throw new DBRequestFailureException("DB failure creating NotificationEvent: " + e.getMessage());
         }  catch (NullPointerException e) {
             log.warn("NPE: Failed attempt to save component with missing fields\n    {}", request);
-            throw new DBRequestFailureException("DB failure creating NotificationEvent: " + e.getMessage());
+            throw new DBRequestFailureException("DB failure creating NotificationEvent: " + request);
         }
     }
 

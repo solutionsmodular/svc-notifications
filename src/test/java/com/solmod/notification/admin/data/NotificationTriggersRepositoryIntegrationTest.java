@@ -62,7 +62,6 @@ class NotificationTriggersRepositoryIntegrationTest {
         NotificationTrigger criteria = new NotificationTrigger();
         criteria.setUid("existing-uid");
 
-        NotificationTriggersRepository triggerRepo = this.triggerRepo;
         List<NotificationTrigger> notificationTriggers = triggerRepo.getNotificationTriggers(criteria);
 
         assertEquals(1, notificationTriggers.size());

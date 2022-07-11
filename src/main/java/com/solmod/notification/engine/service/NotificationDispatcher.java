@@ -3,6 +3,7 @@ package com.solmod.notification.engine.service;
 import com.solmod.commons.StringifyException;
 import com.solmod.notification.admin.data.MessageTemplatesRepository;
 import com.solmod.notification.admin.data.NotificationEventsRepository;
+import com.solmod.notification.admin.data.NotificationTriggerContextRepository;
 import com.solmod.notification.admin.data.NotificationTriggersRepository;
 import com.solmod.notification.domain.*;
 import com.solmod.notification.exception.DBRequestFailureException;
@@ -29,12 +30,19 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
     NotificationEventsRepository neRepo;
     MessageTemplatesRepository mtRepo;
     NotificationTriggersRepository ntRepo;
+    NotificationTriggerContextRepository ntcRepo;
 
     Logger log = LoggerFactory.getLogger(getClass());
 
     @Autowired
-    public NotificationDispatcher(MessageTemplatesRepository mtRepo) {
+    public NotificationDispatcher(NotificationEventsRepository neRepo,
+                                  MessageTemplatesRepository mtRepo,
+                                  NotificationTriggersRepository ntRepo,
+                                  NotificationTriggerContextRepository ntcRepo) {
+        this.neRepo = neRepo;
         this.mtRepo = mtRepo;
+        this.ntRepo = ntRepo;
+        this.ntcRepo = ntcRepo;
     }
 
     /**
@@ -82,13 +90,10 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
                 trigger.setStatus(Status.PENDING_CONTEXT);
                 ntRepo.update(trigger);
             }
-        } catch (NoSuchAlgorithmException | StringifyException e) {
-            // TODO: handle this
-        } catch (NotificationTriggerNonexistentException e) {
-            log.error("Somehow managed a missing NotificationTrigger when trying to update status: {}", trigger);
+        } catch (NoSuchAlgorithmException | StringifyException | DBRequestFailureException e) {
+            log.error("FATAL: {} when trying to handle event message {} | NotificationEvent: {}",
+                    e.getMessage(), solMessage, trigger);
         }
-
-        // That should be the end of it. A Job should poll notification deliveries
 
         return null;
     }
@@ -114,7 +119,7 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
     Map<String, Object> persistRelevantContext(NotificationTrigger trigger,
                                                Map<String, Object> context,
                                                List<MessageTemplate> qualifyingTemplates)
-            throws InsufficientContextException {
+            throws InsufficientContextException, DBRequestFailureException {
 
         Set<String> propertiesNeeded = new HashSet<>();
 
@@ -134,7 +139,8 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
             }
         }
 
-        // TODO: batch save whatever relevant context we have for the trigger
+        // NE-36
+        ntcRepo.create(trigger.getId(), relevantContext);
 
         // Now, ensure the keys in context contain all that are needed
         if (errorMessage.length() > 0) {
