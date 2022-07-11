@@ -76,7 +76,6 @@ public class ObjectUtils {
         String json = toJson(context, new JsonMapper());
         Map<String, Object> flattened = JsonFlattener.flattenAsMap(json);
 
-        System.out.println(flattened);
         return flattened;
     }
 }

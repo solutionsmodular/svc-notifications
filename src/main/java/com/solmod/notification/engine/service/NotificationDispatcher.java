@@ -8,7 +8,6 @@ import com.solmod.notification.admin.data.NotificationTriggersRepository;
 import com.solmod.notification.domain.*;
 import com.solmod.notification.exception.DBRequestFailureException;
 import com.solmod.notification.exception.InsufficientContextException;
-import com.solmod.notification.exception.NotificationTriggerNonexistentException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,17 +66,15 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
         NotificationTrigger trigger = null;
 
         try {
-            trigger = logNotificationTrigger(notificationEvent);
 
             try {
-                List<MessageTemplate> allEventTemplates = getRelatedMessageTemplates(trigger);
+                List<MessageTemplate> allEventTemplates = getRelatedMessageTemplates(notificationEvent.getId());
                 if (allEventTemplates.isEmpty()) {
                     log.warn("NotificationEvent with no MessageTemplates: {}:{}. Should it be disabled??", notificationEvent.getEventSubject(), notificationEvent.getEventVerb());
-
-                    trigger.setStatus(Status.DELETED);
-                    ntRepo.update(trigger);
                     return Collections.emptyList();
                 }
+
+                trigger = logNotificationTrigger(notificationEvent);
 
                 Map<String, Object> context = flatten(solMessage);
                 Map<String, Object> relevantContext = persistRelevantContext(trigger, context, allEventTemplates);
@@ -185,7 +182,7 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
             }
 
             delivery.setMessageTemplateId(messageTemplate.getId());
-            // TODO: Persist delivery. In persist, could generate uid so we don't have to go get it
+            // TODO: Persist delivery. In persist, could generate uid so we don't have to go get ID
             deliveries.add(delivery);
         }
 
@@ -195,13 +192,13 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
     /**
      * Helper method to get all active MessageTemplates that apply to the given NotificationTrigger
      *
-     * @param trigger {@link NotificationTrigger} Instance of an event for which there is a notification configured
+     * @param notificationEventId The {@link NotificationEvent} for which to retrieve all MessageTemplates
      * @return List of {@link MessageTemplate}s which subscribe to the given {@link NotificationTrigger}
      */
 
-    List<MessageTemplate> getRelatedMessageTemplates(NotificationTrigger trigger) {
+    List<MessageTemplate> getRelatedMessageTemplates(Long notificationEventId) {
         MessageTemplate criteria = new MessageTemplate();
-        criteria.setNotificationEventId(trigger.getNotificationEventId());
+        criteria.setNotificationEventId(notificationEventId);
         criteria.setStatus(Status.ACTIVE);
         return mtRepo.getMessageTemplates(criteria);
     }
