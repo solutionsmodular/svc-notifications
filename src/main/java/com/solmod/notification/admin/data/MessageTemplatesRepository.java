@@ -62,7 +62,7 @@ public class MessageTemplatesRepository {
 
             log.info("Message template created per request");
         } catch (DataAccessException e) {
-            log.error("DAE: Failed attempt to save component with missing fields: {}\n{}", e.getMessage(), request);
+            log.error("DAE: Failed attempt to save component: {}\n{}", e.getMessage(), request);
             throw new DBRequestFailureException("DB failure creating MessageTemplate: " + e.getMessage());
         }  catch (NullPointerException e) {
             log.warn("NPE: Failed attempt to save component with missing fields\n    {}", request);

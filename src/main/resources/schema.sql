@@ -4,8 +4,8 @@ use ne;
 
 create table notification_component_status
 (
-    status      varchar(24) unique not null,
-    description varchar(256)       not null,
+    status      varchar(3) unique not null,
+    description varchar(256)      not null,
     constraint status_pk
         primary key (status)
 );
@@ -28,7 +28,7 @@ create table notification_events
     tenant_id     BIGINT                               not null,
     event_subject varchar(50)                          null,
     event_verb    varchar(50)                          null,
-    status        varchar(1)                           not null,
+    status        varchar(3)                           not null,
     created_date  datetime DEFAULT CURRENT_TIMESTAMP   not null,
     modified_date datetime ON UPDATE CURRENT_TIMESTAMP null,
     constraint notification_events_pk
@@ -48,7 +48,7 @@ create table message_templates
     recipient_context_key   varchar(255)                         null,
     message_content_purpose varchar(50)                          NOT NULL,
     content_key             varchar(50)                          not null,
-    status                  varchar(1)                           not null,
+    status                  varchar(3)                           not null,
     created_date            datetime DEFAULT CURRENT_TIMESTAMP   not null,
     modified_date           datetime ON UPDATE CURRENT_TIMESTAMP null,
     constraint message_templates_pk
@@ -81,7 +81,7 @@ create table notification_triggers
     id                    BIGINT auto_increment              not null,
     notification_event_id BIGINT                             not null,
     uid                   varchar(255)                       not null,
-    status                varchar(1)                         not null,
+    status                varchar(3)                         not null,
     created_date          datetime DEFAULT CURRENT_TIMESTAMP not null,
     modified_date         datetime                           null,
     constraint notification_events_pk
@@ -109,12 +109,14 @@ create table notification_trigger_context
 
 create table notification_deliveries
 (
-    id                  BIGINT auto_increment              not null,
-    recipient           varchar(255)                       not null, -- Still in design. Global ID of a user/contact
-    message_template_id BIGINT                             not null,
-    status              varchar(1)                         not null,
-    created_date        datetime DEFAULT CURRENT_TIMESTAMP not null,
-    modified_date       datetime                           null,
+    id                   BIGINT auto_increment              not null,
+    recipient            varchar(255)                       not null, -- Still in design. Global ID of a user/contact
+    message_template_id  BIGINT                             not null,
+    message_body_uri     varchar(255)                       null,
+    delivery_process_key varchar(255)                       null,
+    status               varchar(3)                         not null,
+    created_date         datetime DEFAULT CURRENT_TIMESTAMP not null,
+    modified_date        datetime                           null,
     constraint notification_deliveries_pk
         primary key (id),
     constraint notification_deliveries_message_template_fk

@@ -1,10 +1,7 @@
 package com.solmod.notification.engine.service;
 
 import com.solmod.commons.StringifyException;
-import com.solmod.notification.admin.data.MessageTemplatesRepository;
-import com.solmod.notification.admin.data.NotificationEventsRepository;
-import com.solmod.notification.admin.data.NotificationTriggerContextRepository;
-import com.solmod.notification.admin.data.NotificationTriggersRepository;
+import com.solmod.notification.admin.data.*;
 import com.solmod.notification.domain.*;
 import com.solmod.notification.exception.DBRequestFailureException;
 import com.solmod.notification.exception.InsufficientContextException;
@@ -14,14 +11,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.function.Function;
 
 import static com.solmod.commons.ObjectUtils.flatten;
-import static com.solmod.commons.SolStringUtils.bytesToHex;
+import static com.solmod.notification.admin.data.DataUtils.generateUid;
 
 @Service("NotificationDispatcher")
 public class NotificationDispatcher implements Function<SolMessage, List<SolCommunication>> {
@@ -30,6 +25,7 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
     MessageTemplatesRepository mtRepo;
     NotificationTriggersRepository ntRepo;
     NotificationTriggerContextRepository ntcRepo;
+    NotificationDeliveriesRepository ndRepo;
 
     Logger log = LoggerFactory.getLogger(getClass());
 
@@ -37,11 +33,13 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
     public NotificationDispatcher(NotificationEventsRepository neRepo,
                                   MessageTemplatesRepository mtRepo,
                                   NotificationTriggersRepository ntRepo,
-                                  NotificationTriggerContextRepository ntcRepo) {
+                                  NotificationTriggerContextRepository ntcRepo,
+                                  NotificationDeliveriesRepository ndRepo) {
         this.neRepo = neRepo;
         this.mtRepo = mtRepo;
         this.ntRepo = ntRepo;
         this.ntcRepo = ntcRepo;
+        this.ndRepo = ndRepo;
     }
 
     /**
@@ -82,7 +80,12 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
                 // Should only be here if all needed context exists
                 Set<NotificationDelivery> notificationDeliveries = determineAndBuildDeliveries(allEventTemplates, relevantContext);
                 log.debug("Found {} deliveries for the given trigger", notificationDeliveries.size());
-                // TODO: send deliveries to be delivered
+
+                for (NotificationDelivery delivery : notificationDeliveries) {
+                    // TODO: Submit delivery request to CPI
+                    delivery.setDeliveryProcessKey("what-comes-back-from-CPI");
+                    ndRepo.create(delivery);
+                }
             } catch (InsufficientContextException e) {
                 trigger.setStatus(Status.PENDING_CONTEXT);
                 ntRepo.update(trigger);
@@ -155,7 +158,7 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
      * @return Set of {@link NotificationDelivery}s encapsulating what should be delivered given the params supplied
      */
     Set<NotificationDelivery> determineAndBuildDeliveries(List<MessageTemplate> templates, Map<String, Object> relevantContext)
-            throws InsufficientContextException {
+            throws InsufficientContextException, DBRequestFailureException {
 
         Set<NotificationDelivery> deliveries = new HashSet<>();
 
@@ -182,7 +185,7 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
             }
 
             delivery.setMessageTemplateId(messageTemplate.getId());
-            // TODO: Persist delivery. In persist, could generate uid so we don't have to go get ID
+            // TODO: Get merged content, send to S3, associate that endpoint
             deliveries.add(delivery);
         }
 
@@ -241,12 +244,6 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
         }
 
         return trigger;
-    }
-
-    private String generateUid() throws NoSuchAlgorithmException {
-        MessageDigest salt = MessageDigest.getInstance("SHA-256"); // TODO: extract this into a method away from here
-        salt.update(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8));
-        return bytesToHex(salt.digest());
     }
 
     private NotificationEvent getNotificationEvent(SolMessage solMessage) {

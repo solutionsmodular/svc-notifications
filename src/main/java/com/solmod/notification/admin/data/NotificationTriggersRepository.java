@@ -62,7 +62,7 @@ public class NotificationTriggersRepository {
             request.setId(id);
             return id;
         } catch (DataAccessException e) {
-            log.error("DAE: Failed attempt to save component with missing fields: {}\n{}", e.getMessage(), request);
+            log.error("DAE: Failed attempt to save component: {}\n{}", e.getMessage(), request);
             throw new DBRequestFailureException("DB failure creating NotificationTrigger: " + e.getMessage());
         }  catch (NullPointerException e) {
             log.warn("NPE: Failed attempt to save component with missing fields\n    {}", request);
@@ -103,15 +103,15 @@ public class NotificationTriggersRepository {
 
         template.update(sql, statementParams.getParams());
 
-        log.info("Updated {} fields in NotificationTemplate {}", fieldUpdates.size(), request.getId());
+        log.info("Updated {} fields in NotificationTrigger {}", fieldUpdates.size(), request.getId());
         return fieldUpdates;
     }
 
     /**
-     * Get a NotificationTemplate by ID
+     * Get a NotificationTrigger by ID
      *
      * @param id {@code Long} ID
-     * @return {@link NotificationTrigger}, or null if a NotificationTemplate cannot be found with the given ID
+     * @return {@link NotificationTrigger}, or null if a NotificationTrigger cannot be found with the given ID
      */
     public NotificationTrigger getNotificationTrigger(final Long id) {
         if (id == null) {

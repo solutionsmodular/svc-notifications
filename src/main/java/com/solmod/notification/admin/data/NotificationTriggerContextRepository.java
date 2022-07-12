@@ -58,7 +58,7 @@ public class NotificationTriggerContextRepository {
 
             log.info("NotificationTriggerContext saved per request");
         } catch (DataAccessException e) {
-            log.error("DAE: Failed attempt to save component with missing fields: {}", e.getMessage());
+            log.error("DAE: Failed attempt to save component: {}", e.getMessage());
             throw new DBRequestFailureException("DB failure creating NotificationTriggerContext: " + e.getMessage());
         }  catch (NullPointerException e) {
             log.warn("NPE: Failed attempt to save component with missing fields");

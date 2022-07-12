@@ -5,7 +5,7 @@ public class NotificationDelivery extends Audited {
     private Long messageTemplateId;
     private Status status;
     private String messageBodyUri;
-
+    private String deliveryProcessKey;
 
     public String getRecipient() {
         return recipient;
@@ -37,5 +37,13 @@ public class NotificationDelivery extends Audited {
 
     public void setMessageBodyUri(String messageBodyUri) {
         this.messageBodyUri = messageBodyUri;
+    }
+
+    public String getDeliveryProcessKey() {
+        return deliveryProcessKey;
+    }
+
+    public void setDeliveryProcessKey(String deliveryProcessKey) {
+        this.deliveryProcessKey = deliveryProcessKey;
     }
 }
