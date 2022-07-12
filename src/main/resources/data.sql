@@ -16,56 +16,6 @@ values ('EMAIL', 'Suited to Email'),
        ('TIMELINE', 'Suited to Timeline entry')
        ;
 
-
-insert into local_content(tenant_id, namespace, content_key, content_block)
-values (1, 'notification_engine', 'ORDER_PLACED_OWNER_EMAIL',
-        'Your order has been placed|||Thank you for your order. %{msg.data.owner.firstName}.'),
-       (1, 'notification_engine', 'ORDER_PLACED_SPONSOR_EMAIL',
-        ''),
-       (1, 'notification_engine', 'ORDER_RETURNED_OWNER_EMAIL',
-        'Your order return was processed|||Sorry it didn''t work out. Here''s a return label. ${msg.data.order.return.label}'),
-       (1, 'notification_engine', 'CALEVENT_RSVPED_INVITEE_EMAIL',
-        'You are registered to attend ${calEvent.name}|||Thank you for registering for %{calEvent.name}. %{calEvent.startDate} at %{calEvent.startTime}.'),
-       (1, 'notification_engine', 'CALEVENT_STARTING_EMAIL',
-        'Your event is about to begin|||You have registered for the %{calEvent.name} event, starting at %{calEvent.startDate} at %{calEvent.startTime}.'),
-       (1, 'notification_engine', 'CALEVENT_ENDED_EMAIL',
-        'Tell us what you think!|||How was your %{calEvent.name} service? Click here to take a short survey https://som_mod.io/surveys/%{calEvent.surveyCode}.');
-
-insert into local_content_merge_fields(local_content_id, content_key, merge_field_name)
-select id, 'msg.data.owner.firstName', 'First Name' from local_content
-where content_key = 'ORDER_PLACED_OWNER_EMAIL'
-UNION
-select id, 'css.orderdetails', 'Order details CSS' from local_content
-where content_key = 'ORDER_PLACED_SPONSOR_EMAIL'
-UNION
-select id, 'data.order.details', 'Order Details' from local_content
-where content_key = 'ORDER_PLACED_SPONSOR_EMAIL'
-UNION
-select id, 'msg.data.order.return.label', 'Return Label' from local_content
-where content_key = 'ORDER_RETURNED_OWNER_EMAIL'
-UNION
-select id, 'calEvent.startDate', 'Start Date' from local_content
-where content_key = 'CALEVENT_RSVPED_INVITEE_EMAIL'
-UNION
-select id, 'calEvent.startTime', 'Start Time' from local_content
-where content_key = 'CALEVENT_RSVPED_INVITEE_EMAIL'
-UNION
-select id, 'calEvent.name', 'Event Name' from local_content
-where content_key = 'CALEVENT_RSVPED_INVITEE_EMAIL'
-UNION
-select id, 'calEvent.startDate', 'Start Date' from local_content
-where content_key = 'CALEVENT_STARTING_EMAIL'
-UNION
-select id, 'calEvent.startTime', 'Start Time' from local_content
-where content_key = 'CALEVENT_STARTING_EMAIL'
-UNION
-select id, 'calEvent.name', 'Event Name' from local_content
-where content_key = 'CALEVENT_STARTING_EMAIL'
-UNION
-select id, 'calEvent.surveyCode', 'Survey Code' from local_content
-where content_key = 'CALEVENT_ENDED_EMAIL'
-;
-
 insert into notification_events(tenant_id, event_subject, event_verb, status)
 values (1, 'ORDER', 'CREATED', 'A'),
        (1, 'ORDER', 'RETURNED', 'A'),
