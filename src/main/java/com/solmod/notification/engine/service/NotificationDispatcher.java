@@ -54,7 +54,8 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
     public List<SolCommunication> apply(SolMessage solMessage) {
 
         // Find the appropriate event for the given message subject and verb
-        NotificationEvent notificationEvent = getNotificationEvent(solMessage);
+        NotificationEvent notificationEvent =
+                getNotificationEvent(solMessage.getTenantId(), solMessage.getSubject(), solMessage.getVerb());
         if (notificationEvent == null) {
             return null; // No notifications configured for this event, so we can bail
         }
@@ -74,19 +75,17 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
 
                 trigger = logNotificationTrigger(notificationEvent);
 
-                Map<String, Object> context = flatten(solMessage);
+                Map<String, Object> context = flatten(Map.of("message", solMessage));
                 Map<String, Object> relevantContext = persistRelevantContext(trigger, context, allEventTemplates);
 
                 // Should only be here if all needed context exists
                 Set<NotificationDelivery> notificationDeliveries = determineAndBuildDeliveries(allEventTemplates, relevantContext);
-                log.debug("Found {} deliveries for the given trigger", notificationDeliveries.size());
-
-                for (NotificationDelivery delivery : notificationDeliveries) {
-                    // TODO: Submit delivery request to CPI
-                    delivery.setDeliveryProcessKey("what-comes-back-from-CPI");
-                    ndRepo.create(delivery);
+                if (!notificationDeliveries.isEmpty()) {
+                    processDeliveries(trigger, notificationDeliveries);
                 }
             } catch (InsufficientContextException e) {
+                log.info("More context is needed to process the event {}:{}. This event has {} context builders.:\n{}",
+                        notificationEvent.getEventSubject(), notificationEvent.getEventVerb(), 0, e.getMessage());
                 trigger.setStatus(Status.PENDING_CONTEXT);
                 ntRepo.update(trigger);
             }
@@ -96,6 +95,19 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
         }
 
         return null;
+    }
+
+    private void processDeliveries(NotificationTrigger trigger, Set<NotificationDelivery> notificationDeliveries) throws DBRequestFailureException {
+        log.debug("Processing {} deliveries for trigger {}", notificationDeliveries.size(), trigger.getId());
+
+        for (NotificationDelivery delivery : notificationDeliveries) {
+            // TODO: Submit delivery request to CPI
+            delivery.setDeliveryProcessKey("what-comes-back-from-CPI");
+            ndRepo.create(delivery);
+        }
+
+        trigger.setStatus(Status.PENDING_DELIVERY);
+        ntRepo.update(trigger);
     }
 
     /**
@@ -139,7 +151,6 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
             }
         }
 
-        // NE-36
         ntcRepo.create(trigger.getId(), relevantContext);
 
         // Now, ensure the keys in context contain all that are needed
@@ -153,6 +164,8 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
     }
 
     /**
+     * Helper to build {@link NotificationDelivery}s for the templates associated with a triggered {@link NotificationEvent}
+     *
      * @param templates       List of {@link MessageTemplate}s for which to initialize deliveries
      * @param relevantContext Context needed for processing any part of the {@link MessageTemplate}s
      * @return Set of {@link NotificationDelivery}s encapsulating what should be delivered given the params supplied
@@ -178,7 +191,7 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
             // BUILD
             Object recipient = relevantContext.get(messageTemplate.getRecipientContextKey());
             // Per orig design, this shouldn't be null, but could actually be blank, which would be bad
-            if (recipient != null && StringUtils.isBlank(recipient.toString())) {
+            if (recipient != null && !StringUtils.isBlank(recipient.toString())) {
                 delivery.setRecipient(recipient.toString());
             } else {
                 throw new InsufficientContextException("Not enough context to determine recipient addy");
@@ -246,12 +259,12 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
         return trigger;
     }
 
-    private NotificationEvent getNotificationEvent(SolMessage solMessage) {
+    private NotificationEvent getNotificationEvent(Long tenantId, String subject, String verb) {
         NotificationEvent ntSearchCriteria = new NotificationEvent();
         ntSearchCriteria.setStatus(Status.ACTIVE);
-        ntSearchCriteria.setTenantId(solMessage.getTenantId());
-        ntSearchCriteria.setEventVerb(solMessage.getVerb());
-        ntSearchCriteria.setEventSubject(solMessage.getSubject());
+        ntSearchCriteria.setTenantId(tenantId);
+        ntSearchCriteria.setEventSubject(subject);
+        ntSearchCriteria.setEventVerb(verb);
 
         return neRepo.getNotificationEvent(ntSearchCriteria);
     }

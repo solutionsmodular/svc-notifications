@@ -11,7 +11,7 @@ public class SolMessage {
     private String requester;
     private Long tenantId;
     private Long entityId;
-    private Map<String, Object> data;
+    private Object data;
 
     public String getSubject() {
         return subject;
@@ -53,11 +53,11 @@ public class SolMessage {
         this.entityId = entityId;
     }
 
-    public Map<String, Object> getData() {
+    public Object getData() {
         return data;
     }
 
-    public void setData(Map<String, Object> data) {
+    public void setData(Object data) {
         this.data = data;
     }
 }

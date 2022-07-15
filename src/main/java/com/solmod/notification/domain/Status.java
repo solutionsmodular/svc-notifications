@@ -23,7 +23,6 @@ public enum Status {
     PENDING_PERMISSION("PP"),
     PENDING_DELIVERY("PD");
 
-    @JsonValue
     private final String code;
 
     Status(String code) {
