@@ -1,5 +1,10 @@
 package com.solmod.notification.domain;
 
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
+import java.util.Objects;
+import java.util.Optional;
+
 public class NotificationDelivery extends Audited {
     private String recipient;
     private Long messageTemplateId;
@@ -45,5 +50,37 @@ public class NotificationDelivery extends Audited {
 
     public void setDeliveryProcessKey(String deliveryProcessKey) {
         this.deliveryProcessKey = deliveryProcessKey;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        if (!super.equals(o))
+            return false;
+
+        NotificationDelivery that = (NotificationDelivery) o;
+
+        if (!Objects.equals(that.getDeliveryProcessKey(), ((NotificationDelivery) o).getDeliveryProcessKey()))
+            return false;
+        if (!Objects.equals(that.getRecipient(), ((NotificationDelivery) o).getRecipient()))
+            return false;
+        if (!Objects.equals(that.getStatus(), ((NotificationDelivery) o).getStatus()))
+            return false;
+        if (!Objects.equals(that.getMessageBodyUri(), ((NotificationDelivery) o).getMessageBodyUri()))
+            return false;
+
+        return Objects.equals(that.getMessageTemplateId(), ((NotificationDelivery) o).getMessageTemplateId());
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(3, 7)
+                .append(Optional.ofNullable(deliveryProcessKey).orElse("").hashCode())
+                .append(Optional.ofNullable(recipient).orElse("").hashCode())
+                .append(Optional.ofNullable(messageBodyUri).orElse("").hashCode())
+                .append(Optional.ofNullable(messageTemplateId).orElse(0L).hashCode())
+                .append(status == null ? 0 : status.hashCode()).build();
     }
 }

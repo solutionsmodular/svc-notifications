@@ -14,7 +14,7 @@ public class MessageTemplate extends Audited {
     private String recipientContextKey;
     private MessageContentPurpose messageContentPurpose;
     private String contentKey;
-    private Map<String, Object> deliveryCriteria = new HashMap<>();
+    private Map<String, String> deliveryCriteria = new HashMap<>();
 
     public Status getStatus() {
         return status;
@@ -56,11 +56,11 @@ public class MessageTemplate extends Audited {
         this.contentKey = contentKey;
     }
 
-    public Map<String, Object> getDeliveryCriteria() {
+    public Map<String, String> getDeliveryCriteria() {
         return deliveryCriteria;
     }
 
-    public void setDeliveryCriteria(Map<String, Object> deliveryCriteria) {
+    public void setDeliveryCriteria(Map<String, String> deliveryCriteria) {
         this.deliveryCriteria = deliveryCriteria;
     }
 

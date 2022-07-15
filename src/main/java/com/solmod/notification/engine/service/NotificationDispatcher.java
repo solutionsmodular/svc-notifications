@@ -120,6 +120,9 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
      * <p>So, this method will handle getting all MessageTemplates under the specified NotificationEvent and will build
      * and return an exhaustive list of the context properties needed to satisfy all references to context properties.
      * </p>
+     * <p><em>NOTE</em>: context is handled separate from trigger because this is the method that isolates the relevant
+     * properties from the entire context, and that will be set to the trigger
+     *</p>
      *
      * @param trigger             {@link NotificationTrigger}
      * @param context             Map<String, Object>
@@ -151,7 +154,9 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
             }
         }
 
-        ntcRepo.create(trigger.getId(), relevantContext);
+        if (!relevantContext.isEmpty()) {
+            ntcRepo.create(trigger.getId(), relevantContext);
+        }
 
         // Now, ensure the keys in context contain all that are needed
         if (errorMessage.length() > 0) {
@@ -199,6 +204,13 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
 
             delivery.setMessageTemplateId(messageTemplate.getId());
             // TODO: Get merged content, send to S3, associate that endpoint
+            if (deliveries.isEmpty())
+                delivery.setMessageBodyUri("Helloooooo");
+
+            NotificationDelivery another = new NotificationDelivery();
+            another.setMessageBodyUri("what's up");
+            another.setDeliveryProcessKey("another thing");
+
             deliveries.add(delivery);
         }
 
@@ -226,7 +238,7 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
             return true;
 
         boolean meetsCriteria = true;
-        for (Map.Entry<String, Object> criterion : messageTemplate.getDeliveryCriteria().entrySet()) {
+        for (Map.Entry<String, String> criterion : messageTemplate.getDeliveryCriteria().entrySet()) {
             if (!context.containsKey(criterion.getKey())) {
                 throw new InsufficientContextException("Can not filter Message Template. No value in context for " + criterion.getKey());
             }
