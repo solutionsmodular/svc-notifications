@@ -1,8 +1,8 @@
 package com.solmod.notification.admin.data;
 
-import com.solmod.notification.domain.MessageContentPurpose;
-import com.solmod.notification.domain.MessageTemplate;
-import com.solmod.notification.domain.Status;
+import com.solmod.notification.engine.domain.MessageContentPurpose;
+import com.solmod.notification.engine.domain.MessageConfig;
+import com.solmod.notification.engine.domain.Status;
 import com.solmod.notification.exception.DBRequestFailureException;
 import com.solmod.notification.exception.MessageTemplateAlreadyExistsException;
 import com.solmod.notification.exception.MessageTemplateNonexistentException;
@@ -37,7 +37,7 @@ class MessageTemplatesRepositoryIntegrationTest {
     @DisplayName("Testing create. Happy day case in integration test, only")
     @ExtendWith(OutputCaptureExtension.class)
     void testCreate(CapturedOutput output) throws MessageTemplateAlreadyExistsException, DBRequestFailureException {
-        MessageTemplate request = new MessageTemplate();
+        MessageConfig request = new MessageConfig();
         request.setNotificationEventId(1L);
         request.setContentKey("some.summary.key");
         request.setMessageContentPurpose(MessageContentPurpose.EMAIL);
@@ -54,12 +54,12 @@ class MessageTemplatesRepositoryIntegrationTest {
     @Test
     @DisplayName("Testing Get by Criteria AND update. Happy day case in integration test, only. This test uses data from notification-admin-tests.sql")
     void testGetByCriteriaAndUpdate() throws MessageTemplateNonexistentException, MessageTemplateAlreadyExistsException {
-        MessageTemplate criteria = new MessageTemplate();
+        MessageConfig criteria = new MessageConfig();
         criteria.setRecipientContextKey("data.order.owner.email");
         criteria.setContentKey("ORDER_PLACED_OWNER_EMAIL");
 
-        MessageTemplate existing = adminRepository.getMessageTemplate(criteria);
-        MessageTemplate request = new MessageTemplate();
+        MessageConfig existing = adminRepository.getMessageTemplate(criteria);
+        MessageConfig request = new MessageConfig();
         request.setId(existing.getId());
         request.setRecipientContextKey("data.different.order.owner.email");
         request.setContentKey("   ");
@@ -67,7 +67,7 @@ class MessageTemplatesRepositoryIntegrationTest {
         Set<DataUtils.FieldUpdate> fieldsUpdated = adminRepository.update(request);
         assertEquals(1, fieldsUpdated.size());
 
-        MessageTemplate updated = adminRepository.getMessageTemplate(request.getId());
+        MessageConfig updated = adminRepository.getMessageTemplate(request.getId());
         // Assert intended fields are updated
         assertEquals(request.getRecipientContextKey(), updated.getRecipientContextKey());
         // Assert other fields are as they were

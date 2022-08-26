@@ -1,4 +1,4 @@
-insert into notification_component_status (status, description)
+insert into notification_component_statuses (status, description)
 values ('A', 'Active'),
        ('I', 'Inactive'),
        ('D', 'Deleted'),
@@ -9,7 +9,7 @@ values ('A', 'Active'),
        ('PP', 'Pending Permission'),
        ('PD', 'Pending Delivery')
        ;
-insert into message_content_purposes(type, description)
+insert into message_content_senders(type, description)
 values ('EMAIL', 'Suited to Email'),
        ('SMS', 'Suited to SMS'),
        ('PUSH', 'Suited to Push Notifications'),
@@ -24,7 +24,7 @@ values (1, 'ORDER', 'CREATED', 'A'),
        (1, 'CAL_EVENT', 'ENDING', 'A')
 ;
 
-insert into message_templates(notification_event_id, status, recipient_context_key, message_content_purpose, content_key)
+insert into message_templates(notification_event_id, status, recipient_context_key, message_content_sender, content_key)
 select id, 'A', 'data.order.owner.email', 'EMAIL', 'ORDER_PLACED_OWNER_EMAIL' from notification_events
 where event_subject = 'ORDER' and event_verb = 'CREATED'
 UNION

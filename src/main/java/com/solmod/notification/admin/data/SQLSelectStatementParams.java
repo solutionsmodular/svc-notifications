@@ -1,6 +1,6 @@
 package com.solmod.notification.admin.data;
 
-import com.solmod.notification.domain.Status;
+import com.solmod.notification.engine.domain.Status;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;

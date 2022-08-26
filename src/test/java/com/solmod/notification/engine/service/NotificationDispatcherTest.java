@@ -2,7 +2,7 @@ package com.solmod.notification.engine.service;
 
 import com.solmod.commons.StringifyException;
 import com.solmod.notification.admin.data.*;
-import com.solmod.notification.domain.*;
+import com.solmod.notification.engine.domain.*;
 import com.solmod.notification.exception.DBRequestFailureException;
 import com.solmod.notification.exception.InsufficientContextException;
 import com.solmod.notification.exception.NotificationTriggerNonexistentException;
@@ -17,7 +17,7 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 import java.util.*;
 
 import static com.solmod.commons.ObjectUtils.flatten;
-import static com.solmod.notification.domain.Status.*;
+import static com.solmod.notification.engine.domain.Status.*;
 import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -44,11 +44,11 @@ class NotificationDispatcherTest {
     @Captor
     ArgumentCaptor<NotificationTrigger> triggerCaptor;
     @Captor
-    ArgumentCaptor<MessageTemplate> templateCaptor;
+    ArgumentCaptor<MessageConfig> templateCaptor;
     @Captor
     ArgumentCaptor<NotificationDelivery> deliveryCaptor;
     @Captor
-    ArgumentCaptor<Map<String, Object>> contextCaptor;
+    ArgumentCaptor<Map<String, String>> contextCaptor;
 
     @BeforeEach
     void setup() {
@@ -76,7 +76,7 @@ class NotificationDispatcherTest {
     void apply_noRegisteredTemplates(CapturedOutput output) {
         NotificationEvent event = buildNotificationEvent();
 
-        MessageTemplate messagesCriteria = buildTemplateCriteria(event.getId());
+        MessageConfig messagesCriteria = buildTemplateCriteria(event.getId());
 
         when(neRepo.getNotificationEvent(event)).thenReturn(event);
         when(mtRepo.getMessageTemplates(messagesCriteria)).thenReturn(emptyList());
@@ -98,9 +98,9 @@ class NotificationDispatcherTest {
     @DisplayName("Verify that, when the context is missing context, we log and status PENDING_CONTEXT")
     void apply_contextMissingRecpientKey(CapturedOutput output) throws NotificationTriggerNonexistentException {
         NotificationEvent eventCriteria = buildNotificationEvent();
-        MessageTemplate repoCriteria = buildTemplateCriteria(eventCriteria.getId());
+        MessageConfig repoCriteria = buildTemplateCriteria(eventCriteria.getId());
 
-        MessageTemplate template = buildTemplate("message.data.person.email", Map.of("message.data.person.firstName", "Peter"));
+        MessageConfig template = buildTemplate("message.data.person.email", Map.of("message.data.person.firstName", "Peter"));
 
         NotificationEvent event = new NotificationEvent();
         event.setId(eventCriteria.getId());
@@ -126,9 +126,9 @@ class NotificationDispatcherTest {
     @DisplayName("Verify that, when the context has empty recipient value, we log and status PENDING_CONTEXT")
     void apply_contextEmptyRecpientKey(CapturedOutput output) throws NotificationTriggerNonexistentException {
         NotificationEvent eventCriteria = buildNotificationEvent();
-        MessageTemplate repoCriteria = buildTemplateCriteria(eventCriteria.getId());
+        MessageConfig repoCriteria = buildTemplateCriteria(eventCriteria.getId());
 
-        MessageTemplate template = buildTemplate("message.data.person.email", Map.of("message.data.person.firstName", "Peter"));
+        MessageConfig template = buildTemplate("message.data.person.email", Map.of("message.data.person.firstName", "Peter"));
 
         NotificationEvent event = new NotificationEvent();
         event.setId(eventCriteria.getId());
@@ -155,9 +155,9 @@ class NotificationDispatcherTest {
     @DisplayName("Assert when there are MessageTemplates and context contains required keys, unmatching values, nothing happens")
     void apply_completeContextNoMatchDeliveryCriteria(CapturedOutput output) throws DBRequestFailureException {
         NotificationEvent eventCriteria = buildNotificationEvent();
-        MessageTemplate repoCriteria = buildTemplateCriteria(eventCriteria.getId());
+        MessageConfig repoCriteria = buildTemplateCriteria(eventCriteria.getId());
 
-        MessageTemplate template = buildTemplate("message.data.person.email", Map.of("message.data.person.firstName", "Peter"));
+        MessageConfig template = buildTemplate("message.data.person.email", Map.of("message.data.person.firstName", "Peter"));
 /*
         // For clarity; here are the values we need from the context
         Recipient Context Key = "message.data.person.email"
@@ -187,9 +187,9 @@ class NotificationDispatcherTest {
     @ExtendWith(OutputCaptureExtension.class)
     void apply_deliveriesPersisted(CapturedOutput output) throws DBRequestFailureException {
         NotificationEvent eventCriteria = buildNotificationEvent();
-        MessageTemplate repoCriteria = buildTemplateCriteria(eventCriteria.getId());
+        MessageConfig repoCriteria = buildTemplateCriteria(eventCriteria.getId());
 
-        MessageTemplate template = buildTemplate("message.data.person.email", Map.of("message.data.person.firstName", "Peter"));
+        MessageConfig template = buildTemplate("message.data.person.email", Map.of("message.data.person.firstName", "Peter"));
 
         NotificationEvent event = new NotificationEvent();
         event.setId(eventCriteria.getId());
@@ -231,18 +231,18 @@ class NotificationDispatcherTest {
         relevantContext.put("custom.person.sponsor.email", "sponsor@rabbits.com");
         relevantContext.put("custom.person.sponsor.firstName", "Jessica");
 
-        ArrayList<MessageTemplate> templates = new ArrayList<>();
-        MessageTemplate template1 = buildTemplate("message.person.email", Map.of("message.person.firstName", "Peter"));
-        MessageTemplate template2 = buildTemplate("custom.person.sponsor.email",
+        ArrayList<MessageConfig> templates = new ArrayList<>();
+        MessageConfig template1 = buildTemplate("message.person.email", Map.of("message.person.firstName", "Peter"));
+        MessageConfig template2 = buildTemplate("custom.person.sponsor.email",
                 Map.of("custom.person.sponsor.firstName", "Mary"));
         templates.add(template1);
         templates.add(template2);
 
         dispatcher.persistRelevantContext(trigger, flatten(entireContext), templates);
 
-        verify(ntcRepo, times(1)).create(eq(trigger.getId()), contextCaptor.capture());
+        verify(ntcRepo, times(1)).saveContext(eq(trigger.getId()), contextCaptor.capture());
 
-        Map<String, Object> result = contextCaptor.getValue();
+        Map<String, String> result = contextCaptor.getValue();
         assertFalse(result.isEmpty());
         assertTrue(result.keySet().containsAll(relevantContext.keySet()));
         assertFalse(result.keySet().containsAll(flatten(entireContext).keySet()));
@@ -262,18 +262,18 @@ class NotificationDispatcherTest {
         relevantContext.put("message.person.email", "roger@rabbits.com");
         relevantContext.put("message.person.firstName", "Roger, of course");
 
-        ArrayList<MessageTemplate> templates = new ArrayList<>();
-        MessageTemplate template1 = buildTemplate("message.person.email", Map.of("message.person.firstName", "Peter"));
-        MessageTemplate template2 = buildTemplate("custom.person.sponsor.email",
+        ArrayList<MessageConfig> templates = new ArrayList<>();
+        MessageConfig template1 = buildTemplate("message.person.email", Map.of("message.person.firstName", "Peter"));
+        MessageConfig template2 = buildTemplate("custom.person.sponsor.email",
                 Map.of("custom.person.sponsor.firstName", "Mary"));
         templates.add(template1);
         templates.add(template2);
 
         assertThrows(InsufficientContextException.class, () -> dispatcher.persistRelevantContext(trigger, flatten(entireContext), templates));
 
-        verify(ntcRepo, times(1)).create(eq(trigger.getId()), contextCaptor.capture());
+        verify(ntcRepo, times(1)).saveContext(eq(trigger.getId()), contextCaptor.capture());
 
-        Map<String, Object> result = contextCaptor.getValue();
+        Map<String, String> result = contextCaptor.getValue();
         assertFalse(result.isEmpty());
         assertTrue(result.keySet().containsAll(relevantContext.keySet()));
         assertFalse(result.keySet().containsAll(flatten(entireContext).keySet()));
@@ -282,7 +282,7 @@ class NotificationDispatcherTest {
     @Test
     @DisplayName("Assert only qualifying MessageTemplates become deliveries")
     void determineAndBuildDeliveries_requiredContextAvail() throws InsufficientContextException, DBRequestFailureException {
-        ArrayList<MessageTemplate> templates = new ArrayList<>();
+        ArrayList<MessageConfig> templates = new ArrayList<>();
 
         // Qualifies
         templates.add(buildTemplate("message.data.person.email", Map.of(
@@ -305,7 +305,7 @@ class NotificationDispatcherTest {
     @Test
     @DisplayName("Assert an exception is thrown when needed context is missing")
     void determineAndBuildDeliveries_requiredContextNotAvail() {
-        ArrayList<MessageTemplate> templates = new ArrayList<>();
+        ArrayList<MessageConfig> templates = new ArrayList<>();
 
         // Qualifies
         templates.add(buildTemplate("message.data.person.email", Map.of(
@@ -325,10 +325,10 @@ class NotificationDispatcherTest {
     @Test
     @DisplayName("Assert only active templates are pulled by the dispatcher")
     void getRelatedMessageTemplates() {
-        dispatcher.getRelatedMessageTemplates(15L);
+        dispatcher.getSendableMessageTemplates(15L);
         verify(mtRepo, times(1)).getMessageTemplates(templateCaptor.capture());
 
-        MessageTemplate result = templateCaptor.getValue();
+        MessageConfig result = templateCaptor.getValue();
 
         assertEquals(15L, result.getNotificationEventId());
         assertEquals(ACTIVE, result.getStatus());
@@ -339,8 +339,8 @@ class NotificationDispatcherTest {
         assertTrue(true); // This method is tested thoroughly via determineAndBuildDeliveries_requiredContextAvail
     }
 
-    private MessageTemplate buildTemplateCriteria(Long eventId) {
-        MessageTemplate messagesCriteria = new MessageTemplate();
+    private MessageConfig buildTemplateCriteria(Long eventId) {
+        MessageConfig messagesCriteria = new MessageConfig();
         messagesCriteria.setStatus(Status.ACTIVE);
         messagesCriteria.setNotificationEventId(eventId);
         return messagesCriteria;
@@ -355,14 +355,19 @@ class NotificationDispatcherTest {
         return eventCriteria;
     }
 
-    private MessageTemplate buildTemplate(String recipientContextKey, Map<String, String> deliveryCriteria) {
-        MessageTemplate template = new MessageTemplate();
-        template.setId(new Date().getTime());
-        template.setNotificationEventId(15L);
-        template.setRecipientContextKey(recipientContextKey);
-        template.setDeliveryCriteria(deliveryCriteria);
+    private MessageConfig buildTemplate(String recipientContextKey, Map<String, String> deliveryCriteria) {
+        MessageConfig messageConfig = new MessageConfig();
+        messageConfig.setId(new Date().getTime());
+        messageConfig.setNotificationEventId(15L);
+        messageConfig.setDeliveryCriteria(deliveryCriteria);
 
-        return template;
+        MessageTemplate messageTemplate = new MessageTemplate();
+        messageTemplate.setRecipientContextKey(recipientContextKey);
+        messageTemplate.setMessageConfigId(messageConfig.getId());
+
+        messageConfig.setMessageTemplates(List.of(messageTemplate));
+
+        return messageConfig;
     }
 
     private SolMessage buildSolMessage(NotificationEvent eventCriteria, MessageContextTest context) {
@@ -439,4 +444,5 @@ class NotificationDispatcherTest {
             this.sponsor = sponsor;
         }
     }
+
 }

@@ -1,4 +1,4 @@
-package com.solmod.notification.domain;
+package com.solmod.notification.engine.domain;
 
 import com.solmod.commons.ObjectUtils;
 import com.solmod.commons.StringifyException;

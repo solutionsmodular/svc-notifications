@@ -1,31 +1,29 @@
-package com.solmod.notification.domain;
+package com.solmod.notification.engine.domain;
 
 import com.solmod.commons.ObjectUtils;
 import com.solmod.commons.StringifyException;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
 public class MessageTemplate extends Audited {
 
-    private Long notificationEventId;
+    private Long messageConfigId;
     private Status status;
     private String recipientContextKey;
     private MessageContentPurpose messageContentPurpose;
     private String contentKey;
-    private Map<String, String> deliveryCriteria = new HashMap<>();
 
     public Status getStatus() {
         return status;
     }
 
-    public Long getNotificationEventId() {
-        return notificationEventId;
+    public Long getMessageConfigId() {
+        return messageConfigId;
     }
 
-    public void setNotificationEventId(Long notificationEventId) {
-        this.notificationEventId = notificationEventId;
+    public void setMessageConfigId(Long messageConfigId) {
+        this.messageConfigId = messageConfigId;
     }
 
     public void setStatus(Status status) {
@@ -56,13 +54,6 @@ public class MessageTemplate extends Audited {
         this.contentKey = contentKey;
     }
 
-    public Map<String, String> getDeliveryCriteria() {
-        return deliveryCriteria;
-    }
-
-    public void setDeliveryCriteria(Map<String, String> deliveryCriteria) {
-        this.deliveryCriteria = deliveryCriteria;
-    }
 
     @Override
     public boolean equals(Object o) {
@@ -74,12 +65,11 @@ public class MessageTemplate extends Audited {
 
         MessageTemplate that = (MessageTemplate) o;
 
-        if (!Objects.equals(notificationEventId, that.notificationEventId)) return false;
+        if (!Objects.equals(messageConfigId, that.messageConfigId)) return false;
         if (!Objects.equals(recipientContextKey, that.recipientContextKey)) return false;
         if (!Objects.equals(messageContentPurpose, that.messageContentPurpose)) return false;
         if (!Objects.equals(contentKey, that.contentKey)) return false;
-        if (!Objects.equals(status, that.status)) return false;
-        return Objects.equals(deliveryCriteria, that.deliveryCriteria);
+        return Objects.equals(status, that.status);
     }
 
     @Override
@@ -89,7 +79,6 @@ public class MessageTemplate extends Audited {
         result += (recipientContextKey != null ? recipientContextKey.hashCode() : 0);
         result += (messageContentPurpose != null ? messageContentPurpose.hashCode() : 0);
         result += (contentKey != null ? contentKey.hashCode() : 0);
-        result += (deliveryCriteria != null ? deliveryCriteria.hashCode() : 0);
 
         return result;
     }

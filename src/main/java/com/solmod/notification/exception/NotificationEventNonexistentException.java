@@ -1,6 +1,6 @@
 package com.solmod.notification.exception;
 
-import com.solmod.notification.domain.NotificationEvent;
+import com.solmod.notification.engine.domain.NotificationEvent;
 
 public class NotificationEventNonexistentException extends Exception {
     private final NotificationEvent context;

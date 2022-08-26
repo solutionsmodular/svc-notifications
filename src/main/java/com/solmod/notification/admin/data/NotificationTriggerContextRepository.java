@@ -1,5 +1,6 @@
 package com.solmod.notification.admin.data;
 
+import com.solmod.notification.engine.domain.NotificationTrigger;
 import com.solmod.notification.exception.DBRequestFailureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,8 +34,8 @@ public class NotificationTriggerContextRepository {
      * @param notificationTriggerId Long identifying the trigger for which this is related content
      * @param context Map of context properties
      */
-    public void create(@NotNull final Long notificationTriggerId,
-                       @NotNull final Map<String, Object> context) throws DBRequestFailureException {
+    public void saveContext(@NotNull final Long notificationTriggerId,
+                            @NotNull final Map<String, String> context) throws DBRequestFailureException {
 
         String sql = "INSERT INTO notification_trigger_context " +
                 "(notification_trigger_id, context_key, context_value) " +
@@ -42,16 +43,17 @@ public class NotificationTriggerContextRepository {
         try {
 //            List<SqlParameterSource> values = new ArrayList<>();
 
-            for (Map.Entry<String, Object> contextEntry : context.entrySet()) {
+            for (Map.Entry<String, String> contextEntry : context.entrySet()) {
                 SqlParameterSource paramSource = new MapSqlParameterSource(Map.of(
                         "notification_trigger_id", notificationTriggerId,
                         "context_key", contextEntry.getKey(),
-                        "context_value", contextEntry.getValue().toString()));
+                        "context_value", contextEntry.getValue()));
                 template.update(sql, paramSource);
 //                values.add(paramSource);
             }
 
 /*
+TODO
             SqlParameterSource[] batch = SqlParameterSourceUtils.createBatch(values);
             template.batchUpdate(sql, batch);
 */
@@ -67,7 +69,7 @@ public class NotificationTriggerContextRepository {
     }
 
     /**
-     * Get the context for a given {@link com.solmod.notification.domain.NotificationTrigger}
+     * Get the context for a given {@link NotificationTrigger}
      *
      * @param notificationTriggerId {@code Long} Identifying the NotificationTrigger for which to retrieve context
      * @return Map context

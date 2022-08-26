@@ -1,6 +1,6 @@
 package com.solmod.notification.exception;
 
-import com.solmod.notification.domain.NotificationTrigger;
+import com.solmod.notification.engine.domain.NotificationTrigger;
 
 public class NotificationTriggerNonexistentException extends DBRequestFailureException {
     private final NotificationTrigger context;

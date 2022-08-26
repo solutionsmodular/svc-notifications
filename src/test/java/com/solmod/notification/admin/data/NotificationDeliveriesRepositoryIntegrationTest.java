@@ -1,6 +1,8 @@
 package com.solmod.notification.admin.data;
 
-import com.solmod.notification.domain.*;
+import com.solmod.notification.engine.domain.MessageConfig;
+import com.solmod.notification.engine.domain.NotificationDelivery;
+import com.solmod.notification.engine.domain.Status;
 import com.solmod.notification.exception.DBRequestFailureException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,7 +37,7 @@ class NotificationDeliveriesRepositoryIntegrationTest {
     @ExtendWith(OutputCaptureExtension.class)
     void testCreate_onlyReqFields(CapturedOutput output) throws DBRequestFailureException {
 
-        MessageTemplate template = getLiveMessageTemplate();
+        MessageConfig template = getLiveMessageTemplate();
 
         NotificationDelivery delivery = new NotificationDelivery();
         delivery.setRecipient("some-recipient-identifier");
@@ -65,7 +67,7 @@ class NotificationDeliveriesRepositoryIntegrationTest {
     @ExtendWith(OutputCaptureExtension.class)
     void testCreate_allFields(CapturedOutput output) throws DBRequestFailureException {
 
-        MessageTemplate template = getLiveMessageTemplate();
+        MessageConfig template = getLiveMessageTemplate();
 
         NotificationDelivery delivery = new NotificationDelivery();
         delivery.setRecipient("some-recipient-identifier");
@@ -93,8 +95,8 @@ class NotificationDeliveriesRepositoryIntegrationTest {
         assertEquals(delivery.getStatus(), result.getStatus());
     }
 
-    private MessageTemplate getLiveMessageTemplate() {
-        MessageTemplate criteria = new MessageTemplate();
+    private MessageConfig getLiveMessageTemplate() {
+        MessageConfig criteria = new MessageConfig();
         criteria.setContentKey("ORDER_PLACED_OWNER_EMAIL");
         return messageTemplatesRepo.getMessageTemplates(criteria).get(0);
     }

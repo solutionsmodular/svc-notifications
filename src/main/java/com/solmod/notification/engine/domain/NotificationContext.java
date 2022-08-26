@@ -1,4 +1,4 @@
-package com.solmod.notification.domain;
+package com.solmod.notification.engine.domain;
 
 import com.solmod.commons.StringifyException;
 
@@ -16,7 +16,7 @@ import static com.solmod.commons.ObjectUtils.flatten;
 public class NotificationContext {
     private final Map<String, Object> eventContext = new HashMap<>();
     private final Set<String> minContext = new HashSet<>();
-    private final Set<MessageTemplate> qualifyingMessageTemplates = new HashSet<>();
+    private final Set<MessageConfig> qualifyingMessageConfigs = new HashSet<>();
 
     public Map<String, Object> getEventContext() {
         return eventContext;
@@ -26,8 +26,8 @@ public class NotificationContext {
         return minContext;
     }
 
-    public Set<MessageTemplate> getQualifyingMessageTemplates() {
-        return qualifyingMessageTemplates;
+    public Set<MessageConfig> getQualifyingMessageTemplates() {
+        return qualifyingMessageConfigs;
     }
 
     public void addBuildContextParam(String key, String value) {
@@ -43,8 +43,8 @@ public class NotificationContext {
         minContext.add(key);
     }
 
-    public void addQualifyingMessageTemplate(MessageTemplate template) {
-        qualifyingMessageTemplates.add(template);
+    public void addQualifyingMessageTemplate(MessageConfig template) {
+        qualifyingMessageConfigs.add(template);
     }
 
 
