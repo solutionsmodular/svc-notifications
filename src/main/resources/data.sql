@@ -24,27 +24,53 @@ values (1, 'ORDER', 'CREATED', 'A'),
        (1, 'CAL_EVENT', 'ENDING', 'A')
 ;
 
-insert into message_templates(notification_event_id, status, recipient_context_key, message_content_sender, content_key)
-select id, 'A', 'data.order.owner.email', 'EMAIL', 'ORDER_PLACED_OWNER_EMAIL' from notification_events
+-- Set up some Configs
+insert into message_configs(notification_event_id, name, status)
+select id, 'Order Created', 'A' from notification_events
 where event_subject = 'ORDER' and event_verb = 'CREATED'
 UNION
-select id, 'A', 'data.order.owner.sponsor.email', 'EMAIL', 'ORDER_PLACED_SPONSOR_EMAIL' from notification_events
-where event_subject = 'ORDER' and event_verb = 'CREATED'
-UNION
-select id, 'A', 'data.order.owner.email', 'EMAIL', 'ORDER_RETURNED_OWNER_EMAIL' from notification_events
+select id, 'Order Returned','A' from notification_events
 where event_subject = 'ORDER' and event_verb = 'RETURNED'
 UNION
-select id, 'A', 'data.order.owner.email', 'EMAIL', 'CALEVENT_RSVPED_INVITEE_EMAIL' from notification_events
+select id, 'A', 'Calendar Event Received RSVP' from notification_events
 where event_subject = 'CAL_EVENT' and event_verb = 'RSVPED'
 UNION
-select id, 'A', 'data.order.owner.email', 'EMAIL', 'CALEVENT_STARTING_EMAIL' from notification_events
+select id, 'A', 'Calendar Event About to Start' from notification_events
 where event_subject = 'CAL_EVENT' and event_verb = 'STARTING'
 UNION
-select id, 'A', 'data.order.owner.email', 'EMAIL', 'CALEVENT_ENDING_EMAIL' from notification_events
+select id, 'A', 'Calendar Event Ending Soon' from notification_events
+where event_subject = 'CAL_EVENT' and event_verb = 'ENDING'
+;
+
+insert into message_templates(message_config_id, status, recipient_context_key, message_content_sender, content_key)
+select mc.id, 'A', 'data.order.owner.email', 'EMAIL', 'ORDER_PLACED_OWNER_EMAIL' from notification_events ne
+join message_configs mc on mc.notification_event_id = ne.id
+where event_subject = 'ORDER' and event_verb = 'CREATED'
+UNION
+select mc.id, 'A', 'data.order.owner.sponsor.email', 'EMAIL', 'ORDER_PLACED_SPONSOR_EMAIL' from notification_events ne
+join message_configs mc on mc.notification_event_id = ne.id
+where event_subject = 'ORDER' and event_verb = 'CREATED'
+UNION
+select mc.id, 'A', 'data.order.owner.email', 'EMAIL', 'ORDER_RETURNED_OWNER_EMAIL' from notification_events ne
+join message_configs mc on mc.notification_event_id = ne.id
+where event_subject = 'ORDER' and event_verb = 'RETURNED'
+UNION
+select mc.id, 'A', 'data.order.owner.email', 'EMAIL', 'CALEVENT_RSVPED_INVITEE_EMAIL' from notification_events ne
+join message_configs mc on mc.notification_event_id = ne.id
+where event_subject = 'CAL_EVENT' and event_verb = 'RSVPED'
+UNION
+select mc.id, 'A', 'data.order.owner.email', 'EMAIL', 'CALEVENT_STARTING_EMAIL' from notification_events ne
+join message_configs mc on mc.notification_event_id = ne.id
+where event_subject = 'CAL_EVENT' and event_verb = 'STARTING'
+UNION
+select mc.id, 'A', 'data.order.owner.email', 'EMAIL', 'CALEVENT_ENDING_EMAIL' from notification_events ne
+join message_configs mc on mc.notification_event_id = ne.id
 where event_subject = 'CAL_EVENT' and event_verb = 'ENDING'
 ;
 
 insert into notification_triggers(notification_event_id, uid, status)
-select id, 'existing-uid', 'A' from notification_events where event_subject = 'ORDER' and event_verb = 'CREATED'
+select mc.id, 'existing-uid', 'A' from notification_events ne
+join message_configs mc on mc.notification_event_id = ne.id
+where event_subject = 'ORDER' and event_verb = 'CREATED'
 ;
 

@@ -1,8 +1,8 @@
 package com.solmod.notification.admin.data;
 
 
-import com.solmod.notification.engine.domain.NotificationDelivery;
-import com.solmod.notification.engine.domain.Status;
+import com.solmod.notification.domain.NotificationDelivery;
+import com.solmod.notification.domain.Status;
 import com.solmod.notification.exception.DBRequestFailureException;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;

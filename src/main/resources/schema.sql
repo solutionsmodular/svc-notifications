@@ -1,7 +1,3 @@
-drop schema ne;
-create schema ne;
-use ne;
-
 create table notification_component_statuses
 (
     status      varchar(3) unique not null,
@@ -13,11 +9,11 @@ create table notification_component_statuses
 --
 -- Describes the sender that a content block can be used via NotificationEngine. E.g. email, SMS
 --
-create table message_content_senders
+create table message_senders
 (
     type        varchar(50) unique not null,
     description varchar(255)       not null,
-    constraint message_content_senders_pk
+    constraint message_senders_pk
         primary key (type)
 );
 
@@ -37,58 +33,61 @@ create table notification_events
         FOREIGN KEY (status) references notification_component_statuses (status)
 );
 
--- message_content_sender - links to message_contact_senders describing what medium a given content supports
+-- message_sender - links to message_senders describing what medium a given content supports
 -- recipient_context_key - context value holding the value to be used as recipient (or prefix with two underscores,
 -- indicating a constant)
+--
+create table message_configs
+(
+    id                    BIGINT auto_increment,
+    notification_event_id BIGINT                               not null,
+    name                  varchar(512)                         not null,
+    status                varchar(3)                           not null,
+    created_date          datetime DEFAULT CURRENT_TIMESTAMP   not null,
+    modified_date         datetime ON UPDATE CURRENT_TIMESTAMP null,
+    constraint message_configs_pk
+        primary key (id),
+    constraint message_configs_notification_event_fk
+        FOREIGN KEY (notification_event_id) references notification_events (id),
+    constraint message_configs_status_fk
+        FOREIGN KEY (status) references notification_component_statuses (status)
+);
+
+--
+-- message-template
 --
 create table message_templates
 (
     id                    BIGINT auto_increment,
-    notification_event_id BIGINT                               not null,
+    message_config_id     BIGINT                               not null,
+    recipient_context_key varchar(255)                         null,
+    message_sender        varchar(50)                          NOT NULL,
+    content_key           varchar(50)                          not null,
     status                varchar(3)                           not null,
     created_date          datetime DEFAULT CURRENT_TIMESTAMP   not null,
     modified_date         datetime ON UPDATE CURRENT_TIMESTAMP null,
     constraint message_templates_pk
         primary key (id),
     constraint message_templates_notification_context_fk
-        FOREIGN KEY (notification_event_id) references notification_events (id),
-    constraint message_templates_status_fk
-        FOREIGN KEY (status) references notification_component_statuses (status)
-);
-
---
--- message-template-sender-content
--- 
-create table message_template_sender_content
-(
-    id                     BIGINT auto_increment,
-    message_template_id    BIGINT                               not null,
-    recipient_context_key  varchar(255)                         null,
-    message_content_sender varchar(50)                          NOT NULL,
-    content_key            varchar(50)                          not null,
-    status                 varchar(3)                           not null,
-    created_date           datetime DEFAULT CURRENT_TIMESTAMP   not null,
-    modified_date          datetime ON UPDATE CURRENT_TIMESTAMP null,
-    constraint message_templates_pk
-        primary key (id),
-    constraint message_templates_notification_context_fk
-        FOREIGN KEY (message_template_id) references message_templates (id),
+        FOREIGN KEY (message_config_id) references message_configs (id),
     constraint message_templates_status_fk
         FOREIGN KEY (status) references notification_component_statuses (status),
-    constraint message_template_summary_message_content_sender_fk
-        FOREIGN KEY (message_content_sender) references message_content_senders (type)
+    constraint message_templates_summary_message_sender_fk
+        FOREIGN KEY (message_sender) references message_senders (type)
 );
 
 --
 -- Key value definition of criteria to be met by message context for a template to result in a delivered notification
 create table delivery_criteria
 (
-    id                  BIGINT auto_increment,
-    message_template_id BIGINT       not null,
-    context_key         varchar(100) not null,
-    value               varchar(100) not null,
+    id                BIGINT auto_increment,
+    message_config_id BIGINT       not null,
+    context_key       varchar(100) not null,
+    value             varchar(100) not null,
     constraint delivery_criteria_pk
-        primary key (id)
+        primary key (id),
+    constraint delivery_criteria_message_config_fk
+        FOREIGN KEY (message_config_id) references message_configs (id)
 );
 
 --

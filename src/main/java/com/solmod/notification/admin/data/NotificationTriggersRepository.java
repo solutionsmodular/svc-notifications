@@ -1,10 +1,10 @@
 package com.solmod.notification.admin.data;
 
 
-import com.solmod.notification.engine.domain.NotificationTrigger;
-import com.solmod.notification.engine.domain.Status;
+import com.solmod.notification.domain.NotificationTrigger;
+import com.solmod.notification.domain.Status;
 import com.solmod.notification.exception.DBRequestFailureException;
-import com.solmod.notification.exception.NotificationTriggerNonexistentException;
+import com.solmod.notification.exception.ExpectedNotFoundException;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,17 +77,15 @@ public class NotificationTriggersRepository {
      *                NotificationTrigger
      */
     public Set<DataUtils.FieldUpdate> update(@NotNull final NotificationTrigger request)
-            throws NotificationTriggerNonexistentException {
+            throws ExpectedNotFoundException {
         log.debug("Updating NotificationTrigger {}", request.getId());
         NotificationTrigger origById = getNotificationTrigger(request.getId());
         if (origById == null) {
             log.warn("Attempt to update a NotificationTrigger which does not exist: {}. Pretty weird.", request);
-            throw new NotificationTriggerNonexistentException(request, "NotificationTrigger was not found");
+            throw new ExpectedNotFoundException("NotificationTrigger", request.getId());
         }
 
         SQLUpdateStatementParams statementParams = new SQLUpdateStatementParams(request.getId());
-        statementParams.addField("notification_event_id", origById.getNotificationEventId(), request.getNotificationEventId());
-        statementParams.addField("uid", origById.getUid(), request.getUid());
         statementParams.addField("status", origById.getStatus(), request.getStatus());
 
         Set<DataUtils.FieldUpdate> fieldUpdates = statementParams.getUpdates();

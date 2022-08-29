@@ -1,6 +1,6 @@
 package com.solmod.notification.admin.data;
 
-import com.solmod.notification.engine.domain.NotificationTrigger;
+import com.solmod.notification.domain.NotificationTrigger;
 import com.solmod.notification.exception.DBRequestFailureException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,7 +44,7 @@ class NotificationTriggersContextRepositoryIntegrationTest {
 
         assertEquals(1, notificationTriggers.size());
 
-        Map<String, Object> someContext = Map.of("key1", "value1", "key2", 4455L, "key3", true);
+        Map<String, String> someContext = Map.of("key1", "value1", "key2", "4455", "key3", "true");
 
         triggerContextRepo.saveContext(notificationTriggers.get(0).getId(), someContext);
 

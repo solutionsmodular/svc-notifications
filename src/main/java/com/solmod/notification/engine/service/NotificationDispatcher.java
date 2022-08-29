@@ -2,8 +2,9 @@ package com.solmod.notification.engine.service;
 
 import com.solmod.commons.StringifyException;
 import com.solmod.notification.admin.data.*;
-import com.solmod.notification.engine.domain.*;
+import com.solmod.notification.domain.*;
 import com.solmod.notification.exception.DBRequestFailureException;
+import com.solmod.notification.exception.ExpectedNotFoundException;
 import com.solmod.notification.exception.InsufficientContextException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -24,6 +25,7 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
 
     NotificationEventsRepository neRepo;
     MessageTemplatesRepository mtRepo;
+    MessageConfigsRepository mcRepo;
     NotificationTriggersRepository ntRepo;
     NotificationTriggerContextRepository ntcRepo;
     NotificationDeliveriesRepository ndRepo;
@@ -35,9 +37,11 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
                                   MessageTemplatesRepository mtRepo,
                                   NotificationTriggersRepository ntRepo,
                                   NotificationTriggerContextRepository ntcRepo,
-                                  NotificationDeliveriesRepository ndRepo) {
+                                  NotificationDeliveriesRepository ndRepo,
+                                  MessageConfigsRepository mcRepo) {
         this.neRepo = neRepo;
         this.mtRepo = mtRepo;
+        this.mcRepo = mcRepo;
         this.ntRepo = ntRepo;
         this.ntcRepo = ntcRepo;
         this.ndRepo = ndRepo;
@@ -68,7 +72,7 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
         try {
 
             try {
-                List<MessageConfig> messageConfigs = getSendableMessageTemplates(notificationEvent.getId());
+                List<MessageConfig> messageConfigs = getActiveMessageConfigs(notificationEvent.getId());
                 if (messageConfigs.isEmpty()) {
                     log.warn("NotificationEvent with no MessageConfigs: {}:{}. Should it be disabled??",
                             notificationEvent.getEventSubject(), notificationEvent.getEventVerb());
@@ -92,7 +96,7 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
                 trigger.setStatus(Status.PENDING_CONTEXT);
                 ntRepo.update(trigger);
             }
-        } catch (NoSuchAlgorithmException | StringifyException | DBRequestFailureException e) {
+        } catch (NoSuchAlgorithmException | StringifyException | DBRequestFailureException | ExpectedNotFoundException e) {
             log.error("FATAL: {} when trying to handle event message {} | NotificationEvent: {}",
                     e.getMessage(), solMessage, trigger);
         }
@@ -111,7 +115,11 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
         }
 
         trigger.setStatus(Status.PENDING_DELIVERY);
-        ntRepo.update(trigger);
+        try {
+            ntRepo.update(trigger);
+        } catch (ExpectedNotFoundException e) {
+            throw new DBRequestFailureException("Couldn't update the status of a trigger that SHOULD'VE been created by this very process...");
+        }
     }
 
     /**
@@ -136,7 +144,7 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
         // Compose a list collection of all context keys referenced by any templates specified
         Set<String> propertiesNeeded = new HashSet<>();
         for (MessageConfig qualifyingTemplate : qualifyingTemplates) {
-            propertiesNeeded.addAll(qualifyingTemplate.getMessageTemplates().stream().map(t -> t.getRecipientContextKey()).collect(Collectors.toSet()));
+            propertiesNeeded.addAll(qualifyingTemplate.getMessageTemplates().stream().map(MessageTemplate::getRecipientContextKey).collect(Collectors.toSet()));
             propertiesNeeded.addAll(qualifyingTemplate.getDeliveryCriteria().keySet());
             // TODO: propertiesNeeded.addAll(cms.getMergeFields())
         }
@@ -201,13 +209,9 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
                 }
 
                 delivery.setMessageTemplateId(messageTemplate.getId());
-                // TODO: Get merged content, send to S3, associate that endpoint
+                // TODO: Get merged content, send to storage, associate that endpoint
                 if (deliveries.isEmpty())
                     delivery.setMessageBodyUri("Helloooooo");
-
-                NotificationDelivery another = new NotificationDelivery();
-                another.setMessageBodyUri("what's up");
-                another.setDeliveryProcessKey("another thing");
 
                 deliveries.add(delivery);
             }
@@ -223,11 +227,11 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
      * @return List of {@link MessageConfig}s which subscribe to the given {@link NotificationTrigger}
      */
 
-    List<MessageConfig> getSendableMessageTemplates(Long notificationEventId) {
+    List<MessageConfig> getActiveMessageConfigs(Long notificationEventId) {
         MessageConfig criteria = new MessageConfig();
         criteria.setNotificationEventId(notificationEventId);
         criteria.setStatus(Status.ACTIVE);
-        return mtRepo.getMessageTemplates(criteria);
+        return mcRepo.getMessageConfigs(criteria);
     }
 
 

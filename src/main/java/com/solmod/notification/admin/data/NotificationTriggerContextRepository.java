@@ -1,6 +1,6 @@
 package com.solmod.notification.admin.data;
 
-import com.solmod.notification.engine.domain.NotificationTrigger;
+import com.solmod.notification.domain.NotificationTrigger;
 import com.solmod.notification.exception.DBRequestFailureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

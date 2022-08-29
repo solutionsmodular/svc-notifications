@@ -1,10 +1,10 @@
 package com.solmod.notification.admin.data;
 
-import com.solmod.notification.engine.domain.NotificationEvent;
-import com.solmod.notification.engine.domain.Status;
+import com.solmod.notification.domain.NotificationEvent;
+import com.solmod.notification.domain.Status;
 import com.solmod.notification.exception.DBRequestFailureException;
-import com.solmod.notification.exception.NotificationEventAlreadyExistsException;
-import com.solmod.notification.exception.NotificationEventNonexistentException;
+import com.solmod.notification.exception.DataCollisionException;
+import com.solmod.notification.exception.ExpectedNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,7 +47,7 @@ public class NotificationEventsRepositoryTest {
 
     @Test
     @DisplayName("Assert that we can create a NotificationEvent if it doesn't already exist per UniqueNotificationEventId")
-    void create_allClear() throws NotificationEventAlreadyExistsException, DBRequestFailureException {
+    void create_allClear() throws DataCollisionException, DBRequestFailureException {
         NotificationEvent request = buildFullyPopulatedNotificationEvent();
 
         doReturn(null, new NotificationEvent()).when(repo).getNotificationEvent(any(NotificationEvent.class));
@@ -82,15 +82,15 @@ public class NotificationEventsRepositoryTest {
 
     @Test
     @DisplayName("Assert we get an Exception if the NotificationEvent already exists per UniqueNotificationEventId")
-    void create_alreadyExists() throws NotificationEventAlreadyExistsException, DBRequestFailureException {
+    void create_alreadyExists() throws DataCollisionException, DBRequestFailureException {
         doReturn(new NotificationEvent()).when(repo).getNotificationEvent(any(NotificationEvent.class));
-        assertThrows(NotificationEventAlreadyExistsException.class, () -> repo.create(new NotificationEvent()));
+        assertThrows(DataCollisionException.class, () -> repo.create(new NotificationEvent()));
         verify(repo, times(1)).create(any(NotificationEvent.class));
     }
 
     @Test
     @DisplayName("Assert only supplied values are registered as change request")
-    void update_allClear() throws NotificationEventNonexistentException, NotificationEventAlreadyExistsException {
+    void update_allClear() throws ExpectedNotFoundException, DataCollisionException {
         NotificationEvent origFormOfRequest = new NotificationEvent();
         origFormOfRequest.setId(155L);
         origFormOfRequest.setStatus(Status.INACTIVE);
@@ -114,7 +114,7 @@ public class NotificationEventsRepositoryTest {
 
     @Test
     @DisplayName("Assert we can update a NotificationEvent when there are no rules broken")
-    void update_allClear_ignoreMissingFields() throws NotificationEventNonexistentException, NotificationEventAlreadyExistsException {
+    void update_allClear_ignoreMissingFields() throws ExpectedNotFoundException, DataCollisionException {
         NotificationEvent origFormOfRequest = new NotificationEvent();
         origFormOfRequest.setId(155L);
         origFormOfRequest.setStatus(Status.INACTIVE);
@@ -143,7 +143,7 @@ public class NotificationEventsRepositoryTest {
 
     @Test
     @DisplayName("Assert no update is performed if there are no changes")
-    void update_noChange() throws NotificationEventNonexistentException, NotificationEventAlreadyExistsException {
+    void update_noChange() throws ExpectedNotFoundException, DataCollisionException {
         NotificationEvent origFormOfRequest = new NotificationEvent();
         origFormOfRequest.setId(155L);
         origFormOfRequest.setStatus(Status.INACTIVE);
@@ -174,7 +174,7 @@ public class NotificationEventsRepositoryTest {
         request.setStatus(Status.ACTIVE);
         doReturn(null).when(repo).getNotificationEvent(request.getId());
 
-        assertThrows(NotificationEventNonexistentException.class, () -> repo.update(request));
+        assertThrows(ExpectedNotFoundException.class, () -> repo.update(request));
         assertTrue(out.getOut().contains("WARN"));
         assertTrue(out.getOut().contains("Attempt to update a NotificationEvent which does not exist"));
     }
@@ -206,13 +206,13 @@ public class NotificationEventsRepositoryTest {
         doReturn(conflicting).when(repo).getNotificationEvent(eq(request));
 
         // Call
-        assertThrows(NotificationEventAlreadyExistsException.class, () -> repo.update(request));
+        assertThrows(DataCollisionException.class, () -> repo.update(request));
     }
 
     @ParameterizedTest
     @CsvSource({"A,A,I", "I,I,A", "A,I,I"})
     @DisplayName("Assert that we can make 'colliding' changes to  NotificationEvent so long as there is only one Active across all duplicates")
-    void update_noConflictDueToStatus(String existingStatus, String requestStatus, String conflictingStatus) throws NotificationEventNonexistentException, NotificationEventAlreadyExistsException {
+    void update_noConflictDueToStatus(String existingStatus, String requestStatus, String conflictingStatus) throws ExpectedNotFoundException, DataCollisionException {
         NotificationEvent existing = new NotificationEvent();
         existing.setId(155L);
         existing.setStatus(Status.fromCode(existingStatus));

@@ -1,10 +1,10 @@
 package com.solmod.notification.admin.data;
 
-import com.solmod.notification.engine.domain.NotificationEvent;
-import com.solmod.notification.engine.domain.Status;
+import com.solmod.notification.domain.NotificationEvent;
+import com.solmod.notification.domain.Status;
 import com.solmod.notification.exception.DBRequestFailureException;
-import com.solmod.notification.exception.NotificationEventAlreadyExistsException;
-import com.solmod.notification.exception.NotificationEventNonexistentException;
+import com.solmod.notification.exception.DataCollisionException;
+import com.solmod.notification.exception.ExpectedNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,7 +35,7 @@ class NotificationEventsRepositoryIntegrationTest {
     @Test
     @DisplayName("Testing create. Happy day case in integration test, only")
     @ExtendWith(OutputCaptureExtension.class)
-    void testCreate(CapturedOutput output) throws NotificationEventAlreadyExistsException, DBRequestFailureException {
+    void testCreate(CapturedOutput output) throws DataCollisionException, DBRequestFailureException {
         NotificationEvent request = new NotificationEvent();
         request.setTenantId(1L);
         request.setEventSubject("Something");
@@ -51,7 +51,7 @@ class NotificationEventsRepositoryIntegrationTest {
 
     @Test
     @DisplayName("Testing Get by Criteria AND update. Happy day case in integration test, only. This test uses data from notification-admin-tests.sql")
-    void testGetByCriteriaAndUpdate() throws NotificationEventNonexistentException, NotificationEventAlreadyExistsException {
+    void testGetByCriteriaAndUpdate() throws ExpectedNotFoundException, DataCollisionException {
         NotificationEvent criteria = new NotificationEvent();
         criteria.setEventSubject("ORDER");
         criteria.setEventVerb("CREATED");

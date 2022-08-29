@@ -1,6 +1,5 @@
 package com.solmod.notification.domain;
 
-import com.solmod.notification.engine.domain.MessageConfig;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

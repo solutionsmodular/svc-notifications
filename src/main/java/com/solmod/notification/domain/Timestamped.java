@@ -1,7 +1,9 @@
-package com.solmod.notification.engine.domain;
+package com.solmod.notification.domain;
 
 import org.joda.time.DateTime;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Objects;
 
 public abstract class Timestamped extends BaseDomain {

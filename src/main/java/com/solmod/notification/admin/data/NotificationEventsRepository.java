@@ -1,12 +1,11 @@
 package com.solmod.notification.admin.data;
 
 
-import com.solmod.notification.engine.domain.NotificationEvent;
-import com.solmod.notification.engine.domain.Status;
+import com.solmod.notification.domain.NotificationEvent;
+import com.solmod.notification.domain.Status;
 import com.solmod.notification.exception.DBRequestFailureException;
-import com.solmod.notification.exception.NotificationEventAlreadyExistsException;
-import com.solmod.notification.exception.NotificationEventNonexistentException;
-import org.joda.time.DateTime;
+import com.solmod.notification.exception.DataCollisionException;
+import com.solmod.notification.exception.ExpectedNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.validation.constraints.NotNull;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.*;
 
 @Repository
@@ -40,13 +38,12 @@ public class NotificationEventsRepository {
      * that get delivered.
      *
      * @param request {@link NotificationEvent} representing the request.
-     * @throws NotificationEventAlreadyExistsException In the event an existing NotificationEvent would be duplicated
+     * @throws DataCollisionException In the event an existing NotificationEvent would be duplicated
      */
-    public void create(@NotNull final NotificationEvent request) throws NotificationEventAlreadyExistsException, DBRequestFailureException {
+    public void create(@NotNull final NotificationEvent request) throws DataCollisionException, DBRequestFailureException {
         NotificationEvent existing = getNotificationEvent(request);
         if (existing != null) {
-            throw new NotificationEventAlreadyExistsException(existing,
-                    "Cannot create this NotificationEvent; it would collide with existing NotificationEvent.");
+            throw new DataCollisionException("NotificationEvent", existing.getId());
         }
 
         String sql = "INSERT INTO notification_events " +
@@ -76,21 +73,21 @@ public class NotificationEventsRepository {
      * @param request {@link NotificationEvent} representing the request to make updates to an existing NotificationEvent
      */
     public Set<DataUtils.FieldUpdate> update(@NotNull final NotificationEvent request)
-            throws NotificationEventNonexistentException, NotificationEventAlreadyExistsException {
+            throws ExpectedNotFoundException, DataCollisionException {
         log.debug("Updating NotificationEvent {}", request.getId());
         NotificationEvent origById = getNotificationEvent(request.getId());
         if (origById == null) {
             log.warn("Attempt to update a NotificationEvent which does not exist: {}. Pretty weird.", request);
-            throw new NotificationEventNonexistentException(request, "NotificationEvent was not found");
+            throw new ExpectedNotFoundException("NotificationEvents", request.getId());
         }
 
         // If the outcome of the request is an active status, we need to ensure there's !another active template to collide
         if (Optional.ofNullable(request.getStatus()).orElse(origById.getStatus()).equals(Status.ACTIVE)) {
             NotificationEvent existing = getNotificationEvent(request);
-            if (existing != null && existing.getStatus().equals(Status.ACTIVE)) { // getNotificationStatus should ensure active, but just in case...
+            if (existing != null && !Objects.equals(existing.getId(), request.getId()) && existing.getStatus().equals(Status.ACTIVE)) { // getNotificationStatus should ensure active, but just in case...
                 // There's been a change in one of the UniqueNotificationEventId fields making it clash with an existing Template
                 // Logging is not important, as it doesn't signify an error herein or with the client
-                throw new NotificationEventAlreadyExistsException(request, "Can not update Unique ID params for this NotificationEvent, one already exists");
+                throw new DataCollisionException("NotificationEvent", request.getId());
             }
         }
 
@@ -183,7 +180,7 @@ public class NotificationEventsRepository {
         uniqueCriteria.setEventVerb(id.getEventVerb());
         uniqueCriteria.setTenantId(id.getTenantId());
 
-        List<NotificationEvent> messageTemplates = getNotificationEvents(id);
+        List<NotificationEvent> messageTemplates = getNotificationEvents(uniqueCriteria);
         if (messageTemplates.size() > 1) {
             log.error("DATA INTEGRITY ERROR: more than one NotificationEvent found for {}", id);
             return null;
@@ -202,10 +199,8 @@ public class NotificationEventsRepository {
             messageTemplate.setTenantId(rs.getLong("tenant_id"));
             messageTemplate.setStatus(Status.fromCode(rs.getString("status")));
 
-            Timestamp dateTime = rs.getTimestamp("modified_date");
-            if (dateTime != null)
-                messageTemplate.setModifiedDate(new DateTime(dateTime.getTime()));
-            messageTemplate.setCreatedDate(new DateTime(rs.getTimestamp("created_date").getTime()));
+            messageTemplate.loadByResultSet(rs);
+
             return messageTemplate;
         }
     }

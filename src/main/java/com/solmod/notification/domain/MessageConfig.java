@@ -1,19 +1,23 @@
-package com.solmod.notification.engine.domain;
+package com.solmod.notification.domain;
 
 import com.solmod.commons.ObjectUtils;
 import com.solmod.commons.StringifyException;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
+/**
+ * Where a {@link NotificationEvent} specifies the subject/verb of a message bus event message, the MessageConfig
+ * introduces a point at which the process of (event -> message delivery) can branch, based on criteria. In this way,
+ * we can configure a message to go out to an order owner and to her sponsor based on an order being placed, or payment
+ * failing.
+ */
 public class MessageConfig extends Audited {
 
     private Long notificationEventId;
+    private String name;
     private Status status;
     private Map<String, String> deliveryCriteria = new HashMap<>();
-    private List<MessageTemplate> messageTemplates;
+    private List<MessageTemplate> messageTemplates = new ArrayList<>();
 
     public Status getStatus() {
         return status;
@@ -21,6 +25,14 @@ public class MessageConfig extends Audited {
 
     public Long getNotificationEventId() {
         return notificationEventId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public void setNotificationEventId(Long notificationEventId) {
@@ -48,7 +60,15 @@ public class MessageConfig extends Audited {
     }
 
     public void setMessageTemplates(List<MessageTemplate> messageTemplates) {
-        this.messageTemplates = messageTemplates;
+        if (messageTemplates != null) {
+            this.messageTemplates = messageTemplates;
+        }
+    }
+
+    public void addMessageTemplate(MessageTemplate messageTemplate) {
+        if (messageTemplate != null) {
+            this.messageTemplates.add(messageTemplate);
+        }
     }
 
     @Override

@@ -1,9 +1,9 @@
 package com.solmod.notification.admin.data;
 
-import com.solmod.notification.engine.domain.NotificationTrigger;
-import com.solmod.notification.engine.domain.Status;
+import com.solmod.notification.domain.NotificationTrigger;
+import com.solmod.notification.domain.Status;
 import com.solmod.notification.exception.DBRequestFailureException;
-import com.solmod.notification.exception.NotificationTriggerNonexistentException;
+import com.solmod.notification.exception.ExpectedNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -59,7 +59,7 @@ public class NotificationTriggersRepositoryTest {
 
     @Test
     @DisplayName("Assert no update is performed if there are no changes")
-    void update_noChange() throws NotificationTriggerNonexistentException {
+    void update_noChange() throws ExpectedNotFoundException {
         NotificationTrigger origFormOfRequest = new NotificationTrigger();
         origFormOfRequest.setId(155L);
         origFormOfRequest.setNotificationEventId(255L);
@@ -89,7 +89,7 @@ public class NotificationTriggersRepositoryTest {
         request.setStatus(Status.ACTIVE);
         doReturn(null).when(repo).getNotificationTrigger(request.getId());
 
-        assertThrows(NotificationTriggerNonexistentException.class, () -> repo.update(request));
+        assertThrows(ExpectedNotFoundException.class, () -> repo.update(request));
         assertTrue(out.getOut().contains("WARN"));
         assertTrue(out.getOut().contains("Attempt to update a NotificationTrigger which does not exist"));
     }

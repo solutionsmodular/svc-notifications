@@ -1,8 +1,6 @@
 package com.solmod.notification.admin.data;
 
 import com.solmod.notification.domain.MessageConfig;
-import com.solmod.notification.domain.MessageSender;
-import com.solmod.notification.domain.MessageTemplate;
 import com.solmod.notification.domain.Status;
 import com.solmod.notification.exception.DBRequestFailureException;
 import com.solmod.notification.exception.DataCollisionException;
@@ -28,32 +26,29 @@ import static org.junit.jupiter.api.Assertions.*;
 @Sql(scripts = {"classpath:/scripts/notification-admin-tests.sql"})
 @SpringBootTest
 @Transactional
-class MessageTemplatesRepositoryIntegrationTest {
+class MessageConfigsRepositoryIntegrationTest {
 
     @Autowired
-    MessageTemplatesRepository adminRepository;
-    @Autowired
-    MessageConfigsRepository configRepository;
+    MessageConfigsRepository adminRepository;
 
     @Test
     @DisplayName("Testing create. Happy day case in integration test, only")
     @ExtendWith(OutputCaptureExtension.class)
     void testCreate(CapturedOutput output) throws DataCollisionException, DBRequestFailureException {
-        MessageConfig messageConfig = new MessageConfig();
-        messageConfig.setName("notification-admin-test-mc");
-        messageConfig = configRepository.getMessageConfig(messageConfig);
+        // Get the test message config to get its notification event id
+        MessageConfig model = new MessageConfig();
+        model.setName("notification-admin-test-mc");
+        model = adminRepository.getMessageConfig(model);
 
-        MessageTemplate request = new MessageTemplate();
-        request.setMessageConfigId(messageConfig.getId());
-        request.setContentKey("some.summary.key");
-        request.setMessageSender(MessageSender.EMAIL);
-        request.setRecipientContextKey("some.recipient.context.key");
+        MessageConfig request = new MessageConfig();
+        request.setNotificationEventId(model.getNotificationEventId());
         request.setStatus(Status.ACTIVE);
+        request.setName("new_message-config-test-config");
 
         // Call
-        Long resultId = adminRepository.create(request);
+        Long newId = adminRepository.create(request);
 
-        assertNotNull(resultId);
+        assertNotNull(newId);
         assertTrue(output.getOut().contains("INFO"));
         assertTrue(output.getOut().contains("created"));
     }
@@ -61,24 +56,20 @@ class MessageTemplatesRepositoryIntegrationTest {
     @Test
     @DisplayName("Testing Get by Criteria AND update. Happy day case in integration test, only. This test uses data from notification-admin-tests.sql")
     void testGetByCriteriaAndUpdate() throws ExpectedNotFoundException, DataCollisionException {
-        MessageTemplate criteria = new MessageTemplate();
-        criteria.setRecipientContextKey("test-recipient-addy");
+        MessageConfig model = new MessageConfig();
+        model.setName("notification-admin-test-mc");
+        model = adminRepository.getMessageConfig(model);
 
-        MessageTemplate existing = adminRepository.getMessageTemplate(criteria);
-        MessageTemplate request = new MessageTemplate();
-        request.setId(existing.getId());
-        request.setRecipientContextKey("data.different.order.owner.email");
-        request.setContentKey("   ");
+        MessageConfig request = new MessageConfig();
+        request.setId(model.getId());
+        request.setName("some-different-name");
+        request.setStatus(Status.INACTIVE);
 
         Set<DataUtils.FieldUpdate> fieldsUpdated = adminRepository.update(request);
-        assertEquals(1, fieldsUpdated.size());
+        assertEquals(2, fieldsUpdated.size());
 
-        MessageTemplate updated = adminRepository.getMessageTemplate(request.getId());
-        // Assert intended fields are updated
-        assertEquals(request.getRecipientContextKey(), updated.getRecipientContextKey());
-        // Assert other fields are as they were
-        assertEquals(existing.getContentKey(), updated.getContentKey());
-        assertEquals(existing.getStatus(), updated.getStatus());
-        assertEquals(existing.getMessageSender(), updated.getMessageSender());
+        MessageConfig updated = adminRepository.getMessageConfig(request.getId());
+        assertEquals(request.getName(), updated.getName());
+        assertEquals(request.getStatus(), updated.getStatus());
     }
 }

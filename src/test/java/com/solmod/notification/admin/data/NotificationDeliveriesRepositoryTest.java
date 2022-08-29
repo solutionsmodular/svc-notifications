@@ -1,7 +1,7 @@
 package com.solmod.notification.admin.data;
 
-import com.solmod.notification.engine.domain.NotificationDelivery;
-import com.solmod.notification.engine.domain.Status;
+import com.solmod.notification.domain.NotificationDelivery;
+import com.solmod.notification.domain.Status;
 import com.solmod.notification.exception.DBRequestFailureException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

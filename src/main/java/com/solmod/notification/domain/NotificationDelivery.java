@@ -1,10 +1,14 @@
-package com.solmod.notification.engine.domain;
+package com.solmod.notification.domain;
 
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * A NotificationDelivery encapsulates an instance of a specific message (to deliver, in the process of delivering,
+ * delivered, failed to deliver...) to an ultimate recipient at
+ */
 public class NotificationDelivery extends Audited {
     private String recipient;
     private Long messageTemplateId;

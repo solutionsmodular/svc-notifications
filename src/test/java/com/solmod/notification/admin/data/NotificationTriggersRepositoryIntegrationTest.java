@@ -1,10 +1,10 @@
 package com.solmod.notification.admin.data;
 
-import com.solmod.notification.engine.domain.NotificationEvent;
-import com.solmod.notification.engine.domain.NotificationTrigger;
-import com.solmod.notification.engine.domain.Status;
+import com.solmod.notification.domain.NotificationEvent;
+import com.solmod.notification.domain.NotificationTrigger;
+import com.solmod.notification.domain.Status;
 import com.solmod.notification.exception.DBRequestFailureException;
-import com.solmod.notification.exception.NotificationTriggerNonexistentException;
+import com.solmod.notification.exception.ExpectedNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -58,7 +58,7 @@ class NotificationTriggersRepositoryIntegrationTest {
 
     @Test
     @DisplayName("Testing Get by Criteria AND update. Happy day case in integration test, only. This test uses data from notification-admin-tests.sql")
-    void testGetByCriteriaAndUpdate() throws NotificationTriggerNonexistentException {
+    void testGetByCriteriaAndUpdate() throws ExpectedNotFoundException {
         NotificationTrigger criteria = new NotificationTrigger();
         criteria.setUid("existing-uid");
 

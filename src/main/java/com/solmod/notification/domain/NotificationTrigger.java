@@ -1,30 +1,32 @@
-package com.solmod.notification.engine.domain;
+package com.solmod.notification.domain;
 
 import com.solmod.commons.ObjectUtils;
 import com.solmod.commons.StringifyException;
 
+import java.util.Map;
 import java.util.Objects;
 
-public class NotificationEvent extends Tenanted {
+public class NotificationTrigger extends Audited {
 
-    private String eventSubject;
-    private String eventVerb;
+    private Long notificationEventId;
+    private String uid;
     private Status status;
+    private Map<String, Object> context;
 
-    public String getEventSubject() {
-        return eventSubject;
+    public Long getNotificationEventId() {
+        return notificationEventId;
     }
 
-    public void setEventSubject(String eventSubject) {
-        this.eventSubject = eventSubject;
+    public void setNotificationEventId(Long notificationEventId) {
+        this.notificationEventId = notificationEventId;
     }
 
-    public String getEventVerb() {
-        return eventVerb;
+    public String getUid() {
+        return uid;
     }
 
-    public void setEventVerb(String eventVerb) {
-        this.eventVerb = eventVerb;
+    public void setUid(String uid) {
+        this.uid = uid;
     }
 
     public Status getStatus() {
@@ -35,6 +37,14 @@ public class NotificationEvent extends Tenanted {
         this.status = status;
     }
 
+    public Map<String, Object> getContext() {
+        return context;
+    }
+
+    public void setContext(Map<String, Object> context) {
+        this.context = context;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -43,18 +53,16 @@ public class NotificationEvent extends Tenanted {
         if (!super.equals(o))
             return false;
 
-        NotificationEvent that = (NotificationEvent) o;
+        NotificationTrigger that = (NotificationTrigger) o;
 
-        if (!Objects.equals(eventSubject, that.eventSubject)) return false;
-        if (!Objects.equals(eventVerb, that.eventVerb)) return false;
+        if (!Objects.equals(notificationEventId, that.notificationEventId)) return false;
         return Objects.equals(status, that.status);
     }
 
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result += (eventSubject != null ? eventSubject.hashCode() : 0);
-        result += (eventVerb != null ? eventVerb.hashCode() : 0);
+        result += (notificationEventId != null ? notificationEventId : 0);
         result += (status != null ? status.hashCode() : 0);
 
         return result;

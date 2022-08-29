@@ -2,10 +2,10 @@ package com.solmod.notification.engine.service;
 
 import com.solmod.commons.StringifyException;
 import com.solmod.notification.admin.data.*;
-import com.solmod.notification.engine.domain.*;
+import com.solmod.notification.domain.*;
 import com.solmod.notification.exception.DBRequestFailureException;
+import com.solmod.notification.exception.ExpectedNotFoundException;
 import com.solmod.notification.exception.InsufficientContextException;
-import com.solmod.notification.exception.NotificationTriggerNonexistentException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,7 +17,7 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 import java.util.*;
 
 import static com.solmod.commons.ObjectUtils.flatten;
-import static com.solmod.notification.engine.domain.Status.*;
+import static com.solmod.notification.domain.Status.*;
 import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -34,6 +34,8 @@ class NotificationDispatcherTest {
     @Mock
     MessageTemplatesRepository mtRepo;
     @Mock
+    MessageConfigsRepository mcRepo;
+    @Mock
     NotificationTriggersRepository ntRepo;
     @Mock
     @SuppressWarnings("unused")
@@ -44,7 +46,7 @@ class NotificationDispatcherTest {
     @Captor
     ArgumentCaptor<NotificationTrigger> triggerCaptor;
     @Captor
-    ArgumentCaptor<MessageConfig> templateCaptor;
+    ArgumentCaptor<MessageTemplate> templateCaptor;
     @Captor
     ArgumentCaptor<NotificationDelivery> deliveryCaptor;
     @Captor
@@ -79,7 +81,7 @@ class NotificationDispatcherTest {
         MessageConfig messagesCriteria = buildTemplateCriteria(event.getId());
 
         when(neRepo.getNotificationEvent(event)).thenReturn(event);
-        when(mtRepo.getMessageTemplates(messagesCriteria)).thenReturn(emptyList());
+        when(mcRepo.getMessageConfigs(messagesCriteria)).thenReturn(emptyList());
 
         MessageContextTest context = new MessageContextTest(
                 new PersonContextTest("my-email@somewhere.com", "Peter"));
@@ -96,16 +98,16 @@ class NotificationDispatcherTest {
     @Test
     @ExtendWith(OutputCaptureExtension.class)
     @DisplayName("Verify that, when the context is missing context, we log and status PENDING_CONTEXT")
-    void apply_contextMissingRecpientKey(CapturedOutput output) throws NotificationTriggerNonexistentException {
+    void apply_contextMissingRecpientKey(CapturedOutput output) throws ExpectedNotFoundException {
         NotificationEvent eventCriteria = buildNotificationEvent();
         MessageConfig repoCriteria = buildTemplateCriteria(eventCriteria.getId());
 
-        MessageConfig template = buildTemplate("message.data.person.email", Map.of("message.data.person.firstName", "Peter"));
+        MessageConfig template = buildConfig("message.data.person.email", Map.of("message.data.person.firstName", "Peter"));
 
         NotificationEvent event = new NotificationEvent();
         event.setId(eventCriteria.getId());
         when(neRepo.getNotificationEvent(eventCriteria)).thenReturn(event);
-        when(mtRepo.getMessageTemplates(repoCriteria)).thenReturn(List.of(template));
+        when(mcRepo.getMessageConfigs(repoCriteria)).thenReturn(List.of(template));
 
         MessageContextTest context = new MessageContextTest(
                 new PersonContextTest(null, "Peter"));
@@ -124,16 +126,16 @@ class NotificationDispatcherTest {
     @Test
     @ExtendWith(OutputCaptureExtension.class)
     @DisplayName("Verify that, when the context has empty recipient value, we log and status PENDING_CONTEXT")
-    void apply_contextEmptyRecpientKey(CapturedOutput output) throws NotificationTriggerNonexistentException {
+    void apply_contextEmptyRecipientKey(CapturedOutput output) throws ExpectedNotFoundException {
         NotificationEvent eventCriteria = buildNotificationEvent();
         MessageConfig repoCriteria = buildTemplateCriteria(eventCriteria.getId());
 
-        MessageConfig template = buildTemplate("message.data.person.email", Map.of("message.data.person.firstName", "Peter"));
+        MessageConfig config = buildConfig("message.data.person.email", Map.of("message.data.person.firstName", "Peter"));
 
         NotificationEvent event = new NotificationEvent();
         event.setId(eventCriteria.getId());
         when(neRepo.getNotificationEvent(eventCriteria)).thenReturn(event);
-        when(mtRepo.getMessageTemplates(repoCriteria)).thenReturn(List.of(template));
+        when(mcRepo.getMessageConfigs(repoCriteria)).thenReturn(List.of(config));
 
         MessageContextTest context = new MessageContextTest(
                 new PersonContextTest(" ", "Peter"));
@@ -157,7 +159,7 @@ class NotificationDispatcherTest {
         NotificationEvent eventCriteria = buildNotificationEvent();
         MessageConfig repoCriteria = buildTemplateCriteria(eventCriteria.getId());
 
-        MessageConfig template = buildTemplate("message.data.person.email", Map.of("message.data.person.firstName", "Peter"));
+        MessageConfig template = buildConfig("message.data.person.email", Map.of("message.data.person.firstName", "Peter"));
 /*
         // For clarity; here are the values we need from the context
         Recipient Context Key = "message.data.person.email"
@@ -167,7 +169,7 @@ class NotificationDispatcherTest {
         NotificationEvent event = new NotificationEvent();
         event.setId(eventCriteria.getId());
         when(neRepo.getNotificationEvent(eventCriteria)).thenReturn(event);
-        when(mtRepo.getMessageTemplates(repoCriteria)).thenReturn(List.of(template));
+        when(mcRepo.getMessageConfigs(repoCriteria)).thenReturn(List.of(template));
 
         MessageContextTest context = new MessageContextTest(
                 new PersonContextTest("cool@email.com", "DefinitelyNotPeter"));
@@ -185,16 +187,16 @@ class NotificationDispatcherTest {
 
     @Test
     @ExtendWith(OutputCaptureExtension.class)
-    void apply_deliveriesPersisted(CapturedOutput output) throws DBRequestFailureException {
+    void apply_deliveriesPersisted(CapturedOutput output) throws DBRequestFailureException, ExpectedNotFoundException {
         NotificationEvent eventCriteria = buildNotificationEvent();
         MessageConfig repoCriteria = buildTemplateCriteria(eventCriteria.getId());
 
-        MessageConfig template = buildTemplate("message.data.person.email", Map.of("message.data.person.firstName", "Peter"));
+        MessageConfig template = buildConfig("message.data.person.email", Map.of("message.data.person.firstName", "Peter"));
 
         NotificationEvent event = new NotificationEvent();
         event.setId(eventCriteria.getId());
         when(neRepo.getNotificationEvent(eventCriteria)).thenReturn(event);
-        when(mtRepo.getMessageTemplates(repoCriteria)).thenReturn(List.of(template));
+        when(mcRepo.getMessageConfigs(repoCriteria)).thenReturn(List.of(template));
 
         MessageContextTest qualifyingContext = new MessageContextTest(
                 new PersonContextTest("cool@email.com", "Peter"));
@@ -232,8 +234,8 @@ class NotificationDispatcherTest {
         relevantContext.put("custom.person.sponsor.firstName", "Jessica");
 
         ArrayList<MessageConfig> templates = new ArrayList<>();
-        MessageConfig template1 = buildTemplate("message.person.email", Map.of("message.person.firstName", "Peter"));
-        MessageConfig template2 = buildTemplate("custom.person.sponsor.email",
+        MessageConfig template1 = buildConfig("message.person.email", Map.of("message.person.firstName", "Peter"));
+        MessageConfig template2 = buildConfig("custom.person.sponsor.email",
                 Map.of("custom.person.sponsor.firstName", "Mary"));
         templates.add(template1);
         templates.add(template2);
@@ -263,8 +265,8 @@ class NotificationDispatcherTest {
         relevantContext.put("message.person.firstName", "Roger, of course");
 
         ArrayList<MessageConfig> templates = new ArrayList<>();
-        MessageConfig template1 = buildTemplate("message.person.email", Map.of("message.person.firstName", "Peter"));
-        MessageConfig template2 = buildTemplate("custom.person.sponsor.email",
+        MessageConfig template1 = buildConfig("message.person.email", Map.of("message.person.firstName", "Peter"));
+        MessageConfig template2 = buildConfig("custom.person.sponsor.email",
                 Map.of("custom.person.sponsor.firstName", "Mary"));
         templates.add(template1);
         templates.add(template2);
@@ -285,13 +287,13 @@ class NotificationDispatcherTest {
         ArrayList<MessageConfig> templates = new ArrayList<>();
 
         // Qualifies
-        templates.add(buildTemplate("message.data.person.email", Map.of(
+        templates.add(buildConfig("message.data.person.email", Map.of(
                 "message.data.person.state", "AZ",
                 "message.data.person.member", "VIP")));
-        templates.add(buildTemplate("message.data.person.email", Map.of(
+        templates.add(buildConfig("message.data.person.email", Map.of(
                 "message.data.person.member", "VIP")));
         // Not Qualifies
-        templates.add(buildTemplate("message.data.person.email", Map.of(
+        templates.add(buildConfig("message.data.person.email", Map.of(
                 "message.data.person.state", "FL")));
 
         Set<NotificationDelivery> result = dispatcher.determineAndBuildDeliveries(templates, Map.of(
@@ -308,13 +310,13 @@ class NotificationDispatcherTest {
         ArrayList<MessageConfig> templates = new ArrayList<>();
 
         // Qualifies
-        templates.add(buildTemplate("message.data.person.email", Map.of(
+        templates.add(buildConfig("message.data.person.email", Map.of(
                 "message.data.person.state", "AZ",
                 "message.data.person.member", "VIP")));
-        templates.add(buildTemplate("message.data.person.email", Map.of(
+        templates.add(buildConfig("message.data.person.email", Map.of(
                 "message.data.person.member", "VIP")));
         // Not Qualifies
-        templates.add(buildTemplate("message.data.person.email", Map.of(
+        templates.add(buildConfig("message.data.person.email", Map.of(
                 "message.data.person.state", "FL")));
 
         assertThrows(InsufficientContextException.class, () -> dispatcher.determineAndBuildDeliveries(templates, Map.of(
@@ -325,12 +327,12 @@ class NotificationDispatcherTest {
     @Test
     @DisplayName("Assert only active templates are pulled by the dispatcher")
     void getRelatedMessageTemplates() {
-        dispatcher.getSendableMessageTemplates(15L);
+        dispatcher.getActiveMessageConfigs(15L);
         verify(mtRepo, times(1)).getMessageTemplates(templateCaptor.capture());
 
-        MessageConfig result = templateCaptor.getValue();
+        MessageTemplate result = templateCaptor.getValue();
 
-        assertEquals(15L, result.getNotificationEventId());
+        assertEquals(15L, result.getMessageConfigId());
         assertEquals(ACTIVE, result.getStatus());
     }
 
@@ -355,7 +357,7 @@ class NotificationDispatcherTest {
         return eventCriteria;
     }
 
-    private MessageConfig buildTemplate(String recipientContextKey, Map<String, String> deliveryCriteria) {
+    private MessageConfig buildConfig(String recipientContextKey, Map<String, String> deliveryCriteria) {
         MessageConfig messageConfig = new MessageConfig();
         messageConfig.setId(new Date().getTime());
         messageConfig.setNotificationEventId(15L);
