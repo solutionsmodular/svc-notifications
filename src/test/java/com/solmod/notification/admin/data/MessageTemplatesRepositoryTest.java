@@ -3,7 +3,6 @@ package com.solmod.notification.admin.data;
 import com.solmod.notification.domain.MessageSender;
 import com.solmod.notification.domain.MessageTemplate;
 import com.solmod.notification.domain.Status;
-import com.solmod.notification.exception.DBRequestFailureException;
 import com.solmod.notification.exception.DataCollisionException;
 import com.solmod.notification.exception.ExpectedNotFoundException;
 import org.junit.jupiter.api.DisplayName;
@@ -48,11 +47,10 @@ public class MessageTemplatesRepositoryTest {
 
     @Test
     @DisplayName("Assert that we can create a MessageTemplate if it doesn't already exist per rules of uniqueness")
-    void create_allClear() throws DataCollisionException, DBRequestFailureException {
+    void create_allClear() throws DataCollisionException {
         MessageTemplate request = buildFullyPopulatedMessageTemplate();
 
         doReturn(null, new MessageTemplate()).when(repo).getMessageTemplate(any(MessageTemplate.class));
-        when(template.update(anyString(), anyMap())).thenReturn(1);
 
         // Call
         repo.create(request);
@@ -63,26 +61,8 @@ public class MessageTemplatesRepositoryTest {
     }
 
     @Test
-    @DisplayName("Assert that we cannot create a MessageTemplate and an error is logged if fields are missing")
-    void create_MissingFields(CapturedOutput captured) {
-        MessageTemplate request = new MessageTemplate();
-        request.setMessageConfigId(345L);
-        request.setMessageSender(MessageSender.SMS);
-        request.setStatus(Status.ACTIVE);
-        doReturn(emptyList()).when(repo).getMessageTemplates(any(MessageTemplate.class));
-
-        // Call
-        assertThrows(DBRequestFailureException.class, () -> repo.create(request));
-
-        // Assert
-        assertTrue(captured.getOut().contains("Failed attempt to save component"));
-        // Find first to ensure it doesn't exist, use same find to load after save
-        verify(repo, times(1)).getMessageTemplate(any(MessageTemplate.class));
-    }
-
-    @Test
     @DisplayName("Assert we get an Exception if the MessageTemplate already exists per UniqueMessageTemplateId")
-    void create_alreadyExists() throws DataCollisionException, DBRequestFailureException {
+    void create_alreadyExists() throws DataCollisionException {
         doReturn(new MessageTemplate()).when(repo).getMessageTemplate(any(MessageTemplate.class));
         assertThrows(DataCollisionException.class, () -> repo.create(new MessageTemplate()));
         verify(repo, times(1)).create(any(MessageTemplate.class));
@@ -364,7 +344,7 @@ public class MessageTemplatesRepositoryTest {
                 ArgumentMatchers.<RowMapperResultSetExtractor<MessageTemplatesRepository.MessageTemplateRowMapper>>any());
 
         assertFalse(stringArgCaptor.getValue().contains(":id"));
-        assertTrue(stringArgCaptor.getValue().contains(":notification_event_id"));
+        assertTrue(stringArgCaptor.getValue().contains(":message_config_id"));
         assertTrue(stringArgCaptor.getValue().contains(":recipient_context_key"));
         assertTrue(stringArgCaptor.getValue().contains(":content_key"));
         assertTrue(stringArgCaptor.getValue().contains(":message_sender"));
@@ -388,7 +368,7 @@ public class MessageTemplatesRepositoryTest {
                 ArgumentMatchers.<RowMapperResultSetExtractor<MessageTemplatesRepository.MessageTemplateRowMapper>>any());
 
         assertFalse(stringArgCaptor.getValue().contains(":id"));
-        assertTrue(stringArgCaptor.getValue().contains(":notification_event_id"));
+        assertTrue(stringArgCaptor.getValue().contains(":message_config_id"));
         assertTrue(stringArgCaptor.getValue().contains(":recipient_context_key"));
         assertTrue(stringArgCaptor.getValue().contains(":content_key"));
         assertTrue(stringArgCaptor.getValue().contains(":message_sender"));

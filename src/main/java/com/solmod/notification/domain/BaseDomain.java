@@ -2,7 +2,10 @@ package com.solmod.notification.domain;
 
 import com.solmod.commons.ObjectUtils;
 import com.solmod.commons.StringifyException;
+import org.joda.time.DateTime;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Objects;
 
 public abstract class BaseDomain {
@@ -35,5 +38,9 @@ public abstract class BaseDomain {
         } catch (StringifyException e) {
             return Objects.toString(this);
         }
+    }
+
+    protected void loadByResultSet(ResultSet rs) throws SQLException {
+        setId(rs.getLong("id"));
     }
 }

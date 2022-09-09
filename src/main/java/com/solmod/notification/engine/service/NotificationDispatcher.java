@@ -3,6 +3,7 @@ package com.solmod.notification.engine.service;
 import com.solmod.commons.StringifyException;
 import com.solmod.notification.admin.data.*;
 import com.solmod.notification.domain.*;
+import com.solmod.notification.domain.summary.MessageTemplateSummary;
 import com.solmod.notification.exception.DBRequestFailureException;
 import com.solmod.notification.exception.ExpectedNotFoundException;
 import com.solmod.notification.exception.InsufficientContextException;
@@ -81,7 +82,7 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
 
                 trigger = logNotificationTrigger(notificationEvent);
 
-                Map<String, Object> context = flatten(Map.of("solmod_message", solMessage));
+                Map<String, Object> context = flatten(Map.of("solmod_evt", solMessage));
                 // TODO: Plus we have to get the context that's already been persisted from previous matching triggers
                 Map<String, String> relevantContext = persistRelevantContext(trigger, context, messageConfigs);
 
@@ -130,7 +131,7 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
      *
      * @param trigger             {@link NotificationTrigger}
      * @param context             Map<String, Object>
-     * @param qualifyingTemplates List of {@link MessageConfig}s predetermined will be sent
+     * @param messageConfigs List of {@link MessageConfig}s predetermined will be sent
      * @return Context Map containing the context properties relevant to the {@link MessageConfig}s
      * @throws InsufficientContextException If the given Context Map is missing fields needed to process
      *                                      {@link MessageConfig}s and {@link MessageTemplate}s.
@@ -138,14 +139,14 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
      */
     Map<String, String> persistRelevantContext(NotificationTrigger trigger,
                                                Map<String, Object> context,
-                                               List<MessageConfig> qualifyingTemplates)
+                                               List<MessageConfig> messageConfigs)
             throws InsufficientContextException, DBRequestFailureException {
 
         // Compose a list collection of all context keys referenced by any templates specified
         Set<String> propertiesNeeded = new HashSet<>();
-        for (MessageConfig qualifyingTemplate : qualifyingTemplates) {
-            propertiesNeeded.addAll(qualifyingTemplate.getMessageTemplates().stream().map(MessageTemplate::getRecipientContextKey).collect(Collectors.toSet()));
-            propertiesNeeded.addAll(qualifyingTemplate.getDeliveryCriteria().keySet());
+        for (MessageConfig msgConfig : messageConfigs) {
+            propertiesNeeded.addAll(msgConfig.getMessageTemplates().stream().map(MessageTemplateSummary::getRecipientContextKey).collect(Collectors.toSet()));
+            propertiesNeeded.addAll(msgConfig.getDeliveryCriteria().keySet());
             // TODO: propertiesNeeded.addAll(cms.getMergeFields())
         }
 
@@ -195,7 +196,7 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
             }
 
             // For each sender, create a message to be delivered
-            for (MessageTemplate messageTemplate : messageConfig.getMessageTemplates()) {
+            for (MessageTemplateSummary messageTemplate : messageConfig.getMessageTemplates()) {
 
                 NotificationDelivery delivery = new NotificationDelivery();
                 delivery.setStatus(Status.PENDING_PERMISSION);
@@ -211,7 +212,7 @@ public class NotificationDispatcher implements Function<SolMessage, List<SolComm
                 delivery.setMessageTemplateId(messageTemplate.getId());
                 // TODO: Get merged content, send to storage, associate that endpoint
                 if (deliveries.isEmpty())
-                    delivery.setMessageBodyUri("Helloooooo");
+                    delivery.setMessageBodyUri("TODO");
 
                 deliveries.add(delivery);
             }

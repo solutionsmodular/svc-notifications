@@ -2,7 +2,6 @@ package com.solmod.notification.admin.data;
 
 import com.solmod.notification.domain.MessageConfig;
 import com.solmod.notification.domain.Status;
-import com.solmod.notification.exception.DBRequestFailureException;
 import com.solmod.notification.exception.DataCollisionException;
 import com.solmod.notification.exception.ExpectedNotFoundException;
 import org.junit.jupiter.api.DisplayName;
@@ -16,9 +15,10 @@ import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.jdbc.core.RowMapperResultSetExtractor;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
+import org.springframework.jdbc.support.KeyHolder;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static java.util.Collections.emptyList;
@@ -47,11 +47,10 @@ public class MessageConfigRepositoryTest {
 
     @Test
     @DisplayName("Assert that we can create a MessageConfig if it doesn't already exist per uniqueness rules")
-    void create_allClear() throws DataCollisionException, DBRequestFailureException {
+    void create_allClear() throws DataCollisionException {
         MessageConfig request = buildFullyPopulatedMessageConfig();
 
         doReturn(null, new MessageConfig()).when(repo).getMessageConfig(any(MessageConfig.class));
-        when(template.update(anyString(), anyMap())).thenReturn(1);
 
         // Call
         repo.create(request);
@@ -62,23 +61,8 @@ public class MessageConfigRepositoryTest {
     }
 
     @Test
-    @DisplayName("Assert that we cannot create a MessageConfig and an error is logged if fields are missing")
-    void create_MissingFields(CapturedOutput captured) {
-        MessageConfig request = new MessageConfig();
-        doReturn(emptyList()).when(repo).getMessageConfigs(any(MessageConfig.class));
-
-        // Call
-        assertThrows(DBRequestFailureException.class, () -> repo.create(request));
-
-        // Assert
-        assertTrue(captured.getOut().contains("Failed attempt to save component"));
-        // Find first to ensure it doesn't exist, use same find to load after save
-        verify(repo, times(1)).getMessageConfig(any(MessageConfig.class));
-    }
-
-    @Test
     @DisplayName("Assert we get an Exception if the MessageConfig already exists per uniqueness rules ")
-    void create_alreadyExists() throws DataCollisionException, DBRequestFailureException {
+    void create_alreadyExists() throws DataCollisionException {
         doReturn(new MessageConfig()).when(repo).getMessageConfig(any(MessageConfig.class));
         assertThrows(DataCollisionException.class, () -> repo.create(new MessageConfig()));
         verify(repo, times(1)).create(any(MessageConfig.class));
@@ -126,6 +110,7 @@ public class MessageConfigRepositoryTest {
         Set<DataUtils.FieldUpdate> result = repo.update(request);
 
         assertEquals(1, result.size());
+        assertTrue(result.stream().anyMatch(r -> r.getFieldName().equals("status")));
     }
 
     @Test
@@ -221,7 +206,7 @@ public class MessageConfigRepositoryTest {
 
         // Call test
         Set<DataUtils.FieldUpdate> updates = repo.update(request);
-        assertTrue(updates.size() >= 2);
+        assertTrue(updates.size() >= 1); // for sure name changes, status in some cases
         if (!request.getStatus().equals(Status.ACTIVE)) {
             verify(repo, never()).getMessageConfig(any(MessageConfig.class));
         } else {
@@ -233,8 +218,11 @@ public class MessageConfigRepositoryTest {
     @ExtendWith(OutputCaptureExtension.class)
     void getMessageConfig_byId_exists(CapturedOutput output) {
 
+        ArgumentCaptor<SqlParameterSource> paramSourceCaptor = ArgumentCaptor.forClass(SqlParameterSource.class);
+
         long testId = 15L;
-        when(template.query(anyString(), eq(Map.of("id", testId)), any(MessageConfigsRepository.MessageConfigResultSetExtractor.class)))
+        when(template.query(anyString(), any(SqlParameterSource.class),
+                any(MessageConfigsRepository.MessageConfigResultSetExtractor.class)))
                 .thenReturn(List.of(new MessageConfig()));
 
         // Test call
@@ -242,7 +230,11 @@ public class MessageConfigRepositoryTest {
 
         assertNotNull(result);
         assertFalse(output.getOut().contains("WARN"));
-        verify(template, times(1)).query(anyString(), anyMap(), any(MessageConfigsRepository.MessageConfigResultSetExtractor.class));
+        verify(template, times(1)).query(anyString(), paramSourceCaptor.capture(), any(MessageConfigsRepository.MessageConfigResultSetExtractor.class));
+        SqlParameterSource sqlParameterSource = paramSourceCaptor.getValue();
+        assertNotNull(sqlParameterSource.getParameterNames());
+        assertEquals(1, sqlParameterSource.getParameterNames().length);
+        assertEquals(15L, sqlParameterSource.getValue("id"));
     }
 
     @Test
@@ -250,17 +242,22 @@ public class MessageConfigRepositoryTest {
     @DisplayName("Assert we get a null and a warning log when we get a req by ID which doesn't exist")
     void getMessageConfig_byId_notExists(CapturedOutput output) {
 
+        ArgumentCaptor<SqlParameterSource> paramSourceCaptor = ArgumentCaptor.forClass(SqlParameterSource.class);
         long testId = 15L;
-        when(template.query(anyString(), eq(Map.of("id", testId)), any(MessageConfigsRepository.MessageConfigResultSetExtractor.class)))
+        when(template.query(anyString(), any(SqlParameterSource.class), any(MessageConfigsRepository.MessageConfigResultSetExtractor.class)))
                 .thenReturn(emptyList());
 
         // Test call
-        MessageConfig result = repo.getMessageConfig(15L);
+        MessageConfig result = repo.getMessageConfig(testId);
 
         assertNull(result);
         assertTrue(output.getOut().contains("WARN"));
         assertTrue(output.getOut().contains("no results"));
-        verify(template, times(1)).query(anyString(), eq(Map.of("id", testId)), any(MessageConfigsRepository.MessageConfigResultSetExtractor.class));
+        verify(template, times(1)).query(anyString(), paramSourceCaptor.capture(), any(MessageConfigsRepository.MessageConfigResultSetExtractor.class));
+        SqlParameterSource sqlParams = paramSourceCaptor.getValue();
+        assertNotNull( sqlParams.getParameterNames());
+        assertEquals(1, sqlParams.getParameterNames().length);
+        assertEquals(testId, sqlParams.getValue("id"));
     }
 
     @Test

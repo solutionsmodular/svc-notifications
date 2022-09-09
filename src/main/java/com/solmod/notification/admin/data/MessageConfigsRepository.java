@@ -3,9 +3,8 @@ package com.solmod.notification.admin.data;
 
 import com.solmod.notification.domain.MessageConfig;
 import com.solmod.notification.domain.MessageSender;
-import com.solmod.notification.domain.MessageTemplate;
 import com.solmod.notification.domain.Status;
-import com.solmod.notification.exception.DBRequestFailureException;
+import com.solmod.notification.domain.summary.MessageTemplateSummary;
 import com.solmod.notification.exception.DataCollisionException;
 import com.solmod.notification.exception.ExpectedNotFoundException;
 import org.slf4j.Logger;
@@ -43,7 +42,7 @@ public class MessageConfigsRepository {
      *
      * @param request {@link MessageConfig} representing the request.
      */
-    public Long create(@NotNull final MessageConfig request) throws DataCollisionException, DBRequestFailureException {
+    public Long create(@NotNull final MessageConfig request) throws DataCollisionException {
         MessageConfig existing = getMessageConfig(request);
         if (existing != null) {
             throw new DataCollisionException("MessageConfig", existing.getId());
@@ -59,20 +58,12 @@ public class MessageConfigsRepository {
                 "status", request.getStatus().code(),
                 "name", request.getName()));
 
-        try {
-            template.update(sql, paramSource, keyHolder);
+        template.update(sql, paramSource, keyHolder);
 
-            log.info("MessageConfig created per request");
-            Long id = keyHolder.getKey() == null ? null : keyHolder.getKey().longValue();
-            request.setId(id);
-            return id;
-        } catch (DataAccessException e) {
-            log.error("DAE: Failed attempt to save component: {}\n{}", e.getMessage(), request);
-            throw new DBRequestFailureException("DB failure creating MessageConfig: " + e.getMessage());
-        }  catch (NullPointerException e) {
-            log.warn("NPE: Failed attempt to save component with missing fields\n    {}", request);
-            throw new DBRequestFailureException("DB failure creating MessageConfig: " + request);
-        }
+        log.info("MessageConfig created per request");
+        Long id = keyHolder.getKey() == null ? null : keyHolder.getKey().longValue();
+        request.setId(id);
+        return id;
     }
 
     /**
@@ -132,7 +123,7 @@ public class MessageConfigsRepository {
             return null;
         }
 
-        String sql = "SELECT mc.id message_config_id, mc.notification_event_id, name, mc.status, mc.modified_date, mc.created_date, \n" +
+        String sql = "SELECT mc.id as message_config_id, mc.notification_event_id, name, mc.status, mc.modified_date, mc.created_date, \n" +
                 "mt.id message_template_id, mt.recipient_context_key, mt.message_sender, mt.content_key \n" +
                 "FROM message_configs mc \n" +
                 "LEFT JOIN message_templates mt on mt.message_config_id = mc.id " +
@@ -167,9 +158,13 @@ public class MessageConfigsRepository {
         params.addField("name", crit.getName());
         params.addField("notification_event_id", crit.getNotificationEventId());
 
-        String sql = "select id, notification_event_id, name, status, created_date, modified_date \n" +
-                "FROM message_configs \n" +
-                "WHERE " + params.getStatement();
+        String sql = "SELECT mc.id id, notification_event_id, name, mc.status mc_status, mc.created_date mc_created_date, \n" +
+                "mc.modified_date mc_modified_date,\n" +
+                "mt.id mt_id, mt.recipient_context_key, mt.message_sender, mt.content_key, mt.status mt_status\n" +
+                "FROM message_configs mc\n" +
+                "LEFT JOIN message_templates mt on mt.message_config_id = mc.id \n" +
+                "WHERE " + params.getStatement() +
+                " ORDER BY mc.id";
 
         return template.query(sql, params.getParams(), new MessageConfigResultSetExtractor());
     }
@@ -203,38 +198,56 @@ public class MessageConfigsRepository {
 
     public static class MessageConfigResultSetExtractor implements ResultSetExtractor<List<MessageConfig>> {
 
+        /**
+         * Note: Use the statement to determine eager or lazy
+         *
+         * @param rs ResultSet
+         * @return List of {@link MessageConfig} where MessageConfigs contain {@link MessageTemplateSummary}s if the
+         * SQL statement provides values:
+         *
+         * <ul>
+         * <li>mt_id - Message Template ID</li>
+         * <li>content_key</li>
+         * <li>message_sender</li>
+         * <li>recipient_context_key</li>
+         * <li>mt_status</li>
+         * </ul>
+         * @throws SQLException If there's a problem with the code
+         * @throws DataAccessException If there's a problem with the data or request
+         */
         @Override
         public List<MessageConfig> extractData(ResultSet rs) throws SQLException, DataAccessException {
-            HashMap<Long, MessageConfig> builderMap = new HashMap<>();
+            List<MessageConfig> messageConfigs = new LinkedList<>();
 
+            MessageConfig current = null;
             while (rs.next()) {
-                long currentId = rs.getLong("message_config_id");
-                MessageConfig current = builderMap.get(currentId);
-                if (current == null) {
+                Long currentId = rs.getLong("id");
+                if (current == null || !Objects.equals(currentId, current.getId())) {
                     current = new MessageConfig();
                     current.setId(currentId);
                     current.setName(rs.getString("name"));
                     current.setNotificationEventId(rs.getLong("notification_event_id"));
-                    current.setStatus(Status.valueOf(rs.getString("status")));
+                    current.setStatus(Status.fromCode(rs.getString("mc_status")));
                     current.loadByResultSet(rs);
-                    builderMap.put(currentId, current);
+
+                    messageConfigs.add(current);
                 }
 
-
-                long templateId = rs.getLong("notification_template_id");
-                if (templateId == 0L) {
-                    MessageTemplate messageTemplate = new MessageTemplate();
-                    messageTemplate.setId(rs.getLong("message_template_id"));
-                    messageTemplate.setContentKey("content_key");
-                    messageTemplate.setRecipientContextKey("recipient_context_key");
-                    messageTemplate.setMessageConfigId(currentId);
-                    messageTemplate.setMessageSender(MessageSender.valueOf(rs.getString("message_sender")));
-                    messageTemplate.setStatus(Status.fromCode(rs.getString("status")));
-                    current.addMessageTemplate(messageTemplate);
+                Long msgTemplateId = rs.getLong("mt_id");
+                if (msgTemplateId > 0) {
+                    MessageTemplateSummary mt = MessageTemplateSummary.builder()
+                            .id(msgTemplateId)
+                            .messageConfigId(currentId)
+                            .contentKey(rs.getString("content_key"))
+                            .messageSender(MessageSender.valueOf(rs.getString("message_sender")))
+                            .recipientContextKey(rs.getString("recipient_context_key"))
+                            .status(Status.fromCode(rs.getString("mt_status")))
+                            .build();
+                    current.addMessageTemplate(mt);
                 }
             }
 
-            return new ArrayList<>(builderMap.values());
+            return messageConfigs;
         }
     }
 }

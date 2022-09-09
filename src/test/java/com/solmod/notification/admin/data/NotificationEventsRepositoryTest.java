@@ -51,7 +51,6 @@ public class NotificationEventsRepositoryTest {
         NotificationEvent request = buildFullyPopulatedNotificationEvent();
 
         doReturn(null, new NotificationEvent()).when(repo).getNotificationEvent(any(NotificationEvent.class));
-        when(template.update(anyString(), anyMap())).thenReturn(1);
 
         // Call
         repo.create(request);

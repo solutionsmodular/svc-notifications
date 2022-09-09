@@ -13,7 +13,7 @@ public class DataConfig {
     DataSource dataSource;
 
     @Bean
-    public NamedParameterJdbcTemplate jdbcTemplate() {
+    public NamedParameterJdbcTemplate namedParameterJdbcTemplate() {
         return new NamedParameterJdbcTemplate(dataSource);
     }
 }

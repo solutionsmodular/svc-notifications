@@ -19,10 +19,10 @@ public abstract class Audited extends Timestamped {
     }
 
     public void loadByResultSet(ResultSet rs) throws SQLException {
+        super.loadByResultSet(rs);
         Timestamp dateTime = rs.getTimestamp("modified_date");
         if (dateTime != null)
             setModifiedDate(new DateTime(dateTime.getTime()));
-        setCreatedDate(new DateTime(rs.getTimestamp("created_date").getTime()));
     }
 
     @Override

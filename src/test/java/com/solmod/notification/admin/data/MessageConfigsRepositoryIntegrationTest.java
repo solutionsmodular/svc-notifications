@@ -2,7 +2,6 @@ package com.solmod.notification.admin.data;
 
 import com.solmod.notification.domain.MessageConfig;
 import com.solmod.notification.domain.Status;
-import com.solmod.notification.exception.DBRequestFailureException;
 import com.solmod.notification.exception.DataCollisionException;
 import com.solmod.notification.exception.ExpectedNotFoundException;
 import org.junit.jupiter.api.DisplayName;
@@ -34,7 +33,7 @@ class MessageConfigsRepositoryIntegrationTest {
     @Test
     @DisplayName("Testing create. Happy day case in integration test, only")
     @ExtendWith(OutputCaptureExtension.class)
-    void testCreate(CapturedOutput output) throws DataCollisionException, DBRequestFailureException {
+    void testCreate(CapturedOutput output) throws DataCollisionException {
         // Get the test message config to get its notification event id
         MessageConfig model = new MessageConfig();
         model.setName("notification-admin-test-mc");

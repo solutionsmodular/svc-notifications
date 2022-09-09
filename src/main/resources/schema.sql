@@ -1,6 +1,6 @@
 create table notification_component_statuses
 (
-    status      varchar(3) unique not null,
+    status      varchar(5) unique not null,
     description varchar(256)      not null,
     constraint status_pk
         primary key (status)
@@ -24,7 +24,7 @@ create table notification_events
     tenant_id     BIGINT                               not null,
     event_subject varchar(50)                          null,
     event_verb    varchar(50)                          null,
-    status        varchar(3)                           not null,
+    status        varchar(5)                           not null,
     created_date  datetime DEFAULT CURRENT_TIMESTAMP   not null,
     modified_date datetime ON UPDATE CURRENT_TIMESTAMP null,
     constraint notification_events_pk
@@ -42,7 +42,7 @@ create table message_configs
     id                    BIGINT auto_increment,
     notification_event_id BIGINT                               not null,
     name                  varchar(512)                         not null,
-    status                varchar(3)                           not null,
+    status                varchar(5)                           not null,
     created_date          datetime DEFAULT CURRENT_TIMESTAMP   not null,
     modified_date         datetime ON UPDATE CURRENT_TIMESTAMP null,
     constraint message_configs_pk
@@ -63,7 +63,7 @@ create table message_templates
     recipient_context_key varchar(255)                         null,
     message_sender        varchar(50)                          NOT NULL,
     content_key           varchar(50)                          not null,
-    status                varchar(3)                           not null,
+    status                varchar(5)                           not null,
     created_date          datetime DEFAULT CURRENT_TIMESTAMP   not null,
     modified_date         datetime ON UPDATE CURRENT_TIMESTAMP null,
     constraint message_templates_pk
@@ -98,7 +98,7 @@ create table notification_triggers
     id                    BIGINT auto_increment              not null,
     notification_event_id BIGINT                             not null,
     uid                   varchar(255)                       not null,
-    status                varchar(3)                         not null,
+    status                varchar(5)                         not null,
     created_date          datetime DEFAULT CURRENT_TIMESTAMP not null,
     modified_date         datetime                           null,
     constraint notification_events_pk
@@ -131,7 +131,7 @@ create table notification_deliveries
     message_template_id  BIGINT                             not null,
     message_body_uri     varchar(255)                       null,
     delivery_process_key varchar(255)                       null,
-    status               varchar(3)                         not null,
+    status               varchar(5)                         not null,
     created_date         datetime DEFAULT CURRENT_TIMESTAMP not null,
     modified_date        datetime                           null,
     constraint notification_deliveries_pk

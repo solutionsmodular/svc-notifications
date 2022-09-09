@@ -37,4 +37,8 @@ public abstract class Timestamped extends BaseDomain {
         return result;
     }
 
+    protected void loadByResultSet(ResultSet rs) throws SQLException {
+        super.loadByResultSet(rs);
+        setCreatedDate(new DateTime(rs.getTimestamp("created_date").getTime()));
+    }
 }

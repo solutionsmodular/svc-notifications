@@ -9,7 +9,7 @@ values ('A', 'Active'),
        ('PP', 'Pending Permission'),
        ('PD', 'Pending Delivery')
        ;
-insert into message_content_senders(type, description)
+insert into message_senders(type, description)
 values ('EMAIL', 'Suited to Email'),
        ('SMS', 'Suited to SMS'),
        ('PUSH', 'Suited to Push Notifications'),
@@ -32,17 +32,17 @@ UNION
 select id, 'Order Returned','A' from notification_events
 where event_subject = 'ORDER' and event_verb = 'RETURNED'
 UNION
-select id, 'A', 'Calendar Event Received RSVP' from notification_events
+select id, 'Calendar Event Received RSVP', 'A' from notification_events
 where event_subject = 'CAL_EVENT' and event_verb = 'RSVPED'
 UNION
-select id, 'A', 'Calendar Event About to Start' from notification_events
+select id, 'Calendar Event About to Start', 'A' from notification_events
 where event_subject = 'CAL_EVENT' and event_verb = 'STARTING'
 UNION
-select id, 'A', 'Calendar Event Ending Soon' from notification_events
+select id, 'Calendar Event Ending Soon', 'A' from notification_events
 where event_subject = 'CAL_EVENT' and event_verb = 'ENDING'
 ;
 
-insert into message_templates(message_config_id, status, recipient_context_key, message_content_sender, content_key)
+insert into message_templates(message_config_id, status, recipient_context_key, message_sender, content_key)
 select mc.id, 'A', 'data.order.owner.email', 'EMAIL', 'ORDER_PLACED_OWNER_EMAIL' from notification_events ne
 join message_configs mc on mc.notification_event_id = ne.id
 where event_subject = 'ORDER' and event_verb = 'CREATED'

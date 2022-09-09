@@ -2,6 +2,7 @@ package com.solmod.notification.domain;
 
 import com.solmod.commons.ObjectUtils;
 import com.solmod.commons.StringifyException;
+import com.solmod.notification.domain.summary.MessageTemplateSummary;
 
 import java.util.*;
 
@@ -17,7 +18,7 @@ public class MessageConfig extends Audited {
     private String name;
     private Status status;
     private Map<String, String> deliveryCriteria = new HashMap<>();
-    private List<MessageTemplate> messageTemplates = new ArrayList<>();
+    private List<MessageTemplateSummary> messageTemplates;
 
     public Status getStatus() {
         return status;
@@ -55,20 +56,23 @@ public class MessageConfig extends Audited {
         this.deliveryCriteria.put(contextKeyName, contextValue);
     }
 
-    public List<MessageTemplate> getMessageTemplates() {
+    public List<MessageTemplateSummary> getMessageTemplates() {
         return messageTemplates;
     }
 
-    public void setMessageTemplates(List<MessageTemplate> messageTemplates) {
-        if (messageTemplates != null) {
-            this.messageTemplates = messageTemplates;
-        }
+    public void setMessageTemplates(List<MessageTemplateSummary> messageTemplates) {
+        this.messageTemplates = messageTemplates;
     }
 
-    public void addMessageTemplate(MessageTemplate messageTemplate) {
-        if (messageTemplate != null) {
-            this.messageTemplates.add(messageTemplate);
+    public void addMessageTemplate(MessageTemplateSummary messageTemplate) {
+        if (messageTemplate == null)
+            return;
+
+        if (this.messageTemplates == null) {
+            this.messageTemplates = new LinkedList<>();
         }
+
+        this.messageTemplates.add(messageTemplate);
     }
 
     @Override

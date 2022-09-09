@@ -47,7 +47,7 @@ public class MessageTemplatesRepository {
      * @return Long indicating the ID of the newly added MessageTemplate
      */
     public Long create(@NotNull final MessageTemplate request)
-            throws DataCollisionException, DBRequestFailureException {
+            throws DataCollisionException {
 
         MessageTemplate existing = getMessageTemplate(request);
         if (existing != null) {
@@ -67,20 +67,12 @@ public class MessageTemplatesRepository {
                 "recipient_context_key", request.getRecipientContextKey(),
                 "content_key", request.getContentKey()));
 
-        try {
             template.update(sql, paramSource, keyHolder);
 
             log.info("MessageTemplate created per request");
             Long id = keyHolder.getKey() == null ? null : keyHolder.getKey().longValue();
             request.setId(id);
             return id;
-        } catch (DataAccessException e) {
-            log.error("DAE: Failed attempt to save component: {}\n{}", e.getMessage(), request);
-            throw new DBRequestFailureException("DB failure creating MessageTemplate: " + e.getMessage());
-        } catch (NullPointerException e) {
-            log.warn("NPE: Failed attempt to save component with missing fields\n    {}", request);
-            throw new DBRequestFailureException("DB failure creating MessageTemplate: " + request);
-        }
     }
 
     /**
@@ -100,7 +92,7 @@ public class MessageTemplatesRepository {
         // If the outcome of the request is an active status, we need to ensure there's !another active template to collide
         if (Optional.ofNullable(request.getStatus()).orElse(origById.getStatus()).equals(Status.ACTIVE)) {
             MessageTemplate existing = getMessageTemplate(request);
-            if (existing != null && existing.getId() != request.getId() && existing.getStatus().equals(Status.ACTIVE)) {// getMessageTemplate should ensure active, but just in case...
+            if (existing != null && !Objects.equals(existing.getId(), request.getId()) && existing.getStatus().equals(Status.ACTIVE)) {// getMessageTemplate should ensure active, but just in case...
                 // There's been a change in one of the UniqueMessageTemplateId fields making it clash with an existing Template
                 // Logging is not important, as it doesn't signify an error herein or with the client
                 throw new DataCollisionException("MessageTemplate", request.getId());

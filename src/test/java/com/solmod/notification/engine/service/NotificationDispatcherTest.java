@@ -3,6 +3,7 @@ package com.solmod.notification.engine.service;
 import com.solmod.commons.StringifyException;
 import com.solmod.notification.admin.data.*;
 import com.solmod.notification.domain.*;
+import com.solmod.notification.domain.summary.MessageTemplateSummary;
 import com.solmod.notification.exception.DBRequestFailureException;
 import com.solmod.notification.exception.ExpectedNotFoundException;
 import com.solmod.notification.exception.InsufficientContextException;
@@ -48,6 +49,8 @@ class NotificationDispatcherTest {
     @Captor
     ArgumentCaptor<MessageTemplate> templateCaptor;
     @Captor
+    ArgumentCaptor<MessageConfig> configCaptor;
+    @Captor
     ArgumentCaptor<NotificationDelivery> deliveryCaptor;
     @Captor
     ArgumentCaptor<Map<String, String>> contextCaptor;
@@ -92,17 +95,17 @@ class NotificationDispatcherTest {
         assertNotNull(result);
         assertTrue(result.isEmpty());
         assertTrue(output.getOut().contains("WARN"));
-        assertTrue(output.getOut().contains("NotificationEvent with no MessageTemplates"));
+        assertTrue(output.getOut().contains("NotificationEvent with no MessageConfigs"));
     }
 
     @Test
     @ExtendWith(OutputCaptureExtension.class)
     @DisplayName("Verify that, when the context is missing context, we log and status PENDING_CONTEXT")
-    void apply_contextMissingRecpientKey(CapturedOutput output) throws ExpectedNotFoundException {
+    void apply_contextMissingRecipientKey(CapturedOutput output) throws ExpectedNotFoundException {
         NotificationEvent eventCriteria = buildNotificationEvent();
         MessageConfig repoCriteria = buildTemplateCriteria(eventCriteria.getId());
 
-        MessageConfig template = buildConfig("message.data.person.email", Map.of("message.data.person.firstName", "Peter"));
+        MessageConfig template = buildConfig("solmod_evt.data.person.email", Map.of("solmod_evt.data.person.firstName", "Peter"));
 
         NotificationEvent event = new NotificationEvent();
         event.setId(eventCriteria.getId());
@@ -130,7 +133,7 @@ class NotificationDispatcherTest {
         NotificationEvent eventCriteria = buildNotificationEvent();
         MessageConfig repoCriteria = buildTemplateCriteria(eventCriteria.getId());
 
-        MessageConfig config = buildConfig("message.data.person.email", Map.of("message.data.person.firstName", "Peter"));
+        MessageConfig config = buildConfig("solmod_evt.data.person.email", Map.of("solmod_evt.data.person.firstName", "Peter"));
 
         NotificationEvent event = new NotificationEvent();
         event.setId(eventCriteria.getId());
@@ -159,11 +162,11 @@ class NotificationDispatcherTest {
         NotificationEvent eventCriteria = buildNotificationEvent();
         MessageConfig repoCriteria = buildTemplateCriteria(eventCriteria.getId());
 
-        MessageConfig template = buildConfig("message.data.person.email", Map.of("message.data.person.firstName", "Peter"));
+        MessageConfig template = buildConfig("solmod_evt.data.person.email", Map.of("solmod_evt.data.person.firstName", "Peter"));
 /*
         // For clarity; here are the values we need from the context
-        Recipient Context Key = "message.data.person.email"
-        Delivery Criteria = message.data.person.name" == "Peter"
+        Recipient Context Key = "solmod_evt.data.person.email"
+        Delivery Criteria = solmod_evt.data.person.name" == "Peter"
 */
 
         NotificationEvent event = new NotificationEvent();
@@ -191,7 +194,7 @@ class NotificationDispatcherTest {
         NotificationEvent eventCriteria = buildNotificationEvent();
         MessageConfig repoCriteria = buildTemplateCriteria(eventCriteria.getId());
 
-        MessageConfig template = buildConfig("message.data.person.email", Map.of("message.data.person.firstName", "Peter"));
+        MessageConfig template = buildConfig("solmod_evt.data.person.email", Map.of("solmod_evt.data.person.firstName", "Peter"));
 
         NotificationEvent event = new NotificationEvent();
         event.setId(eventCriteria.getId());
@@ -220,7 +223,7 @@ class NotificationDispatcherTest {
         trigger.setId(22L);
 
         HashMap<String, Object> entireContext = new HashMap<>();
-        entireContext.put("message", new MessageContextTest(new PersonContextTest("roger@rabbits.com", "Roger, of course")));
+        entireContext.put("solmod_evt", new MessageContextTest(new PersonContextTest("roger@rabbits.com", "Roger, of course")));
         // "custom" would be the result of running a context builder
         entireContext.put("custom", new MessageContextTest(
                 new PersonContextTest("roger@rabbits.com", "Roger, of course", 
@@ -228,13 +231,13 @@ class NotificationDispatcherTest {
         entireContext.put("unused", new MessageContextTest(new PersonContextTest("who@cares.com", "poof")));
 
         HashMap<String, Object> relevantContext = new HashMap<>();
-        relevantContext.put("message.person.email", "roger@rabbits.com");
-        relevantContext.put("message.person.firstName", "Roger, of course");
+        relevantContext.put("solmod_evt.person.email", "roger@rabbits.com");
+        relevantContext.put("solmod_evt.person.firstName", "Roger, of course");
         relevantContext.put("custom.person.sponsor.email", "sponsor@rabbits.com");
         relevantContext.put("custom.person.sponsor.firstName", "Jessica");
 
         ArrayList<MessageConfig> templates = new ArrayList<>();
-        MessageConfig template1 = buildConfig("message.person.email", Map.of("message.person.firstName", "Peter"));
+        MessageConfig template1 = buildConfig("solmod_evt.person.email", Map.of("solmod_evt.person.firstName", "Peter"));
         MessageConfig template2 = buildConfig("custom.person.sponsor.email",
                 Map.of("custom.person.sponsor.firstName", "Mary"));
         templates.add(template1);
@@ -257,15 +260,15 @@ class NotificationDispatcherTest {
         trigger.setId(22L);
 
         HashMap<String, Object> entireContext = new HashMap<>();
-        entireContext.put("message", new MessageContextTest(new PersonContextTest("roger@rabbits.com", "Roger, of course")));
+        entireContext.put("solmod_evt", new MessageContextTest(new PersonContextTest("roger@rabbits.com", "Roger, of course")));
         entireContext.put("unused", new MessageContextTest(new PersonContextTest("who@cares.com", "poof")));
 
         HashMap<String, Object> relevantContext = new HashMap<>();
-        relevantContext.put("message.person.email", "roger@rabbits.com");
-        relevantContext.put("message.person.firstName", "Roger, of course");
+        relevantContext.put("solmod_evt.person.email", "roger@rabbits.com");
+        relevantContext.put("solmod_evt.person.firstName", "Roger, of course");
 
         ArrayList<MessageConfig> templates = new ArrayList<>();
-        MessageConfig template1 = buildConfig("message.person.email", Map.of("message.person.firstName", "Peter"));
+        MessageConfig template1 = buildConfig("solmod_evt.person.email", Map.of("solmod_evt.person.firstName", "Peter"));
         MessageConfig template2 = buildConfig("custom.person.sponsor.email",
                 Map.of("custom.person.sponsor.firstName", "Mary"));
         templates.add(template1);
@@ -287,19 +290,19 @@ class NotificationDispatcherTest {
         ArrayList<MessageConfig> templates = new ArrayList<>();
 
         // Qualifies
-        templates.add(buildConfig("message.data.person.email", Map.of(
-                "message.data.person.state", "AZ",
-                "message.data.person.member", "VIP")));
-        templates.add(buildConfig("message.data.person.email", Map.of(
-                "message.data.person.member", "VIP")));
+        templates.add(buildConfig("solmod_evt.data.person.email", Map.of(
+                "solmod_evt.data.person.state", "AZ",
+                "solmod_evt.data.person.member", "VIP")));
+        templates.add(buildConfig("solmod_evt.data.person.email", Map.of(
+                "solmod_evt.data.person.member", "VIP")));
         // Not Qualifies
-        templates.add(buildConfig("message.data.person.email", Map.of(
-                "message.data.person.state", "FL")));
+        templates.add(buildConfig("solmod_evt.data.person.email", Map.of(
+                "solmod_evt.data.person.state", "FL")));
 
         Set<NotificationDelivery> result = dispatcher.determineAndBuildDeliveries(templates, Map.of(
-                "message.data.person.state", "AZ",
-                "message.data.person.member", "VIP",
-                "message.data.person.email", "joe@cool.com"));
+                "solmod_evt.data.person.state", "AZ",
+                "solmod_evt.data.person.member", "VIP",
+                "solmod_evt.data.person.email", "joe@cool.com"));
 
         assertEquals(2, result.size());
     }
@@ -310,29 +313,29 @@ class NotificationDispatcherTest {
         ArrayList<MessageConfig> templates = new ArrayList<>();
 
         // Qualifies
-        templates.add(buildConfig("message.data.person.email", Map.of(
-                "message.data.person.state", "AZ",
-                "message.data.person.member", "VIP")));
-        templates.add(buildConfig("message.data.person.email", Map.of(
-                "message.data.person.member", "VIP")));
+        templates.add(buildConfig("solmod_evt.data.person.email", Map.of(
+                "solmod_evt.data.person.state", "AZ",
+                "solmod_evt.data.person.member", "VIP")));
+        templates.add(buildConfig("solmod_evt.data.person.email", Map.of(
+                "solmod_evt.data.person.member", "VIP")));
         // Not Qualifies
-        templates.add(buildConfig("message.data.person.email", Map.of(
-                "message.data.person.state", "FL")));
+        templates.add(buildConfig("solmod_evt.data.person.email", Map.of(
+                "solmod_evt.data.person.state", "FL")));
 
         assertThrows(InsufficientContextException.class, () -> dispatcher.determineAndBuildDeliveries(templates, Map.of(
-                "message.data.person.member", "VIP",
-                "message.data.person.email", "joe@cool.com")));
+                "solmod_evt.data.person.member", "VIP",
+                "solmod_evt.data.person.email", "joe@cool.com")));
     }
 
     @Test
     @DisplayName("Assert only active templates are pulled by the dispatcher")
     void getRelatedMessageTemplates() {
         dispatcher.getActiveMessageConfigs(15L);
-        verify(mtRepo, times(1)).getMessageTemplates(templateCaptor.capture());
+        verify(mcRepo, times(1)).getMessageConfigs(configCaptor.capture());
 
-        MessageTemplate result = templateCaptor.getValue();
+        MessageConfig result = configCaptor.getValue();
 
-        assertEquals(15L, result.getMessageConfigId());
+        assertEquals(15L, result.getNotificationEventId());
         assertEquals(ACTIVE, result.getStatus());
     }
 
@@ -363,11 +366,12 @@ class NotificationDispatcherTest {
         messageConfig.setNotificationEventId(15L);
         messageConfig.setDeliveryCriteria(deliveryCriteria);
 
-        MessageTemplate messageTemplate = new MessageTemplate();
-        messageTemplate.setRecipientContextKey(recipientContextKey);
-        messageTemplate.setMessageConfigId(messageConfig.getId());
+        MessageTemplateSummary messageTemplate = MessageTemplateSummary.builder()
+                .recipientContextKey(recipientContextKey)
+                .messageConfigId(messageConfig.getId())
+                .build();
 
-        messageConfig.setMessageTemplates(List.of(messageTemplate));
+        messageConfig.addMessageTemplate(messageTemplate);
 
         return messageConfig;
     }
