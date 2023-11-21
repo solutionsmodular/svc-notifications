@@ -15,7 +15,7 @@ import java.util.Objects;
  * indicates the more verbose message body like that would be used for an email.
  * All configurations found will be processed.
  */
-public class MessageTemplate extends Audited {
+public class MessageTemplate extends Tenanted {
 
     private Long messageConfigId;
     private Status status;

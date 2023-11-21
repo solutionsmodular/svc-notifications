@@ -19,7 +19,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -87,6 +87,7 @@ public class NotificationTriggersRepository {
 
         SQLUpdateStatementParams statementParams = new SQLUpdateStatementParams(request.getId());
         statementParams.addField("status", origById.getStatus(), request.getStatus());
+        statementParams.addField("uid", origById.getUid(), request.getUid());
 
         Set<DataUtils.FieldUpdate> fieldUpdates = statementParams.getUpdates();
 

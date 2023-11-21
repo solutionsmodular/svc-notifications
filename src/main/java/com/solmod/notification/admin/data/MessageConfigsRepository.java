@@ -7,6 +7,7 @@ import com.solmod.notification.domain.Status;
 import com.solmod.notification.domain.summary.MessageTemplateSummary;
 import com.solmod.notification.exception.DataCollisionException;
 import com.solmod.notification.exception.ExpectedNotFoundException;
+import jakarta.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +21,6 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.validation.constraints.NotNull;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -123,11 +123,9 @@ public class MessageConfigsRepository {
             return null;
         }
 
-        String sql = "SELECT mc.id as message_config_id, mc.notification_event_id, name, mc.status, mc.modified_date, mc.created_date, \n" +
-                "mt.id message_template_id, mt.recipient_context_key, mt.message_sender, mt.content_key \n" +
-                "FROM message_configs mc \n" +
-                "LEFT JOIN message_templates mt on mt.message_config_id = mc.id " +
-                "where mt.id = :id";
+        String sql = "SELECT mc.id, mc.notification_event_id, name, mc.status, mc.modified_date, mc.created_date " +
+                "FROM message_configs mc " +
+                "where id = :id";
 
         MapSqlParameterSource params = new MapSqlParameterSource(Map.of("id", id));
         List<MessageConfig> results = template.query(sql, params, new MessageConfigResultSetExtractor());
@@ -158,11 +156,9 @@ public class MessageConfigsRepository {
         params.addField("name", crit.getName());
         params.addField("notification_event_id", crit.getNotificationEventId());
 
-        String sql = "SELECT mc.id id, notification_event_id, name, mc.status mc_status, mc.created_date mc_created_date, \n" +
-                "mc.modified_date mc_modified_date,\n" +
-                "mt.id mt_id, mt.recipient_context_key, mt.message_sender, mt.content_key, mt.status mt_status\n" +
+        String sql = "SELECT mc.id, notification_event_id, name, mc.status, mc.created_date, \n" +
+                "mc.modified_date\n" +
                 "FROM message_configs mc\n" +
-                "LEFT JOIN message_templates mt on mt.message_config_id = mc.id \n" +
                 "WHERE " + params.getStatement() +
                 " ORDER BY mc.id";
 
@@ -227,23 +223,10 @@ public class MessageConfigsRepository {
                     current.setId(currentId);
                     current.setName(rs.getString("name"));
                     current.setNotificationEventId(rs.getLong("notification_event_id"));
-                    current.setStatus(Status.fromCode(rs.getString("mc_status")));
+                    current.setStatus(Status.fromCode(rs.getString("status")));
                     current.loadByResultSet(rs);
 
                     messageConfigs.add(current);
-                }
-
-                Long msgTemplateId = rs.getLong("mt_id");
-                if (msgTemplateId > 0) {
-                    MessageTemplateSummary mt = MessageTemplateSummary.builder()
-                            .id(msgTemplateId)
-                            .messageConfigId(currentId)
-                            .contentKey(rs.getString("content_key"))
-                            .messageSender(MessageSender.valueOf(rs.getString("message_sender")))
-                            .recipientContextKey(rs.getString("recipient_context_key"))
-                            .status(Status.fromCode(rs.getString("mt_status")))
-                            .build();
-                    current.addMessageTemplate(mt);
                 }
             }
 

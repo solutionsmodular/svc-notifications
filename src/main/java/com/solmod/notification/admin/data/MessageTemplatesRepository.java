@@ -1,17 +1,15 @@
 package com.solmod.notification.admin.data;
 
-
 import com.solmod.notification.domain.MessageSender;
 import com.solmod.notification.domain.MessageTemplate;
 import com.solmod.notification.domain.Status;
-import com.solmod.notification.exception.DBRequestFailureException;
 import com.solmod.notification.exception.DataCollisionException;
 import com.solmod.notification.exception.ExpectedNotFoundException;
+import jakarta.validation.constraints.NotNull;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.RowMapperResultSetExtractor;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -22,7 +20,6 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.validation.constraints.NotNull;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;

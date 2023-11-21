@@ -14,7 +14,7 @@ import lombok.Setter;
 public class MessageTemplateSummary {
     private Long id;
     private Long messageConfigId;
-    private Status status;
+    private Status mt_status;
     private String recipientContextKey;
     private MessageSender messageSender;
     private String contentKey;

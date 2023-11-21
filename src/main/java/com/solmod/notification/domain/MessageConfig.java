@@ -52,10 +52,6 @@ public class MessageConfig extends Audited {
         this.deliveryCriteria = deliveryCriteria != null ? deliveryCriteria : new HashMap<>();
     }
 
-    public void addDeliveryCriteria(String contextKeyName, String contextValue) {
-        this.deliveryCriteria.put(contextKeyName, contextValue);
-    }
-
     public List<MessageTemplateSummary> getMessageTemplates() {
         return messageTemplates;
     }

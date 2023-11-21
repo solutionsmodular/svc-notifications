@@ -44,4 +44,4 @@ Senders, such as email, timeline, or SMS, can not be duplicated within a Message
 * Based on the message data, Message Templates whose data meets criteria are persisted as Message Deliveries
 * Once the delivery is persisted, it can be queued for the Senders
 
-TODO: rename messagetemplates to message_comfigurations
+TODO: rename messagetemplates to message_configurations

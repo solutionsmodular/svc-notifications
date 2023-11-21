@@ -1,3 +1,6 @@
+drop schema ne;
+create schema ne;
+use ne;
 create table notification_component_statuses
 (
     status      varchar(5) unique not null,

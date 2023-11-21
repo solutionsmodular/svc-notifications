@@ -4,7 +4,6 @@ import com.solmod.notification.domain.MessageConfig;
 import com.solmod.notification.domain.MessageSender;
 import com.solmod.notification.domain.MessageTemplate;
 import com.solmod.notification.domain.Status;
-import com.solmod.notification.exception.DBRequestFailureException;
 import com.solmod.notification.exception.DataCollisionException;
 import com.solmod.notification.exception.ExpectedNotFoundException;
 import org.junit.jupiter.api.DisplayName;
@@ -17,6 +16,7 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,7 +38,7 @@ class MessageTemplatesRepositoryIntegrationTest {
     @Test
     @DisplayName("Testing create. Happy day case in integration test, only")
     @ExtendWith(OutputCaptureExtension.class)
-    void testCreate(CapturedOutput output) throws DataCollisionException, DBRequestFailureException {
+    void testCreate(CapturedOutput output) throws DataCollisionException {
         MessageConfig messageConfig = new MessageConfig();
         messageConfig.setName("notification-admin-test-mc");
         messageConfig = configRepository.getMessageConfig(messageConfig);
@@ -64,7 +64,8 @@ class MessageTemplatesRepositoryIntegrationTest {
         MessageTemplate criteria = new MessageTemplate();
         criteria.setRecipientContextKey("test-recipient-addy");
 
-        MessageTemplate existing = adminRepository.getMessageTemplate(criteria);
+        List<MessageTemplate> messageTemplates = adminRepository.getMessageTemplates(criteria);
+        MessageTemplate existing = messageTemplates.get(0);
         MessageTemplate request = new MessageTemplate();
         request.setId(existing.getId());
         request.setRecipientContextKey("data.different.order.owner.email");
