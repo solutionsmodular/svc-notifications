@@ -3,29 +3,36 @@ package com.solmod.notification.domain;
 import com.solmod.commons.ObjectUtils;
 import com.solmod.commons.StringifyException;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 
-public class MessageTemplate extends Audited {
+/**
+ * A MessageTemplate is the component which, for a given {@link MessageConfig}, specifies a specific message to deliver.
+ * By "specific", we refer to the channel through which the message should be delivered, the CMS content key for the
+ * message body, and where in the Event Context it should find the address for the recipient.
+ * In other words, where a {@link MessageConfig} would indicate subject/verb and conditions specifying, say, a scope
+ * of "Order Placed - Customer Sponsor", indicating a notification to be sent to the sponsor of someone who placed
+ * an order,... The MessageTemplate indicates the actual shortened body to be sent, onto a timeline, or via SMS, and
+ * indicates the more verbose message body like that would be used for an email.
+ * All configurations found will be processed.
+ */
+public class MessageTemplate extends Tenanted {
 
-    private Long notificationContextId;
+    private Long messageConfigId;
     private Status status;
     private String recipientContextKey;
-    private ContentLookupType contentLookupType;
+    private MessageSender messageSender;
     private String contentKey;
-    private Map<String, Object> deliveryCriteria = new HashMap<>();
 
     public Status getStatus() {
         return status;
     }
 
-    public Long getNotificationContextId() {
-        return notificationContextId;
+    public Long getMessageConfigId() {
+        return messageConfigId;
     }
 
-    public void setNotificationContextId(Long notificationContextId) {
-        this.notificationContextId = notificationContextId;
+    public void setMessageConfigId(Long messageConfigId) {
+        this.messageConfigId = messageConfigId;
     }
 
     public void setStatus(Status status) {
@@ -40,12 +47,12 @@ public class MessageTemplate extends Audited {
         this.recipientContextKey = recipientContextKey;
     }
 
-    public ContentLookupType getContentLookupType() {
-        return contentLookupType;
+    public MessageSender getMessageSender() {
+        return messageSender;
     }
 
-    public void setContentLookupType(ContentLookupType contentLookupType) {
-        this.contentLookupType = contentLookupType;
+    public void setMessageSender(MessageSender messageSender) {
+        this.messageSender = messageSender;
     }
 
     public String getContentKey() {
@@ -56,13 +63,6 @@ public class MessageTemplate extends Audited {
         this.contentKey = contentKey;
     }
 
-    public Map<String, Object> getDeliveryCriteria() {
-        return deliveryCriteria;
-    }
-
-    public void setDeliveryCriteria(Map<String, Object> deliveryCriteria) {
-        this.deliveryCriteria = deliveryCriteria;
-    }
 
     @Override
     public boolean equals(Object o) {
@@ -74,12 +74,11 @@ public class MessageTemplate extends Audited {
 
         MessageTemplate that = (MessageTemplate) o;
 
-        if (!Objects.equals(notificationContextId, that.notificationContextId)) return false;
+        if (!Objects.equals(messageConfigId, that.messageConfigId)) return false;
         if (!Objects.equals(recipientContextKey, that.recipientContextKey)) return false;
-        if (!Objects.equals(contentLookupType, that.contentLookupType)) return false;
+        if (!Objects.equals(messageSender, that.messageSender)) return false;
         if (!Objects.equals(contentKey, that.contentKey)) return false;
-        if (!Objects.equals(status, that.status)) return false;
-        return Objects.equals(deliveryCriteria, that.deliveryCriteria);
+        return Objects.equals(status, that.status);
     }
 
     @Override
@@ -87,9 +86,8 @@ public class MessageTemplate extends Audited {
         int result = super.hashCode();
         result += (status != null ? status.hashCode() : 0);
         result += (recipientContextKey != null ? recipientContextKey.hashCode() : 0);
-        result += (contentLookupType != null ? contentLookupType.hashCode() : 0);
+        result += (messageSender != null ? messageSender.hashCode() : 0);
         result += (contentKey != null ? contentKey.hashCode() : 0);
-        result += (deliveryCriteria != null ? deliveryCriteria.hashCode() : 0);
 
         return result;
     }

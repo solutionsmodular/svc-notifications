@@ -1,71 +1,51 @@
 package com.solmod.notification.domain;
 
-import com.solmod.commons.ObjectUtils;
 import com.solmod.commons.StringifyException;
 
-import java.util.Objects;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
-public class NotificationContext extends Tenanted {
+import static com.solmod.commons.ObjectUtils.flatten;
 
-    private String eventSubject;
-    private String eventVerb;
-    private Status status;
+/**
+ * Encapsulate all that's essentially needed for a notification, upon which many messages may be triggered
+ * to deliver
+ */
+public class NotificationContext {
+    private final Map<String, Object> eventContext = new HashMap<>();
+    private final Set<String> minContext = new HashSet<>();
+    private final Set<MessageConfig> qualifyingMessageConfigs = new HashSet<>();
 
-    public String getEventSubject() {
-        return eventSubject;
+    public Map<String, Object> getEventContext() {
+        return eventContext;
     }
 
-    public void setEventSubject(String eventSubject) {
-        this.eventSubject = eventSubject;
+    public Set<String> getMinContext() {
+        return minContext;
     }
 
-    public String getEventVerb() {
-        return eventVerb;
+    public Set<MessageConfig> getQualifyingMessageTemplates() {
+        return qualifyingMessageConfigs;
     }
 
-    public void setEventVerb(String eventVerb) {
-        this.eventVerb = eventVerb;
+    public void addBuildContextParam(String key, String value) {
+        eventContext.put(key, value);
     }
 
-    public Status getStatus() {
-        return status;
+    public void addBuildContext(String contextKey, Object context) throws StringifyException {
+        Map<String, Object> flattenedContext = flatten(context);
+        eventContext.put(contextKey, flattenedContext);
     }
 
-    public void setStatus(Status status) {
-        this.status = status;
+    public void addMinContextParam(String key) {
+        minContext.add(key);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        if (!super.equals(o))
-            return false;
-
-        NotificationContext that = (NotificationContext) o;
-
-        if (!Objects.equals(eventSubject, that.eventSubject)) return false;
-        if (!Objects.equals(eventVerb, that.eventVerb)) return false;
-        return Objects.equals(status, that.status);
+    public void addQualifyingMessageTemplate(MessageConfig template) {
+        qualifyingMessageConfigs.add(template);
     }
 
-    @Override
-    public int hashCode() {
-        int result = super.hashCode();
-        result += (eventSubject != null ? eventSubject.hashCode() : 0);
-        result += (eventVerb != null ? eventVerb.hashCode() : 0);
-        result += (status != null ? status.hashCode() : 0);
 
-        return result;
-    }
-
-    @Override
-    public String toString() {
-        try {
-            return ObjectUtils.stringify(this);
-        } catch (StringifyException e) {
-            return Objects.toString(this);
-        }
-    }
 }

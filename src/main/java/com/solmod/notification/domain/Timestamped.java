@@ -2,6 +2,8 @@ package com.solmod.notification.domain;
 
 import org.joda.time.DateTime;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Objects;
 
 public abstract class Timestamped extends BaseDomain {
@@ -35,4 +37,8 @@ public abstract class Timestamped extends BaseDomain {
         return result;
     }
 
+    protected void loadByResultSet(ResultSet rs) throws SQLException {
+        super.loadByResultSet(rs);
+        setCreatedDate(new DateTime(rs.getTimestamp("created_date").getTime()));
+    }
 }

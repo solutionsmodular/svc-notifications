@@ -10,11 +10,18 @@ public enum Status {
     INACTIVE("I"),
     ACTIVE("A"),
     DELETED("D"),
-    // Used by Notification Delivery
+
+    // MessageTrigger statuses
+    NO_OP("NO"), // If, in the end, no MessageTemplates qualify/exist to send
+    PROCESSING("P"),
+    COMPLETE("CP"),
+
+    // MessageDelivery statuses
     DELIVERED("V"),
-    CANCELED("C"),
     FAILED("F"),
-    PENDING("P");
+    PENDING_CONTEXT("PC"),
+    PENDING_PERMISSION("PP"),
+    PENDING_DELIVERY("PD");
 
     private final String code;
 
@@ -30,6 +37,7 @@ public enum Status {
 
         return null;
     }
+
     @JsonValue
     public String code() {
         return code;

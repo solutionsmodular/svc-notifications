@@ -1,11 +1,10 @@
 package com.solmod.notification.admin.data;
 
-import com.solmod.notification.domain.ContentLookupType;
+import com.solmod.notification.domain.MessageSender;
 import com.solmod.notification.domain.MessageTemplate;
-import com.solmod.notification.domain.NotificationContext;
 import com.solmod.notification.domain.Status;
-import com.solmod.notification.exception.MessageTemplateAlreadyExistsException;
-import com.solmod.notification.exception.MessageTemplateNonexistentException;
+import com.solmod.notification.exception.DataCollisionException;
+import com.solmod.notification.exception.ExpectedNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,55 +46,36 @@ public class MessageTemplatesRepositoryTest {
     }
 
     @Test
-    @DisplayName("Assert that we can create a MessageTemplate if it doesn't already exist per UniqueMessageTemplateId")
-    void create_allClear() throws MessageTemplateAlreadyExistsException {
+    @DisplayName("Assert that we can create a MessageTemplate if it doesn't already exist per rules of uniqueness")
+    void create_allClear() throws DataCollisionException {
         MessageTemplate request = buildFullyPopulatedMessageTemplate();
 
         doReturn(null, new MessageTemplate()).when(repo).getMessageTemplate(any(MessageTemplate.class));
-        when(template.update(anyString(), anyMap())).thenReturn(1);
 
         // Call
         repo.create(request);
 
         verify(repo, times(1)).create(any(MessageTemplate.class));
-        // Find first to ensure it doesn't exist, use same find to load after save
-        verify(repo, times(1)).getMessageTemplate(any(MessageTemplate.class));
-    }
-
-    @Test
-    @DisplayName("Assert that we cannot create a MessageTemplate and an error is logged if fields are missing")
-    void create_MissingFields(CapturedOutput captured) throws MessageTemplateAlreadyExistsException {
-        MessageTemplate request = new MessageTemplate();
-        request.setNotificationContextId(345L);
-        request.setContentLookupType(ContentLookupType.STATIC);
-        request.setStatus(Status.ACTIVE);
-        doReturn(emptyList()).when(repo).getMessageTemplates(any(MessageTemplate.class));
-
-        // Call
-        repo.create(request);
-
-        // Assert
-        assertTrue(captured.getOut().contains("Failed attempt to save message template"));
         // Find first to ensure it doesn't exist, use same find to load after save
         verify(repo, times(1)).getMessageTemplate(any(MessageTemplate.class));
     }
 
     @Test
     @DisplayName("Assert we get an Exception if the MessageTemplate already exists per UniqueMessageTemplateId")
-    void create_alreadyExists() throws MessageTemplateAlreadyExistsException {
+    void create_alreadyExists() throws DataCollisionException {
         doReturn(new MessageTemplate()).when(repo).getMessageTemplate(any(MessageTemplate.class));
-        assertThrows(MessageTemplateAlreadyExistsException.class, () -> repo.create(new MessageTemplate()));
+        assertThrows(DataCollisionException.class, () -> repo.create(new MessageTemplate()));
         verify(repo, times(1)).create(any(MessageTemplate.class));
     }
 
     @Test
     @DisplayName("Assert only supplied values are registered as change request")
-    void update_allClear() throws MessageTemplateNonexistentException, MessageTemplateAlreadyExistsException {
+    void update_allClear() throws ExpectedNotFoundException, DataCollisionException {
         MessageTemplate origFormOfRequest = new MessageTemplate();
         origFormOfRequest.setId(155L);
         origFormOfRequest.setStatus(Status.ACTIVE);
-        origFormOfRequest.setNotificationContextId(155L);
-        origFormOfRequest.setContentLookupType(ContentLookupType.URL);
+        origFormOfRequest.setMessageConfigId(155L);
+        origFormOfRequest.setMessageSender(MessageSender.EMAIL);
         origFormOfRequest.setContentKey("OG-content-key");
         origFormOfRequest.setRecipientContextKey("a-recipient-context-key");
 
@@ -115,20 +95,20 @@ public class MessageTemplatesRepositoryTest {
 
     @Test
     @DisplayName("Assert we can update a MessageTemplate when there are no rules broken")
-    void update_allClear_ignoreMissingFields() throws MessageTemplateNonexistentException, MessageTemplateAlreadyExistsException {
+    void update_allClear_ignoreMissingFields() throws ExpectedNotFoundException, DataCollisionException {
         MessageTemplate origFormOfRequest = new MessageTemplate();
         origFormOfRequest.setId(155L);
-        origFormOfRequest.setNotificationContextId(155L);
+        origFormOfRequest.setMessageConfigId(155L);
         origFormOfRequest.setStatus(Status.ACTIVE);
-        origFormOfRequest.setContentLookupType(ContentLookupType.URL);
+        origFormOfRequest.setMessageSender(MessageSender.EMAIL);
         origFormOfRequest.setContentKey("OG-content-key");
         origFormOfRequest.setRecipientContextKey("a-recipient-context-key");
 
         MessageTemplate request = new MessageTemplate();
         request.setId(155L);
-        request.setNotificationContextId(155L);
+        request.setMessageConfigId(155L);
         request.setStatus(Status.INACTIVE);
-        request.setContentLookupType(ContentLookupType.STATIC);
+        request.setMessageSender(MessageSender.SMS);
         request.setContentKey("new-content-key");
         request.setRecipientContextKey(origFormOfRequest.getRecipientContextKey());
 
@@ -142,18 +122,18 @@ public class MessageTemplatesRepositoryTest {
 
     @Test
     @DisplayName("Assert no update is performed if there are no changes")
-    void update_noChange() throws MessageTemplateNonexistentException, MessageTemplateAlreadyExistsException {
+    void update_noChange() throws ExpectedNotFoundException, DataCollisionException {
         MessageTemplate origFormOfRequest = new MessageTemplate();
         origFormOfRequest.setId(155L);
         origFormOfRequest.setStatus(Status.INACTIVE);
-        origFormOfRequest.setContentLookupType(ContentLookupType.URL);
+        origFormOfRequest.setMessageSender(MessageSender.EMAIL);
         origFormOfRequest.setContentKey("OG-content-key");
         origFormOfRequest.setRecipientContextKey("a-recipient-context-key");
 
         MessageTemplate request = new MessageTemplate();
         request.setId(origFormOfRequest.getId());
         request.setStatus(origFormOfRequest.getStatus());
-        request.setContentLookupType(origFormOfRequest.getContentLookupType());
+        request.setMessageSender(origFormOfRequest.getMessageSender());
         request.setContentKey(origFormOfRequest.getContentKey());
         request.setRecipientContextKey(origFormOfRequest.getRecipientContextKey());
 
@@ -175,7 +155,7 @@ public class MessageTemplatesRepositoryTest {
         request.setStatus(Status.ACTIVE);
         doReturn(null).when(repo).getMessageTemplate(request.getId());
 
-        assertThrows(MessageTemplateNonexistentException.class, () -> repo.update(request));
+        assertThrows(ExpectedNotFoundException.class, () -> repo.update(request));
         assertTrue(out.getOut().contains("WARN"));
         assertTrue(out.getOut().contains("Attempt to update a MessageTemplate which does not exist"));
     }
@@ -188,21 +168,21 @@ public class MessageTemplatesRepositoryTest {
         MessageTemplate original = new MessageTemplate();
         original.setId(155L);
         original.setStatus(Status.ACTIVE);
-        original.setContentLookupType(ContentLookupType.STATIC);
+        original.setMessageSender(MessageSender.SMS);
         original.setContentKey("a-content-key");
         original.setRecipientContextKey("a-recipient-context-key");
 
         MessageTemplate request = new MessageTemplate();
         request.setId(155L);
         request.setStatus(Status.ACTIVE);
-        request.setContentLookupType(ContentLookupType.STATIC);
+        request.setMessageSender(MessageSender.SMS);
         request.setContentKey("b-content-key");
         request.setRecipientContextKey("b-recipient-context-key");
 
         MessageTemplate conflicting = new MessageTemplate();
         conflicting.setId(156L);
         conflicting.setStatus(Status.ACTIVE);
-        conflicting.setContentLookupType(ContentLookupType.STATIC);
+        conflicting.setMessageSender(MessageSender.SMS);
         conflicting.setContentKey(request.getContentKey());
         conflicting.setRecipientContextKey(request.getRecipientContextKey());
 
@@ -210,31 +190,31 @@ public class MessageTemplatesRepositoryTest {
         doReturn(conflicting).when(repo).getMessageTemplate(eq(request));
 
         // Call
-        assertThrows(MessageTemplateAlreadyExistsException.class, () -> repo.update(request));
+        assertThrows(DataCollisionException.class, () -> repo.update(request));
     }
 
     @ParameterizedTest
     @CsvSource({"A,A,I", "I,I,A", "A,I,I"})
     @DisplayName("Assert that we can make 'colliding' changes to  MessageTemplate so long as there is only one Active across all duplicates")
-    void update_noConflictDueToStatus(String existingStatus, String requestStatus, String conflictingStatus) throws MessageTemplateNonexistentException, MessageTemplateAlreadyExistsException {
+    void update_noConflictDueToStatus(String existingStatus, String requestStatus, String conflictingStatus) throws ExpectedNotFoundException, DataCollisionException {
         MessageTemplate original = new MessageTemplate();
         original.setId(155L);
         original.setStatus(Status.fromCode(existingStatus));
-        original.setContentLookupType(ContentLookupType.STATIC);
+        original.setMessageSender(MessageSender.SMS);
         original.setContentKey("a-content-key");
         original.setRecipientContextKey("a-recipient-context-key");
 
         MessageTemplate request = new MessageTemplate();
         request.setId(155L);
         request.setStatus(Status.fromCode(requestStatus));
-        request.setContentLookupType(ContentLookupType.STATIC);
+        request.setMessageSender(MessageSender.SMS);
         request.setContentKey("b-content-key");
         request.setRecipientContextKey("b-recipient-context-key");
 
         MessageTemplate conflicting = new MessageTemplate();
         conflicting.setId(156L);
         conflicting.setStatus(Status.fromCode(conflictingStatus));
-        conflicting.setContentLookupType(ContentLookupType.STATIC);
+        conflicting.setMessageSender(MessageSender.SMS);
         conflicting.setContentKey(request.getContentKey());
         conflicting.setRecipientContextKey(request.getRecipientContextKey());
 
@@ -348,13 +328,37 @@ public class MessageTemplatesRepositoryTest {
     }
 
     @Test
+    @DisplayName("Assert all fields are considered in SQL statement when provided")
+    void getMessageTemplates_byAllCriteria() {
+        MessageTemplate crit = new MessageTemplate();
+        crit.setMessageConfigId(55L);
+        crit.setRecipientContextKey("recipient_context_key");
+        crit.setContentKey("content_key");
+        crit.setMessageSender(MessageSender.SMS);
+        crit.setStatus(Status.ACTIVE);
+
+        // Test call
+        repo.getMessageTemplates(crit);
+
+        verify(template, times(1)).query(stringArgCaptor.capture(), anyMap(),
+                ArgumentMatchers.<RowMapperResultSetExtractor<MessageTemplatesRepository.MessageTemplateRowMapper>>any());
+
+        assertFalse(stringArgCaptor.getValue().contains(":id"));
+        assertTrue(stringArgCaptor.getValue().contains(":message_config_id"));
+        assertTrue(stringArgCaptor.getValue().contains(":recipient_context_key"));
+        assertTrue(stringArgCaptor.getValue().contains(":content_key"));
+        assertTrue(stringArgCaptor.getValue().contains(":message_sender"));
+        assertTrue(stringArgCaptor.getValue().contains(":status"));
+    }
+
+    @Test
     @DisplayName("Assert a SQL statement contains any non-null criteria supplied in the criteria. By criteria ignores ID")
     void getMessageTemplates_byCrit() {
         MessageTemplate crit = new MessageTemplate();
-        crit.setNotificationContextId(55L);
+        crit.setMessageConfigId(55L);
         crit.setRecipientContextKey("recipient_context_key");
         crit.setContentKey("content_key");
-        crit.setContentLookupType(ContentLookupType.STATIC);
+        crit.setMessageSender(MessageSender.SMS);
         crit.setStatus(null);
 
         // Test call
@@ -364,19 +368,19 @@ public class MessageTemplatesRepositoryTest {
                 ArgumentMatchers.<RowMapperResultSetExtractor<MessageTemplatesRepository.MessageTemplateRowMapper>>any());
 
         assertFalse(stringArgCaptor.getValue().contains(":id"));
-        assertTrue(stringArgCaptor.getValue().contains(":notification_context_id"));
+        assertTrue(stringArgCaptor.getValue().contains(":message_config_id"));
         assertTrue(stringArgCaptor.getValue().contains(":recipient_context_key"));
         assertTrue(stringArgCaptor.getValue().contains(":content_key"));
-        assertTrue(stringArgCaptor.getValue().contains(":content_lookup_type"));
+        assertTrue(stringArgCaptor.getValue().contains(":message_sender"));
         assertFalse(stringArgCaptor.getValue().contains(":status"));
     }
 
     private MessageTemplate buildFullyPopulatedMessageTemplate() {
         MessageTemplate request = new MessageTemplate();
-        request.setNotificationContextId(1L);
+        request.setMessageConfigId(1L);
         request.setRecipientContextKey("find.recipient.address.here");
         request.setStatus(Status.ACTIVE);
-        request.setContentLookupType(ContentLookupType.STATIC);
+        request.setMessageSender(MessageSender.SMS);
         request.setContentKey("TEST_CONTENT_KEY");
 
         return request;

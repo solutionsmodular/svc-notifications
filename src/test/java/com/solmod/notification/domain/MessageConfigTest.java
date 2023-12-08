@@ -4,13 +4,13 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class MessageTemplateTest {
+class MessageConfigTest {
     
     @Test
     void testEquals() {
-        MessageTemplate template1 = new MessageTemplate();
+        MessageConfig template1 = new MessageConfig();
         template1.getDeliveryCriteria().put("situation", "situated");
-        MessageTemplate template2 = new MessageTemplate();
+        MessageConfig template2 = new MessageConfig();
         template2.getDeliveryCriteria().put("situation", "situated");
 
         assertEquals(template1, template2);

@@ -1,6 +1,20 @@
 package com.solmod.notification.admin.data;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.UUID;
+
+import static com.solmod.commons.SolStringUtils.bytesToHex;
+
 public class DataUtils {
+
+    public static String generateUid() throws NoSuchAlgorithmException {
+        MessageDigest salt = MessageDigest.getInstance("SHA-256");
+        salt.update(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8));
+        return bytesToHex(salt.digest());
+    }
+
 
     public static class FieldUpdate {
         private String fieldName;

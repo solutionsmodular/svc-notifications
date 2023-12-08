@@ -2,20 +2,17 @@ package com.solmod.commons;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.github.wnameless.json.flattener.JsonFlattener;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.core.style.DefaultToStringStyler;
-import org.springframework.core.style.DefaultValueStyler;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Map;
 
 import static java.util.Arrays.stream;
 
 public class ObjectUtils {
-
-    public static final Logger log = LoggerFactory.getLogger(ObjectUtils.class);
 
     /**
      * Utility to take control over the manner by which the application serializes to JSON
@@ -40,7 +37,7 @@ public class ObjectUtils {
     /**
      * Eventually, this method will ensure that objects are properly stringified to mask for security, etc
      *
-     * @param toStringify
+     * @param toStringify Object to create a string of, for logging purposes
      * @return {@code String} Loggable string
      * @throws StringifyException In the event of any error
      */
@@ -68,42 +65,17 @@ public class ObjectUtils {
     }
 
     /**
-     * Styler for logging objects
+     * Create a flat, Properties-like, construct representing the data in the provided context. This facilitates
+     * the use of context keys such as {@code parent.child.property}
+     *
+     * @param context {@code Object} of any sort, to flatten
+     * @return Map of String key Object value context
+     * @throws StringifyException In the event there's something funky with the specified context
      */
-    static class ToStringSolmodStyler extends DefaultToStringStyler {
+    public static Map<String, Object> flatten(Object context) throws StringifyException {
+        String json = toJson(context, new JsonMapper());
+        Map<String, Object> flattened = JsonFlattener.flattenAsMap(json);
 
-        private Object toStyle;
-
-        public ToStringSolmodStyler(Object toStyle) {
-            super(new ValueStyler());
-            this.toStyle = toStyle;
-        }
-
-        @Override
-        public void styleStart(StringBuilder buffer, Object obj) {
-            buffer.append(toStyle.getClass().getSimpleName());
-        }
-
-        @Override
-        public void styleEnd(StringBuilder buffer, Object o) {
-
-        }
-
-        @Override
-        public void styleField(StringBuilder buffer, String fieldName, Object value) {
-            buffer.append("(")
-                    .append(fieldName)
-                    .append(" = ")
-                    .append(getValueStyler().style(value))
-                    .append(")");
-        }
+        return flattened;
     }
-
-    static class ValueStyler extends DefaultValueStyler {
-        @Override
-        public String style(Object value) {
-            return super.style(value);
-        }
-    }
-
 }
