@@ -1,47 +1,30 @@
-# Overview
+# Notification Engine - Overview
 
 The services and behavior supplied by this project include:
 
-* Backing services used by Notification Admin
-* Notification Engine, subscribing to the SolBus and triggering notifications per configuration as managed by Admin
-* Failures queue, whereby an admin may present failures to customer service allowing a representative to manually compose the intended notification, or else fix the Content Manager and retry the notification. (https://solutionsmodular.atlassian.net/browse/NE-44)
-* Senders
+* [admin](./admin/README.md) - Standard services for administration and access of data for the Notification Engine
+* [content-manager](./content-manager/README.md) - Used to manage the message content
+* [dispatcher](./dispatcher/README.md) - Subscribes to the SolBus and triggers notifications per configuration as managed by Admin
+* [governor](./governor/README.md) - Suppresses delivery of notifications based on rules and recipient preferences
+* [preferences](./preferences/README.md) - Manages recipients' options for the messages and channels to allow
+
+I
 
 # Design Requirements
 
-1. An admin must be able to specify multiple purposes (channels) for a content block.
+1. An admin must be able to specify multiple purposes (channels) for a Message Template (ultimately resolving to a content block).
 For instance, a content block could be used for SMS _and_ timelines.
-2. The engine must send all notifications configured.
+1. The engine must send all notifications configured which apply to a given SolBus Message.
 In other words, if there is a notification configured for SMS (the concept of "send" in this context refers only to the choosing of messages to deliver. Rules and preferences are considered elsewhere)
-3. How do I control what messages are sent via what sender?
+1. How do I control what messages are sent via what sender?
 
-# Settings Layers
+# Terms
 
-The following describes the connection from an event on the bus to a specific piece of content being sent via a specific channel.
+Not rocket science, but there are some ambiguities among the components of the Notification Engine.
 
-## Configuration
+## Message
 
-Configure the Notification Engine using settings for the following conceptual components:
-
-### Notification Events
-
-This defines message subject/verb under which different messages are ultimately delivered. For example, order created. 
-
-### Message Templates
-
-These specify a grouping of messages. Criteria for sending are here.
-
-### Notification Messages
-
-These specify the message template content and specify one or more senders.
-
-Senders, such as email, timeline, or SMS, can not be duplicated within a Message Template 
-
-## Sending
-
-* An event is detected on the bus for which there is a Notification Event configured
-* A Message Trigger is persisted to DB 
-* Based on the message data, Message Templates whose data meets criteria are persisted as Message Deliveries
-* Once the delivery is persisted, it can be queued for the Senders
-
-TODO: rename messagetemplates to message_configurations
+The concept of a "Message" could mean the event which is sent over the SolBus, for which a notification might need to be delivered. 
+Or, it could mean the actual message as can ultimately be viewed on a mobile device via SMS.
+Therefore, the term "Message" is not used within this documentation without full qualification (e.g. Message Template vs SolBus Message vs Rendered Message).
+I've decided it's an intuitive substitution to refer to a "Content Block" (to which a Message Template ultimately resolves) to refer to a Message Template, or an "Event Message" to refer to a SolBus Message.

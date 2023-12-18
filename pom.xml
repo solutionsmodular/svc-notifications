@@ -8,6 +8,7 @@
         <module>preferences</module>
         <module>governor</module>
         <module>content-manager</module>
+        <module>admin</module>
     </modules>
     <parent>
         <groupId>org.springframework.boot</groupId>
