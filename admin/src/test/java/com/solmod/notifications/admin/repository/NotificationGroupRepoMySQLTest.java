@@ -21,8 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Testcontainers
-//@ActiveProfiles(value = "local")
-    @Transactional
+@Transactional
 class NotificationGroupRepoMySQLTest {
 
     @Autowired
@@ -30,7 +29,7 @@ class NotificationGroupRepoMySQLTest {
 
     @Container
     private static final MySQLContainer<?> mysqlContainer = new MySQLContainer<>("mysql:8.2.0")
-            .withDatabaseName("testdb")
+            .withDatabaseName("admin_db")
             .withUsername("testuser")
             .withPassword("testpass");
 

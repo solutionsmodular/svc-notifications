@@ -10,6 +10,7 @@
         <module>content-manager</module>
         <module>admin</module>
     </modules>
+
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -31,17 +32,17 @@
         </dependencies>
     </dependencyManagement>
 
-    <!--    <distributionManagement>
-        <repository>
-            <uniqueVersion>false</uniqueVersion>
-            <id>corp1</id>
-            <name>Corporate Repository</name>
-            <url>scp://repo/maven2</url>
-            <layout>default</layout>
-        </repository>
-    </distributionManagement>-->
-
     <dependencies>
+        <!--TODO: This DB doesn't need to be here. Remove it asap-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.33</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-dependencies</artifactId>
