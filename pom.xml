@@ -64,6 +64,13 @@
 <!--            <version>1.18.22</version>-->
         </dependency>
         <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>2.2.224</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
         <!-- Supporting doc: https://github.com/wnameless/json-flattener -->
             <groupId>com.github.wnameless.json</groupId>
             <artifactId>json-flattener</artifactId>

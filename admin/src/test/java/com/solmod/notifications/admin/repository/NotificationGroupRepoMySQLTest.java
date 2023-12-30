@@ -1,8 +1,10 @@
 package com.solmod.notifications.admin.repository;
 
-import com.solmod.notifications.admin.repository.model.EventCriteria;
-import com.solmod.notifications.admin.repository.model.MessageTheme;
 import com.solmod.notifications.admin.repository.model.NotificationGroup;
+import com.solmod.notifications.admin.repository.model.Theme;
+import com.solmod.notifications.admin.repository.model.ThemeCriteria;
+import com.solmod.notifications.admin.repository.model.ThemeDeliveryRules;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,14 +16,19 @@ import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest
 @Testcontainers
 @Transactional
+@ActiveProfiles(value = "local")
 class NotificationGroupRepoMySQLTest {
 
     @Autowired
@@ -42,30 +49,55 @@ class NotificationGroupRepoMySQLTest {
     }
 
     @Test
-    void testBasic() {
+    void bigSaveBigGet() {
+        NotificationGroup entity = buildBasicNotificationGroup();
+        Theme testTheme = buildTheme();
+        entity.setMessageThemes(List.of(testTheme));
+
+        NotificationGroup savedGroup = repo.save(entity);
+        assertNotNull(savedGroup.getId());
+        assertEquals("somesubject", savedGroup.getSubject());
+        assertNotNull(savedGroup.getMessageThemes());
+        assertNotEquals(0, savedGroup.getMessageThemes().size());
+
+        System.out.println(savedGroup.getId());
+
+        NotificationGroup foundGroup = repo.findById(savedGroup.getId()).orElse(null);
+        assertNotNull(foundGroup);
+        Collection<Theme> themes = foundGroup.getMessageThemes();
+        assertNotNull(themes);
+
+        assertEquals(1, themes.size());
+        Theme resultTheme = themes.iterator().next();
+
+        assertEquals(1, resultTheme.getCriteria().size());
+        assertEquals(1, resultTheme.getDeliveryRules().size());
+    }
+
+    @NotNull
+    private NotificationGroup buildBasicNotificationGroup() {
         NotificationGroup entity = new NotificationGroup();
         entity.setDescription("This is a test");
         entity.setSubject("somesubject");
         entity.setVerb("someverb");
-        MessageTheme testTheme = new MessageTheme();
-        EventCriteria testCriteria = new EventCriteria();
+        return entity;
+    }
+
+    @NotNull
+    private Theme buildTheme() {
+        Theme testTheme = new Theme();
+        ThemeCriteria testCriteria = new ThemeCriteria();
         testCriteria.setKey("some-key");
         testCriteria.setValue("some-value");
         testTheme.setCriteria(List.of(testCriteria));
-        entity.setMessageThemes(List.of(testTheme));
+        ThemeDeliveryRules testRules = new ThemeDeliveryRules();
+        testRules.setIntervalPeriod(Calendar.HOUR);
+        testRules.setResendInterval(2);
+        testTheme.setDeliveryRules(List.of(testRules));
 
-        NotificationGroup saved = repo.save(entity);
-        assertNotNull(saved.getId());
-        assertEquals("somesubject", saved.getSubject());
-        assertNotNull(saved.getMessageThemes());
-        assertNotEquals(0, saved.getMessageThemes().size());
-        System.out.println(saved.getId());
-
-        Iterable<NotificationGroup> all = repo.findAll();
-        Collection<MessageTheme> messageThemes = all.iterator().next().getMessageThemes();
-        assertNotNull(messageThemes);
-
+        return testTheme;
     }
+
 
     @Test
     void assertNothing() {

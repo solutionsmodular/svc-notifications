@@ -11,7 +11,7 @@ public class NotificationGroup {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
     @OneToMany(mappedBy = "notificationGroup")
-    private Collection<MessageTheme> messageThemes;
+    private Collection<Theme> themes;
     private String subject;
     private String verb;
     private String description;
@@ -25,12 +25,12 @@ public class NotificationGroup {
         this.id = id;
     }
 
-    public Collection<MessageTheme> getMessageThemes() {
-        return messageThemes;
+    public Collection<Theme> getMessageThemes() {
+        return themes;
     }
 
-    public void setMessageThemes(Collection<MessageTheme> messageThemes) {
-        this.messageThemes = messageThemes;
+    public void setMessageThemes(Collection<Theme> themes) {
+        this.themes = themes;
     }
 
     public String getSubject() {

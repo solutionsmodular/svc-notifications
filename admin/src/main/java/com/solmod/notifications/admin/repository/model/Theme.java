@@ -6,12 +6,15 @@ import java.util.Collection;
 import java.util.UUID;
 
 @Entity
-public class MessageTheme {
+@Table(name = "MessageTheme")
+public class Theme {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
     @OneToMany(mappedBy = "theme")
-    private Collection<EventCriteria> criteria;
+    private Collection<ThemeCriteria> criteria;
+    @OneToMany(mappedBy = "theme")
+    private Collection<ThemeDeliveryRules> deliveryRules;
     @ManyToOne(fetch = FetchType.LAZY)
     private NotificationGroup notificationGroup;
 
@@ -23,12 +26,20 @@ public class MessageTheme {
         this.id = id;
     }
 
-    public Collection<EventCriteria> getCriteria() {
+    public Collection<ThemeCriteria> getCriteria() {
         return criteria;
     }
 
-    public void setCriteria(Collection<EventCriteria> criteria) {
+    public void setCriteria(Collection<ThemeCriteria> criteria) {
         this.criteria = criteria;
+    }
+
+    public Collection<ThemeDeliveryRules> getDeliveryRules() {
+        return deliveryRules;
+    }
+
+    public void setDeliveryRules(Collection<ThemeDeliveryRules> deliveryRules) {
+        this.deliveryRules = deliveryRules;
     }
 
     public NotificationGroup getNotificationGroup() {
