@@ -9,6 +9,7 @@ public class ThemeCriteria {
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "message_theme_id")
     private Theme theme;
     @Column(name = "meta-key")
     private String key;

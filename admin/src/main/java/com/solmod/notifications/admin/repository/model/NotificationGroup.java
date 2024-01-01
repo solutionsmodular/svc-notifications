@@ -5,12 +5,17 @@ import jakarta.persistence.*;
 import java.util.Collection;
 import java.util.UUID;
 
+/**
+ * Group a collection of Message Themes for a given subject/verb
+ */
 @Entity
+@Table(name = "NotificationGroups")
 public class NotificationGroup {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-    @OneToMany(mappedBy = "notificationGroup")
+
+    @OneToMany(mappedBy = "notificationGroup", cascade = CascadeType.ALL)
     private Collection<Theme> themes;
     private String subject;
     private String verb;

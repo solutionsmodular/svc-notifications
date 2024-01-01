@@ -2,15 +2,17 @@ package com.solmod.notifications.admin.repository.model;
 
 import jakarta.persistence.*;
 
+/**
+ * Override delivery rules as set by the parent Theme, if any
+ */
 @Entity
-@Table(name = "MessageThemeDeliveryRules")
-public class ThemeDeliveryRules {
+@Table(name = "MessageTemplateDeliveryRules")
+public class TemplateDeliveryRules {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "message_theme_id")
-    private Theme theme;
+    private MessageTemplate template;
     private Integer maxSend;
     private Integer resendInterval;
     private Integer intervalPeriod; // Use Calendar constants
@@ -23,12 +25,12 @@ public class ThemeDeliveryRules {
         this.id = id;
     }
 
-    public Theme getTheme() {
-        return theme;
+    public MessageTemplate getTemplate() {
+        return template;
     }
 
-    public void setTheme(Theme theme) {
-        this.theme = theme;
+    public void setTemplate(MessageTemplate template) {
+        this.template = template;
     }
 
     public Integer getMaxSend() {

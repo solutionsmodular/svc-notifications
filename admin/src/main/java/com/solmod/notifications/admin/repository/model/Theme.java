@@ -3,27 +3,39 @@ package com.solmod.notifications.admin.repository.model;
 import jakarta.persistence.*;
 
 import java.util.Collection;
-import java.util.UUID;
 
 @Entity
-@Table(name = "MessageTheme")
+@Table(name = "MessageThemes")
 public class Theme {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
-    @OneToMany(mappedBy = "theme")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    private Long id;
+    private String description;
+
+    @OneToMany(mappedBy = "theme", cascade = CascadeType.ALL)
     private Collection<ThemeCriteria> criteria;
-    @OneToMany(mappedBy = "theme")
+    @OneToMany(mappedBy = "theme", cascade = CascadeType.ALL)
     private Collection<ThemeDeliveryRules> deliveryRules;
+    @OneToMany(mappedBy = "theme", cascade = CascadeType.ALL)
+    private Collection<MessageTemplate> messageTemplates;
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "notification_group_id")
     private NotificationGroup notificationGroup;
 
-    public UUID getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(UUID id) {
+    public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public Collection<ThemeCriteria> getCriteria() {
@@ -48,5 +60,13 @@ public class Theme {
 
     public void setNotificationGroup(NotificationGroup notificationGroup) {
         this.notificationGroup = notificationGroup;
+    }
+
+    public Collection<MessageTemplate> getMessageTemplates() {
+        return messageTemplates;
+    }
+
+    public void setMessageTemplates(Collection<MessageTemplate> messageTemplates) {
+        this.messageTemplates = messageTemplates;
     }
 }
