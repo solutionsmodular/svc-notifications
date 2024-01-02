@@ -5,8 +5,7 @@ import jakarta.persistence.*;
 /**
  * Override delivery rules as set by the parent Theme, if any
  */
-@Entity
-@Table(name = "MessageTemplateDeliveryRules")
+@Entity(name = "MessageTemplateDeliveryRules")
 public class TemplateDeliveryRules {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)

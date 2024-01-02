@@ -2,8 +2,7 @@ package com.solmod.notifications.admin.repository.model;
 
 import jakarta.persistence.*;
 
-@Entity
-@Table(name = "MessageThemeDeliveryRules")
+@Entity(name = "MessageThemeDeliveryRules")
 public class ThemeDeliveryRules {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)

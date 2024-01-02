@@ -5,8 +5,10 @@ import jakarta.persistence.*;
 /**
  * Associate a certain message content to be delivered via a particular sender
  */
-@Entity
-@Table(name = "MessageTemplates")
+@Entity(name = "BasicMessageTemplates")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name="template_type", discriminatorType = DiscriminatorType.CHAR)
+@DiscriminatorValue("null")
 public class MessageTemplate {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)

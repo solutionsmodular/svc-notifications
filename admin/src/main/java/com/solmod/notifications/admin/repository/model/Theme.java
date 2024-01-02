@@ -4,8 +4,7 @@ import jakarta.persistence.*;
 
 import java.util.Collection;
 
-@Entity
-@Table(name = "MessageThemes")
+@Entity(name = "MessageThemes")
 public class Theme {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)

@@ -3,7 +3,6 @@ package com.solmod.notifications.admin.repository;
 import com.solmod.notifications.admin.repository.model.*;
 import org.jetbrains.annotations.NotNull;
 import org.junit.FixMethodOrder;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
@@ -13,10 +12,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -75,9 +71,13 @@ class NotificationGroupRepoMySQLTest {
         assertEquals(1, resultTheme.getCriteria().size());
         assertEquals(1, resultTheme.getDeliveryRules().size());
 
-        assertTrue(resultTheme.getMessageTemplates().iterator().hasNext());
-        MessageTemplate resultTemplate = resultTheme.getMessageTemplates().iterator().next();
+        Iterator<MessageTemplate> iterator = resultTheme.getMessageTemplates().iterator();
+        assertTrue(iterator.hasNext());
+        MessageTemplate resultTemplate = iterator.next();
         assertNotNull(resultTemplate.getMessageBodyContentKey());
+        MessageTemplate emailResultTemplate = iterator.next();
+        assertNotNull(emailResultTemplate);
+        assertTrue(emailResultTemplate instanceof EmailMessageTemplate);
     }
 
     /**
@@ -118,8 +118,13 @@ class NotificationGroupRepoMySQLTest {
         testTemplate.setTheme(testTheme);
         testTemplate.setMaxRetries(100 + var);
         testTemplate.setMessageBodyContentKey(var + "TheBody");
-        testTemplate.setRecipientAddressContextKey(var + "_where_to_find_it");
-        testTheme.setMessageTemplates(List.of(testTemplate));
+        testTemplate.setRecipientAddressContextKey(var + "sms_number_perhaps");
+        EmailMessageTemplate testEmailTemplate = new EmailMessageTemplate();
+        testEmailTemplate.setTheme(testTheme);
+        testEmailTemplate.setMaxRetries(200 + var);
+        testEmailTemplate.setMessageBodyContentKey(var + "TheEmailBody");
+        testEmailTemplate.setRecipientAddressContextKey(var + "email_addy_event_metadata");
+        testTheme.setMessageTemplates(List.of(testTemplate, testEmailTemplate));
 
         return testTheme;
     }

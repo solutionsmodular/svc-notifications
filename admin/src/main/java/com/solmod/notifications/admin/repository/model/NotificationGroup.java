@@ -8,8 +8,7 @@ import java.util.UUID;
 /**
  * Group a collection of Message Themes for a given subject/verb
  */
-@Entity
-@Table(name = "NotificationGroups")
+@Entity(name = "NotificationGroups")
 public class NotificationGroup {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
