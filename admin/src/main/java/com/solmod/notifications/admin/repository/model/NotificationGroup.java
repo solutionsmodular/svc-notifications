@@ -5,13 +5,17 @@ import jakarta.persistence.*;
 import java.util.Collection;
 import java.util.UUID;
 
-@Entity
+/**
+ * Group a collection of Message Themes for a given subject/verb
+ */
+@Entity(name = "NotificationGroups")
 public class NotificationGroup {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-    @OneToMany(mappedBy = "notificationGroup")
-    private Collection<MessageTheme> messageThemes;
+
+    @OneToMany(mappedBy = "notificationGroup", cascade = CascadeType.ALL)
+    private Collection<Theme> themes;
     private String subject;
     private String verb;
     private String description;
@@ -25,12 +29,12 @@ public class NotificationGroup {
         this.id = id;
     }
 
-    public Collection<MessageTheme> getMessageThemes() {
-        return messageThemes;
+    public Collection<Theme> getMessageThemes() {
+        return themes;
     }
 
-    public void setMessageThemes(Collection<MessageTheme> messageThemes) {
-        this.messageThemes = messageThemes;
+    public void setMessageThemes(Collection<Theme> themes) {
+        this.themes = themes;
     }
 
     public String getSubject() {

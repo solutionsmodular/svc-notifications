@@ -2,13 +2,14 @@ package com.solmod.notifications.admin.repository.model;
 
 import jakarta.persistence.*;
 
-@Entity
-public class EventCriteria {
+@Entity(name = "MessageThemeCriteria")
+public class ThemeCriteria {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
     @ManyToOne(fetch = FetchType.LAZY)
-    private MessageTheme theme;
+    @JoinColumn(name = "message_theme_id")
+    private Theme theme;
     @Column(name = "meta-key")
     private String key;
     @Column(name = "meta-key-value")
@@ -22,11 +23,11 @@ public class EventCriteria {
         this.id = id;
     }
 
-    public MessageTheme getTheme() {
+    public Theme getTheme() {
         return theme;
     }
 
-    public void setTheme(MessageTheme theme) {
+    public void setTheme(Theme theme) {
         this.theme = theme;
     }
 

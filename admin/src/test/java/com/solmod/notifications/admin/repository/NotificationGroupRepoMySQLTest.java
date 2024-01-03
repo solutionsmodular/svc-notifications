@@ -1,32 +1,36 @@
 package com.solmod.notifications.admin.repository;
 
-import com.solmod.notifications.admin.repository.model.EventCriteria;
-import com.solmod.notifications.admin.repository.model.MessageTheme;
-import com.solmod.notifications.admin.repository.model.NotificationGroup;
+import com.solmod.notifications.admin.repository.model.*;
+import org.jetbrains.annotations.NotNull;
+import org.junit.FixMethodOrder;
 import org.junit.jupiter.api.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@Testcontainers
+//@Testcontainers
+@ActiveProfiles(value = "local")
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @Transactional
+//@ContextConfiguration(initializers = {NotificationGroupRepoMySQLTest.Initializer.class})
+@RunWith(SpringRunner.class)
 class NotificationGroupRepoMySQLTest {
 
     @Autowired
     NotificationGroupRepo repo;
 
+    private static UUID resultGroupId;
+
+/*
     @Container
     private static final MySQLContainer<?> mysqlContainer = new MySQLContainer<>("mysql:8.2.0")
             .withDatabaseName("admin_db")
@@ -40,36 +44,102 @@ class NotificationGroupRepoMySQLTest {
             return mysqlContainer.getJdbcUrl();
         }
     }
+*/
 
     @Test
-    void testBasic() {
-        NotificationGroup entity = new NotificationGroup();
-        entity.setDescription("This is a test");
-        entity.setSubject("somesubject");
-        entity.setVerb("someverb");
-        MessageTheme testTheme = new MessageTheme();
-        EventCriteria testCriteria = new EventCriteria();
-        testCriteria.setKey("some-key");
-        testCriteria.setValue("some-value");
-        testTheme.setCriteria(List.of(testCriteria));
-        entity.setMessageThemes(List.of(testTheme));
+    void buildSaveAndGetAll() {
+        for (int i = 0; i < 5; i++) {
+            NotificationGroup entity = buildBasicNotificationGroup(i);
+            Theme testTheme = buildTheme(entity, i);
+            entity.setMessageThemes(List.of(testTheme));
+            NotificationGroup savedGroup = repo.save(entity);
+            resultGroupId = savedGroup.getId();
+            assertNotNull(savedGroup.getId());
+            assertEquals(entity.getSubject(), savedGroup.getSubject());
+            assertNotNull(savedGroup.getMessageThemes());
+            assertNotEquals(0, savedGroup.getMessageThemes().size());
+        }
 
-        NotificationGroup saved = repo.save(entity);
-        assertNotNull(saved.getId());
-        assertEquals("somesubject", saved.getSubject());
-        assertNotNull(saved.getMessageThemes());
-        assertNotEquals(0, saved.getMessageThemes().size());
-        System.out.println(saved.getId());
+        NotificationGroup foundGroup = repo.findById(resultGroupId).orElse(null);
+        assertNotNull(foundGroup);
+        Collection<Theme> themes = foundGroup.getMessageThemes();
+        assertNotNull(themes);
 
-        Iterable<NotificationGroup> all = repo.findAll();
-        Collection<MessageTheme> messageThemes = all.iterator().next().getMessageThemes();
-        assertNotNull(messageThemes);
+        assertEquals(1, themes.size());
+        Theme resultTheme = themes.iterator().next();
 
+        assertEquals(1, resultTheme.getCriteria().size());
+        assertEquals(1, resultTheme.getDeliveryRules().size());
+
+        Iterator<MessageTemplate> iterator = resultTheme.getMessageTemplates().iterator();
+        assertTrue(iterator.hasNext());
+        MessageTemplate resultTemplate = iterator.next();
+        assertNotNull(resultTemplate.getMessageBodyContentKey());
+        MessageTemplate emailResultTemplate = iterator.next();
+        assertNotNull(emailResultTemplate);
+        assertTrue(emailResultTemplate instanceof EmailMessageTemplate);
     }
 
+    /**
+     * This just shows @Transaction is at entire class level and test data is not persisted outside test
+     */
     @Test
     void assertNothing() {
         Iterable<NotificationGroup> all = repo.findAll();
         assertFalse(all.iterator().hasNext());
     }
+
+    @NotNull
+    private NotificationGroup buildBasicNotificationGroup(int var) {
+        NotificationGroup entity = new NotificationGroup();
+        entity.setDescription("This is a test: " + var);
+        entity.setSubject(var + "somesubject");
+        entity.setVerb(var + "someverb");
+        return entity;
+    }
+
+    @NotNull
+    private Theme buildTheme(NotificationGroup entity, int var) {
+        Theme testTheme = new Theme();
+
+        testTheme.setDescription(var + " some description");
+        testTheme.setNotificationGroup(entity);
+        ThemeCriteria testCriteria = new ThemeCriteria();
+        testCriteria.setTheme(testTheme);
+        testCriteria.setKey(var + "some-key");
+        testCriteria.setValue(var + "some-value");
+        testTheme.setCriteria(List.of(testCriteria));
+        ThemeDeliveryRules testRules = new ThemeDeliveryRules();
+        testRules.setTheme(testTheme);
+        testRules.setIntervalPeriod(Calendar.HOUR);
+        testRules.setResendInterval(2);
+        testTheme.setDeliveryRules(List.of(testRules));
+        MessageTemplate testTemplate = new MessageTemplate();
+        testTemplate.setTheme(testTheme);
+        testTemplate.setMaxRetries(100 + var);
+        testTemplate.setMessageBodyContentKey(var + "TheBody");
+        testTemplate.setRecipientAddressContextKey(var + "sms_number_perhaps");
+        EmailMessageTemplate testEmailTemplate = new EmailMessageTemplate();
+        testEmailTemplate.setTheme(testTheme);
+        testEmailTemplate.setMaxRetries(200 + var);
+        testEmailTemplate.setMessageBodyContentKey(var + "TheEmailBody");
+        testEmailTemplate.setRecipientAddressContextKey(var + "email_addy_event_metadata");
+        testTheme.setMessageTemplates(List.of(testTemplate, testEmailTemplate));
+
+        return testTheme;
+    }
+
+
+/*
+    static class Initializer
+            implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+        public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
+            TestPropertyValues.of(
+                    "spring.datasource.url=" + mysqlContainer.getJdbcUrl(),
+                    "spring.datasource.username=" + mysqlContainer.getUsername(),
+                    "spring.datasource.password=" + mysqlContainer.getPassword()
+            ).applyTo(configurableApplicationContext.getEnvironment());
+        }
+    }
+*/
 }
