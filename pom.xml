@@ -6,7 +6,6 @@
     <modules>
         <module>dispatcher</module>
         <module>preferences</module>
-        <module>governor</module>
         <module>content-manager</module>
         <module>admin</module>
     </modules>

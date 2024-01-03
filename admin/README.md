@@ -6,6 +6,7 @@ This module is responsible for managing the configurations for the Notification 
 
 Configure the Notification Engine using settings for the following conceptual components:
 
+![](../doc/NotificationEngineEntities.png)
 ## Notification Group
 
 This defines message subject/verb under which different messages are ultimately delivered. For example, order created.
