@@ -16,8 +16,8 @@
         <version>3.2.1</version>
     </parent>
 
-    <groupId>com.solmod</groupId>
-    <artifactId>svc-notifications</artifactId>
+    <groupId>com.solmod.notifications</groupId>
+    <artifactId>notification-engine</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>Notification Services</name>
     <description>This project supplies back end services handling Notification Engine and Notification Admin</description>
@@ -27,48 +27,6 @@
     </properties>
 
     <dependencies>
-        <!--TODO: This DB doesn't need to be here. Remove it asap-->
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-dependencies</artifactId>
-            <version>${spring-cloud.version}</version>
-            <type>pom</type>
-<!--            <scope>import</scope>-->
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-joda</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-<!--            <version>1.18.22</version>-->
-        </dependency>
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <version>2.2.224</version>
-            <scope>test</scope>
-        </dependency>
-
         <dependency>
         <!-- Supporting doc: https://github.com/wnameless/json-flattener -->
             <groupId>com.github.wnameless.json</groupId>
@@ -76,14 +34,5 @@
             <version>0.13.0</version>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </build>
 
 </project>

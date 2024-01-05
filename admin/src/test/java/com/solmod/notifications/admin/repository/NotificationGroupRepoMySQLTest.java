@@ -28,8 +28,6 @@ class NotificationGroupRepoMySQLTest {
     @Autowired
     NotificationGroupRepo repo;
 
-    private static UUID resultGroupId;
-
 /*
     @Container
     private static final MySQLContainer<?> mysqlContainer = new MySQLContainer<>("mysql:8.2.0")
@@ -48,21 +46,22 @@ class NotificationGroupRepoMySQLTest {
 
     @Test
     void buildSaveAndGetAll() {
+        Long resultGroupId = null;
         for (int i = 0; i < 5; i++) {
             NotificationGroup entity = buildBasicNotificationGroup(i);
             Theme testTheme = buildTheme(entity, i);
-            entity.setMessageThemes(List.of(testTheme));
+            entity.setThemes(List.of(testTheme));
             NotificationGroup savedGroup = repo.save(entity);
             resultGroupId = savedGroup.getId();
             assertNotNull(savedGroup.getId());
             assertEquals(entity.getSubject(), savedGroup.getSubject());
-            assertNotNull(savedGroup.getMessageThemes());
-            assertNotEquals(0, savedGroup.getMessageThemes().size());
+            assertNotNull(savedGroup.getThemes());
+            assertNotEquals(0, savedGroup.getThemes().size());
         }
 
         NotificationGroup foundGroup = repo.findById(resultGroupId).orElse(null);
         assertNotNull(foundGroup);
-        Collection<Theme> themes = foundGroup.getMessageThemes();
+        Collection<Theme> themes = foundGroup.getThemes();
         assertNotNull(themes);
 
         assertEquals(1, themes.size());
@@ -80,6 +79,23 @@ class NotificationGroupRepoMySQLTest {
         assertTrue(emailResultTemplate instanceof EmailMessageTemplate);
     }
 
+    @Test
+    void buildSaveAndGetAllBySubjectVerb() {
+        for (int i = 0; i < 5; i++) {
+            NotificationGroup entity = buildBasicNotificationGroup(i);
+            Theme testTheme = buildTheme(entity, i);
+            entity.setThemes(List.of(testTheme));
+            NotificationGroup savedGroup = repo.save(entity);
+            assertNotNull(savedGroup.getId());
+            assertEquals(entity.getSubject(), savedGroup.getSubject());
+            assertNotNull(savedGroup.getThemes());
+            assertNotEquals(0, savedGroup.getThemes().size());
+        }
+
+        List<NotificationGroup> bySubjectAndVerb = repo.findByTenantIdAndSubjectAndVerb(1L, "1somesubject", "1someverb");
+        System.out.println("hi");
+    }
+
     /**
      * This just shows @Transaction is at entire class level and test data is not persisted outside test
      */
@@ -93,6 +109,7 @@ class NotificationGroupRepoMySQLTest {
     private NotificationGroup buildBasicNotificationGroup(int var) {
         NotificationGroup entity = new NotificationGroup();
         entity.setDescription("This is a test: " + var);
+        entity.setTenantId(1L);
         entity.setSubject(var + "somesubject");
         entity.setVerb(var + "someverb");
         return entity;
@@ -116,6 +133,7 @@ class NotificationGroupRepoMySQLTest {
         testTheme.setDeliveryRules(List.of(testRules));
         MessageTemplate testTemplate = new MessageTemplate();
         testTemplate.setTheme(testTheme);
+        testTemplate.setSender("somesender");
         testTemplate.setMaxRetries(100 + var);
         testTemplate.setMessageBodyContentKey(var + "TheBody");
         testTemplate.setRecipientAddressContextKey(var + "sms_number_perhaps");

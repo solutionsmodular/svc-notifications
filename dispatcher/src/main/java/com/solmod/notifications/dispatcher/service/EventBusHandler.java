@@ -1,29 +1,35 @@
 package com.solmod.notifications.dispatcher.service;
 
+import com.solmod.notifications.admin.service.NotificationAccessService;
+import com.solmod.notifications.admin.web.model.MessageTemplateGroup;
 import com.solmod.notifications.dispatcher.domain.SolCommunication;
 import com.solmod.notifications.dispatcher.domain.SolMessage;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * This service receives and handles messages which qualify for an externally configured pub/sub queue subscription.
  * To minimize on use, this handler's subscription should be for any subjects/verbs for which there could possibly
  * be a notification.
  * // TODO: add automation to alter the queue subscription when a hitherto unknown subject/verb is added to
- * // TODO: NotificationGroups, subscribing the disptcher to the new subject/verb combo
+ * // TODO: NotificationGroups, subscribing the dispatcher to the new subject/verb combo
  */
 @Service("NotificationDispatcher")
 public class EventBusHandler implements Function<SolMessage, List<SolCommunication>> {
 
     Logger log = LoggerFactory.getLogger(getClass());
+
+    NotificationAccessService accessService;
+
+    @Autowired
+    public EventBusHandler(NotificationAccessService accessService) {
+        this.accessService = accessService;
+    }
 
     /**
      * Message Bus Subscriber
@@ -36,6 +42,9 @@ public class EventBusHandler implements Function<SolMessage, List<SolCommunicati
     @Override
     public List<SolCommunication> apply(SolMessage solMessage) {
 
+        MessageTemplateGroup templates = accessService.getNotificationTemplateGroup(solMessage.getTenantId(), solMessage.getSubject(), solMessage.getVerb());
+        // TODO: run those through the filters
+
         // Find the appropriate event for the given message subject and verb
         /*
         In:
@@ -46,6 +55,7 @@ public class EventBusHandler implements Function<SolMessage, List<SolCommunicati
 
         1. Get qualifying message templates (based on subject/verb)
             Create NotificationDelivery for each found
+
         TODO: Add Notification Group context builder here
         TODO: Add MessageTheme context builder here
         2. Apply MessageTheme metadata:criteria filter
