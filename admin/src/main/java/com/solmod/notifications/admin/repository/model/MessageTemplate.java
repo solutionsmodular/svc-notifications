@@ -2,6 +2,8 @@ package com.solmod.notifications.admin.repository.model;
 
 import jakarta.persistence.*;
 
+import java.util.Collection;
+
 /**
  * Associate a certain message content to be delivered via a particular sender
  */
@@ -17,6 +19,8 @@ public class MessageTemplate {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "message_theme_id")
     private Theme theme;
+    @OneToMany(mappedBy = "template", cascade = CascadeType.ALL)
+    private Collection<TemplateDeliveryRules> deliveryRules;
     private String sender;
     private String recipientAddressContextKey;
     private String messageBodyContentKey;

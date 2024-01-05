@@ -2,14 +2,14 @@ package com.solmod.notifications.admin.web.model;
 
 import java.util.List;
 
-public class TemplateRuleset {
-    private List<TemplateRule> rules;
+public class DeliveryCriteriaSetDTO {
+    private List<DeliveryCriteriaDTO> rules;
 
-    public List<TemplateRule> getRules() {
+    public List<DeliveryCriteriaDTO> getRules() {
         return rules;
     }
 
-    public void setRules(List<TemplateRule> rules) {
+    public void setRules(List<DeliveryCriteriaDTO> rules) {
         this.rules = rules;
     }
 
@@ -20,11 +20,11 @@ public class TemplateRuleset {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof TemplateRuleset)) {
+        if (obj == null || !(obj instanceof DeliveryCriteriaSetDTO)) {
             return false;
         }
 
-        TemplateRuleset comp = (TemplateRuleset) obj;
+        DeliveryCriteriaSetDTO comp = (DeliveryCriteriaSetDTO) obj;
 
         return this.getRules().equals(comp.getRules());
     }

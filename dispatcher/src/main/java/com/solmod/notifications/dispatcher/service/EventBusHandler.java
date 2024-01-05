@@ -1,7 +1,7 @@
 package com.solmod.notifications.dispatcher.service;
 
 import com.solmod.notifications.admin.service.NotificationAccessService;
-import com.solmod.notifications.admin.web.model.MessageTemplateGroup;
+import com.solmod.notifications.admin.web.model.MessageTemplateGroupDTO;
 import com.solmod.notifications.dispatcher.domain.SolCommunication;
 import com.solmod.notifications.dispatcher.domain.SolMessage;
 import org.slf4j.Logger;
@@ -42,7 +42,7 @@ public class EventBusHandler implements Function<SolMessage, List<SolCommunicati
     @Override
     public List<SolCommunication> apply(SolMessage solMessage) {
 
-        MessageTemplateGroup templates = accessService.getNotificationTemplateGroup(solMessage.getTenantId(), solMessage.getSubject(), solMessage.getVerb());
+        MessageTemplateGroupDTO templates = accessService.getNotificationTemplateGroup(solMessage.getTenantId(), solMessage.getSubject(), solMessage.getVerb());
         // TODO: run those through the filters
 
         // Find the appropriate event for the given message subject and verb

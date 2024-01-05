@@ -92,7 +92,7 @@ class NotificationGroupRepoMySQLTest {
             assertNotEquals(0, savedGroup.getThemes().size());
         }
 
-        List<NotificationGroup> bySubjectAndVerb = repo.findByTenantIdAndSubjectAndVerb(1L, "1somesubject", "1someverb");
+        NotificationGroup bySubjectAndVerb = repo.findByTenantIdAndSubjectAndVerb(1L, "1somesubject", "1someverb");
         System.out.println("hi");
     }
 

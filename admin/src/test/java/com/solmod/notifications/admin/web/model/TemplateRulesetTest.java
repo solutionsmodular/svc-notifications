@@ -10,12 +10,12 @@ class TemplateRulesetTest {
 
     @Test
     void testEquals() {
-        TemplateRuleset ruleset1 = new TemplateRuleset();
-        List<TemplateRule> rules1 = List.of(new TemplateRule("akey", "avalue"), new TemplateRule("bkey", "bvalue"));
+        DeliveryCriteriaSetDTO ruleset1 = new DeliveryCriteriaSetDTO();
+        List<DeliveryCriteriaDTO> rules1 = List.of(new DeliveryCriteriaDTO("akey", "avalue"), new DeliveryCriteriaDTO("bkey", "bvalue"));
         ruleset1.setRules(rules1);
 
-        TemplateRuleset ruleset2 = new TemplateRuleset();
-        List<TemplateRule> rules2 = List.of(new TemplateRule("akey", "avalue"), new TemplateRule("bkey", "bvalue"));
+        DeliveryCriteriaSetDTO ruleset2 = new DeliveryCriteriaSetDTO();
+        List<DeliveryCriteriaDTO> rules2 = List.of(new DeliveryCriteriaDTO("akey", "avalue"), new DeliveryCriteriaDTO("bkey", "bvalue"));
         ruleset2.setRules(rules2);
 
         assertTrue(ruleset1.equals(ruleset2));
@@ -23,12 +23,12 @@ class TemplateRulesetTest {
 
     @Test
     void testNotEquals() {
-        TemplateRuleset ruleset1 = new TemplateRuleset();
-        List<TemplateRule> rules1 = List.of(new TemplateRule("akey", "avalue"), new TemplateRule("bkey", "bvalue"), new TemplateRule("ckey", "cvalue"));
+        DeliveryCriteriaSetDTO ruleset1 = new DeliveryCriteriaSetDTO();
+        List<DeliveryCriteriaDTO> rules1 = List.of(new DeliveryCriteriaDTO("akey", "avalue"), new DeliveryCriteriaDTO("bkey", "bvalue"), new DeliveryCriteriaDTO("ckey", "cvalue"));
         ruleset1.setRules(rules1);
 
-        TemplateRuleset ruleset2 = new TemplateRuleset();
-        List<TemplateRule> rules2 = List.of(new TemplateRule("akey", "avalue"), new TemplateRule("bkey", "bvalue"));
+        DeliveryCriteriaSetDTO ruleset2 = new DeliveryCriteriaSetDTO();
+        List<DeliveryCriteriaDTO> rules2 = List.of(new DeliveryCriteriaDTO("akey", "avalue"), new DeliveryCriteriaDTO("bkey", "bvalue"));
         ruleset2.setRules(rules2);
 
         assertFalse(ruleset1.equals(ruleset2));

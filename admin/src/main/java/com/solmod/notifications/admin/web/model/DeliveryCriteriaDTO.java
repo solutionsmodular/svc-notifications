@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class TemplateRule {
+public class DeliveryCriteriaDTO {
     private String key;
     private String value;
 
@@ -20,11 +20,11 @@ public class TemplateRule {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof TemplateRule)) {
+        if (obj == null || !(obj instanceof DeliveryCriteriaDTO)) {
             return false;
         }
 
-        TemplateRule comp = (TemplateRule) obj;
+        DeliveryCriteriaDTO comp = (DeliveryCriteriaDTO) obj;
         return key != null && key.equals(comp.getKey()) &&
             value != null && value.equals(comp.getValue());
     }

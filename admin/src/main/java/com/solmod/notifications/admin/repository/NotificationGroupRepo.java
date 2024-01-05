@@ -9,5 +9,5 @@ import java.util.UUID;
 
 public interface NotificationGroupRepo extends CrudRepository<NotificationGroup, Long> {
 
-    List<NotificationGroup> findByTenantIdAndSubjectAndVerb(@NotNull Long tenantId, @NotNull String subject, @NotNull String verb);
+    NotificationGroup findByTenantIdAndSubjectAndVerb(@NotNull Long tenantId, @NotNull String subject, @NotNull String verb);
 }
