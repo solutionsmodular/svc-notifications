@@ -12,5 +12,5 @@ import java.util.Set;
 public class MessageTemplateGroupDTO implements Serializable {
 
     // Collection of MessageTemplates is keyed on rule-set
-    private Map<DeliveryCriteriaSetDTO, Set<MessageTemplateDTO>> messageTemplates;
+    private Map<DeliveryCriterionSetDTO, Set<MessageTemplateDTO>> messageTemplates;
 }

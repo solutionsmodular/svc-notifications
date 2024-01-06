@@ -14,12 +14,13 @@ public class Theme {
     @OneToMany(mappedBy = "theme", cascade = CascadeType.ALL)
     private Collection<ThemeCriteria> criteria;
     @OneToMany(mappedBy = "theme", cascade = CascadeType.ALL)
-    private Collection<ThemeDeliveryRules> deliveryRules;
-    @OneToMany(mappedBy = "theme", cascade = CascadeType.ALL)
     private Collection<MessageTemplate> messageTemplates;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "notification_group_id")
     private NotificationGroup notificationGroup;
+    private Integer maxSend;
+    private Integer resendInterval;
+    private Integer resendIntervalPeriod; // Use Calendar constants
 
     public Long getId() {
         return id;
@@ -45,14 +46,6 @@ public class Theme {
         this.criteria = criteria;
     }
 
-    public Collection<ThemeDeliveryRules> getDeliveryRules() {
-        return deliveryRules;
-    }
-
-    public void setDeliveryRules(Collection<ThemeDeliveryRules> deliveryRules) {
-        this.deliveryRules = deliveryRules;
-    }
-
     public NotificationGroup getNotificationGroup() {
         return notificationGroup;
     }
@@ -67,5 +60,29 @@ public class Theme {
 
     public void setMessageTemplates(Collection<MessageTemplate> messageTemplates) {
         this.messageTemplates = messageTemplates;
+    }
+
+    public Integer getMaxSend() {
+        return maxSend;
+    }
+
+    public void setMaxSend(Integer maxSend) {
+        this.maxSend = maxSend;
+    }
+
+    public Integer getResendInterval() {
+        return resendInterval;
+    }
+
+    public void setResendInterval(Integer resendInterval) {
+        this.resendInterval = resendInterval;
+    }
+
+    public Integer getResendIntervalPeriod() {
+        return resendIntervalPeriod;
+    }
+
+    public void setResendIntervalPeriod(Integer intervalPeriod) {
+        this.resendIntervalPeriod = intervalPeriod;
     }
 }

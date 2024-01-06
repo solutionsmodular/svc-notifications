@@ -2,8 +2,6 @@ package com.solmod.notifications.admin.repository.model;
 
 import jakarta.persistence.*;
 
-import java.util.Collection;
-
 /**
  * Associate a certain message content to be delivered via a particular sender
  */
@@ -19,13 +17,14 @@ public class MessageTemplate {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "message_theme_id")
     private Theme theme;
-    @OneToMany(mappedBy = "template", cascade = CascadeType.ALL)
-    private Collection<TemplateDeliveryRules> deliveryRules;
     private String sender;
     private String recipientAddressContextKey;
     private String messageBodyContentKey;
     private Integer maxRetries;
     private Integer minWaitForRetry; // in seconds
+    private Integer maxSend;
+    private Integer resendInterval;
+    private Integer resendIntervalPeriod; // Use Calendar constants
 
     public Long getId() {
         return id;
@@ -81,5 +80,29 @@ public class MessageTemplate {
 
     public void setMinWaitForRetry(Integer minWaitForRetry) {
         this.minWaitForRetry = minWaitForRetry;
+    }
+
+    public Integer getMaxSend() {
+        return maxSend;
+    }
+
+    public void setMaxSend(Integer maxSend) {
+        this.maxSend = maxSend;
+    }
+
+    public Integer getResendInterval() {
+        return resendInterval;
+    }
+
+    public void setResendInterval(Integer resendInterval) {
+        this.resendInterval = resendInterval;
+    }
+
+    public Integer getResendIntervalPeriod() {
+        return resendIntervalPeriod;
+    }
+
+    public void setResendIntervalPeriod(Integer intervalPeriod) {
+        this.resendIntervalPeriod = intervalPeriod;
     }
 }

@@ -68,7 +68,6 @@ class NotificationGroupRepoMySQLTest {
         Theme resultTheme = themes.iterator().next();
 
         assertEquals(1, resultTheme.getCriteria().size());
-        assertEquals(1, resultTheme.getDeliveryRules().size());
 
         Iterator<MessageTemplate> iterator = resultTheme.getMessageTemplates().iterator();
         assertTrue(iterator.hasNext());
@@ -126,11 +125,8 @@ class NotificationGroupRepoMySQLTest {
         testCriteria.setKey(var + "some-key");
         testCriteria.setValue(var + "some-value");
         testTheme.setCriteria(List.of(testCriteria));
-        ThemeDeliveryRules testRules = new ThemeDeliveryRules();
-        testRules.setTheme(testTheme);
-        testRules.setIntervalPeriod(Calendar.HOUR);
-        testRules.setResendInterval(2);
-        testTheme.setDeliveryRules(List.of(testRules));
+        testTheme.setResendIntervalPeriod(Calendar.HOUR);
+        testTheme.setResendInterval(2);
         MessageTemplate testTemplate = new MessageTemplate();
         testTemplate.setTheme(testTheme);
         testTemplate.setSender("somesender");
