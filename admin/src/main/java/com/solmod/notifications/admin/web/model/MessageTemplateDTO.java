@@ -8,6 +8,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class MessageTemplateDTO {
+    private Long messageTemplateID;
     private String sender;
     private String recipientAddressContextKey;
     private String messageBodyContentKey;

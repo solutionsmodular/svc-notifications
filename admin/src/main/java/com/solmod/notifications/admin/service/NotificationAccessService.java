@@ -55,17 +55,7 @@ public class NotificationAccessService {
                 Set<MessageTemplateDTO> keyedMessageTemplates = messageTemplates.computeIfAbsent(criteriaSet, k -> new HashSet<>());
                 Collection<MessageTemplate> templateEntities = curThemeEntity.getMessageTemplates();
                 for (MessageTemplate curTemplateEntity : templateEntities) {
-                    MessageTemplateDTO templateDTO = new MessageTemplateDTO();
-                    templateDTO.setMessageBodyContentKey(curTemplateEntity.getMessageBodyContentKey());
-                    templateDTO.setRecipientAddressContextKey(curTemplateEntity.getRecipientAddressContextKey());
-                    templateDTO.setSender(curTemplateEntity.getSender());
-                    templateDTO.setMinWaitForRetry(curTemplateEntity.getMinWaitForRetry());
-                    templateDTO.setMaxRetries(curTemplateEntity.getMaxRetries());
-                    // Limit to the lowest value between Theme and Template
-                    templateDTO.setMaxSend(min(curTemplateEntity.getMaxSend(), curThemeEntity.getMaxSend()));
-                    // Use the greatest configured value for interval between Theme and Template
-                    templateDTO.setResendInterval(max(curTemplateEntity.getResendInterval(), curThemeEntity.getResendInterval()));
-
+                    MessageTemplateDTO templateDTO = templateFromEntity(curThemeEntity, curTemplateEntity);
                     keyedMessageTemplates.add(templateDTO);
                 }
 
@@ -74,6 +64,21 @@ public class NotificationAccessService {
 
             result.setMessageTemplates(messageTemplates);
             return result;
+        }
+
+        private static MessageTemplateDTO templateFromEntity(Theme themeEntity, MessageTemplate templateEntity) {
+            MessageTemplateDTO templateDTO = new MessageTemplateDTO();
+            templateDTO.setMessageTemplateID(templateEntity.getId());
+            templateDTO.setMessageBodyContentKey(templateEntity.getMessageBodyContentKey());
+            templateDTO.setRecipientAddressContextKey(templateEntity.getRecipientAddressContextKey());
+            templateDTO.setSender(templateEntity.getSender());
+            templateDTO.setMinWaitForRetry(templateEntity.getMinWaitForRetry());
+            templateDTO.setMaxRetries(templateEntity.getMaxRetries());
+            // Limit to the lowest value between Theme and Template
+            templateDTO.setMaxSend(min(templateEntity.getMaxSend(), themeEntity.getMaxSend()));
+            // Use the greatest configured value for interval between Theme and Template
+            templateDTO.setResendInterval(max(templateEntity.getResendInterval(), themeEntity.getResendInterval()));
+            return templateDTO;
         }
 
         private static DeliveryCriterionSetDTO buildCriteriaSet(Collection<ThemeCriteria> criteria) {
