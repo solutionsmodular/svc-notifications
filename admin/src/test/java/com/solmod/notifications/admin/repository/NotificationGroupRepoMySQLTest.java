@@ -125,7 +125,6 @@ class NotificationGroupRepoMySQLTest {
         testCriteria.setKey(var + "some-key");
         testCriteria.setValue(var + "some-value");
         testTheme.setCriteria(List.of(testCriteria));
-        testTheme.setResendIntervalPeriod(Calendar.HOUR);
         testTheme.setResendInterval(2);
         MessageTemplate testTemplate = new MessageTemplate();
         testTemplate.setTheme(testTheme);

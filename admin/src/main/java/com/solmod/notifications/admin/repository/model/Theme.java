@@ -20,7 +20,6 @@ public class Theme {
     private NotificationGroup notificationGroup;
     private Integer maxSend;
     private Integer resendInterval;
-    private Integer resendIntervalPeriod; // Use Calendar constants
 
     public Long getId() {
         return id;
@@ -76,13 +75,5 @@ public class Theme {
 
     public void setResendInterval(Integer resendInterval) {
         this.resendInterval = resendInterval;
-    }
-
-    public Integer getResendIntervalPeriod() {
-        return resendIntervalPeriod;
-    }
-
-    public void setResendIntervalPeriod(Integer intervalPeriod) {
-        this.resendIntervalPeriod = intervalPeriod;
     }
 }

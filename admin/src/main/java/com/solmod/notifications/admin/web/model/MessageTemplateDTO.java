@@ -16,7 +16,6 @@ public class MessageTemplateDTO {
     private Integer minWaitForRetry; // in seconds
     // Resends control how many times a message could possibly be delivered in response to a repeat SolBus event
     private Integer maxSend;
-    private Integer resendInterval;
-    private Integer resendIntervalPeriod; // Use Calendar constants
+    private Integer resendInterval; // in minutes
 
 }
