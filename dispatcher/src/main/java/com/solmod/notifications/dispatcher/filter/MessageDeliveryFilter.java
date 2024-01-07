@@ -1,5 +1,6 @@
 package com.solmod.notifications.dispatcher.filter;
 
+import com.solmod.notifications.dispatcher.domain.SolMessage;
 import com.solmod.notifications.dispatcher.service.domain.TriggeredMessageTemplateGroup;
 
 @FunctionalInterface
@@ -12,9 +13,10 @@ public interface MessageDeliveryFilter {
      * 2. Assess each MessageTemplate
      *
      * @param templateGroup
+     * @param solMessage
      * @return
      */
-    TriggeredMessageTemplateGroup apply(TriggeredMessageTemplateGroup templateGroup);
+    TriggeredMessageTemplateGroup apply(TriggeredMessageTemplateGroup templateGroup, SolMessage solMessage);
 /*
     Message metadata -> Context
     Resolved recipient

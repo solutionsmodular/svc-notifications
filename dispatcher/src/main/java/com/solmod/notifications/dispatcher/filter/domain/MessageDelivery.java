@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 import java.util.Map;
 
-public class MessageDeliveryTrigger {
+public class MessageDelivery {
     private String recipient;
     private Long messageTemplateId;
     private Status status; // TODO
@@ -13,10 +13,6 @@ public class MessageDeliveryTrigger {
     private String sender;
     private String messageBody; // TODO: Reminder that this needs to be built somewhere, but not sure where yet
     private Map<String, String> metadata;
-//    Message metadata -> Context
-//    Resolved recipient
-//    Sender
-//    Rendered message body (Content Manager + metadata)
 
     enum Status {
 

@@ -4,12 +4,13 @@ import com.solmod.notifications.admin.service.NotificationAccessService;
 import com.solmod.notifications.admin.web.model.MessageTemplateGroupDTO;
 import com.solmod.notifications.dispatcher.domain.SolCommunication;
 import com.solmod.notifications.dispatcher.domain.SolMessage;
+import com.solmod.notifications.dispatcher.service.domain.TriggeredMessageTemplateGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -25,10 +26,12 @@ public class EventBusHandler implements Function<SolMessage, List<SolCommunicati
     Logger log = LoggerFactory.getLogger(getClass());
 
     NotificationAccessService accessService;
+    MessageFilterService messageFilterService;
 
     @Autowired
-    public EventBusHandler(NotificationAccessService accessService) {
+    public EventBusHandler(NotificationAccessService accessService, MessageFilterService messageFilterService) {
         this.accessService = accessService;
+        this.messageFilterService = messageFilterService;
     }
 
     /**
@@ -40,12 +43,14 @@ public class EventBusHandler implements Function<SolMessage, List<SolCommunicati
      * @return List of {@link SolCommunication}s suited to send to the sender
      */
     @Override
-    public List<SolCommunication> apply(SolMessage solMessage) {
+    public List<SolCommunication> apply(final SolMessage solMessage) {
 
         MessageTemplateGroupDTO templates = accessService.getNotificationTemplateGroup(solMessage.getTenantId(), solMessage.getSubject(), solMessage.getVerb());
-        // TODO: run those through the filters
+        // TODO: If the above returned no results, then an error should be logged suggesting adjusting subscription
+        TriggeredMessageTemplateGroup messagesToSend = new TriggeredMessageTemplateGroup();
+        messagesToSend.setQualifiedTemplates(templates); // Before filters, all templates qualify
+        messageFilterService.runThroughFilters(messagesToSend, solMessage);
 
-        // Find the appropriate event for the given message subject and verb
         /*
         In:
             Message metadata -> Context
@@ -53,8 +58,8 @@ public class EventBusHandler implements Function<SolMessage, List<SolCommunicati
             Sender
             Rendered message body (Content Manager + metadata)
 
-        1. Get qualifying message templates (based on subject/verb)
-            Create NotificationDelivery for each found
+        1. X Get qualifying message templates (based on subject/verb)
+        2. Create NotificationDelivery for each found
 
         TODO: Add Notification Group context builder here
         TODO: Add MessageTheme context builder here
