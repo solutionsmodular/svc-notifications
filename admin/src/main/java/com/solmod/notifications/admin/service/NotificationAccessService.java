@@ -69,7 +69,7 @@ public class NotificationAccessService {
         private static MessageTemplateDTO templateFromEntity(Theme themeEntity, MessageTemplate templateEntity) {
             MessageTemplateDTO templateDTO = new MessageTemplateDTO();
             templateDTO.setMessageTemplateID(templateEntity.getId());
-            templateDTO.setMessageBodyContentKey(templateEntity.getMessageBodyContentKey());
+            templateDTO.setContentKeySet(templateEntity.toContentKeySet());
             templateDTO.setRecipientAddressContextKey(templateEntity.getRecipientAddressContextKey());
             templateDTO.setSender(templateEntity.getSender());
             templateDTO.setMinWaitForRetry(templateEntity.getMinWaitForRetry());

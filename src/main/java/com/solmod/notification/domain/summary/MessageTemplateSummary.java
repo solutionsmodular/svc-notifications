@@ -2,15 +2,9 @@ package com.solmod.notification.domain.summary;
 
 import com.solmod.notification.domain.MessageSender;
 import com.solmod.notification.domain.Status;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
-@Setter
-@Builder
-@EqualsAndHashCode
+@Data
 public class MessageTemplateSummary {
     private Long id;
     private Long messageConfigId;

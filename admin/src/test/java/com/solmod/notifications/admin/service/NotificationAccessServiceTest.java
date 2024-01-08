@@ -1,10 +1,7 @@
 package com.solmod.notifications.admin.service;
 
 import com.solmod.notifications.admin.repository.NotificationGroupRepo;
-import com.solmod.notifications.admin.repository.model.MessageTemplate;
-import com.solmod.notifications.admin.repository.model.NotificationGroup;
-import com.solmod.notifications.admin.repository.model.Theme;
-import com.solmod.notifications.admin.repository.model.ThemeCriteria;
+import com.solmod.notifications.admin.repository.model.*;
 import com.solmod.notifications.admin.web.model.DeliveryCriterionSetDTO;
 import com.solmod.notifications.admin.web.model.MessageTemplateDTO;
 import com.solmod.notifications.admin.web.model.MessageTemplateGroupDTO;
@@ -70,7 +67,11 @@ class NotificationAccessServiceTest {
 
         MessageTemplateDTO resultTemplateDTO = commonCriteriaDTO.values().iterator().next().iterator().next();
         assertEquals(mockTemplate.getMaxRetries(), resultTemplateDTO.getMaxRetries());
-        assertEquals(mockTemplate.getMessageBodyContentKey(), resultTemplateDTO.getMessageBodyContentKey());
+        assertEquals("ALERT", resultTemplateDTO.getContentKeySet().getContentKeys().get("timelineNodeType"));
+        assertEquals("nodetitlecontentkey", resultTemplateDTO.getContentKeySet().getContentKeys().get("nodeTitleContentKey"));
+        assertEquals("messagebodycontentkey", resultTemplateDTO.getContentKeySet().getContentKeys().get("messageBodyContentKey"));
+        assertEquals(15, resultTemplateDTO.getMaxRetries());
+        assertEquals(600, resultTemplateDTO.getMinWaitForRetry());
         assertEquals(mockTemplate.getMinWaitForRetry(), resultTemplateDTO.getMinWaitForRetry());
         assertEquals(mockTemplate.getRecipientAddressContextKey(), resultTemplateDTO.getRecipientAddressContextKey());
         assertEquals(mockTemplate.getSender(), resultTemplateDTO.getSender());
@@ -94,11 +95,15 @@ class NotificationAccessServiceTest {
         mockCriteria1.setValue("criteria1aval");
         theme1.setCriteria(List.of(mockCriteria1));
 
-        MessageTemplate mockTemplate1 = new MessageTemplate();
+        TimelineMessageTemplate mockTemplate1 = new TimelineMessageTemplate();
+        mockTemplate1.setMaxRetries(15);
+        mockTemplate1.setMinWaitForRetry(60*10); // 10min
         mockTemplate1.setMaxSend(15);
         mockTemplate1.setSender("someSenderTemplate1");
         mockTemplate1.setResendInterval(2);
         mockTemplate1.setRecipientAddressContextKey("template1recipientaddy");
+        mockTemplate1.setTimelineNodeType(TimelineMessageTemplate.TimelineNodeType.ALERT);
+        mockTemplate1.setNodeTitleContentKey("nodetitlecontentkey");
         mockTemplate1.setMessageBodyContentKey("messagebodycontentkey");
 
         theme1.setMessageTemplates(Set.of(mockTemplate1));

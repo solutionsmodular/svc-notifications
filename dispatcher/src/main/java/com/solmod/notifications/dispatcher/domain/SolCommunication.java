@@ -1,12 +1,8 @@
 package com.solmod.notifications.dispatcher.domain;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
-@Setter
-@EqualsAndHashCode
+@Data
 public class SolCommunication {
     Long communicationId;
     Long messageTemplateId;

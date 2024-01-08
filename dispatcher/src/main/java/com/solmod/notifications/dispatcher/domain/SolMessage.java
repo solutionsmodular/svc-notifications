@@ -1,8 +1,11 @@
 package com.solmod.notifications.dispatcher.domain;
 
+import lombok.Data;
+
 /**
  * On the SolBus, all messages follow this format
  */
+@Data
 public class SolMessage {
     private String subject;
     private String verb;

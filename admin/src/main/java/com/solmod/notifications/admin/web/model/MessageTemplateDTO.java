@@ -11,7 +11,7 @@ public class MessageTemplateDTO {
     private Long messageTemplateID;
     private String sender;
     private String recipientAddressContextKey;
-    private String messageBodyContentKey;
+    private ContentKeySetDTO contentKeySet;
     // Retries are re-attempts at failed sends
     private Integer maxRetries;
     private Integer minWaitForRetry; // in seconds
