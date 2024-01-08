@@ -1,21 +1,23 @@
 package com.solmod.notifications.admin.web.model;
 
-import java.util.HashSet;
-import java.util.Set;
+import lombok.Data;
 
+import java.util.*;
+
+@Data
 public class DeliveryCriterionSetDTO {
-    private Set<DeliveryCriteriaDTO> criteria = new HashSet<>();
+    private Map<String, String> criteria = new HashMap<>();
 
-    public Set<DeliveryCriteriaDTO> getCriteria() {
+    public Map<String, String> getCriteria() {
         return criteria;
     }
 
-    public void setCriteria(Set<DeliveryCriteriaDTO> criteria) {
+    public void setCriteria(Map<String, String> criteria) {
         this.criteria = criteria;
     }
 
-    public void addCriterion(DeliveryCriteriaDTO criteriaDTO) {
-        criteria.add(criteriaDTO);
+    public void addCriterion(String key, String value) {
+        criteria.put(key, value);
     }
 
     @Override
@@ -25,11 +27,9 @@ public class DeliveryCriterionSetDTO {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof DeliveryCriterionSetDTO)) {
+        if (!(obj instanceof DeliveryCriterionSetDTO comp)) {
             return false;
         }
-
-        DeliveryCriterionSetDTO comp = (DeliveryCriterionSetDTO) obj;
 
         return this.getCriteria().equals(comp.getCriteria());
     }

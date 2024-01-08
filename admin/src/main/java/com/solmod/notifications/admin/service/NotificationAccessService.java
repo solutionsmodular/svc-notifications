@@ -5,7 +5,6 @@ import com.solmod.notifications.admin.repository.model.MessageTemplate;
 import com.solmod.notifications.admin.repository.model.NotificationGroup;
 import com.solmod.notifications.admin.repository.model.Theme;
 import com.solmod.notifications.admin.repository.model.ThemeCriteria;
-import com.solmod.notifications.admin.web.model.DeliveryCriteriaDTO;
 import com.solmod.notifications.admin.web.model.DeliveryCriterionSetDTO;
 import com.solmod.notifications.admin.web.model.MessageTemplateDTO;
 import com.solmod.notifications.admin.web.model.MessageTemplateGroupDTO;
@@ -15,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -48,18 +46,14 @@ public class NotificationAccessService {
          * @return {@link MessageTemplateDTO}
          */
         private static MessageTemplateGroupDTO fromEntity(NotificationGroup entity) {
-            HashMap<DeliveryCriterionSetDTO, Set<MessageTemplateDTO>> messageTemplates = new HashMap<>();
+            Set<MessageTemplateDTO> messageTemplates = new HashSet<>();
             MessageTemplateGroupDTO result = new MessageTemplateGroupDTO();
             for (Theme curThemeEntity : entity.getThemes()) {
-                DeliveryCriterionSetDTO criteriaSet = buildCriteriaSet(curThemeEntity.getCriteria());
-                Set<MessageTemplateDTO> keyedMessageTemplates = messageTemplates.computeIfAbsent(criteriaSet, k -> new HashSet<>());
                 Collection<MessageTemplate> templateEntities = curThemeEntity.getMessageTemplates();
                 for (MessageTemplate curTemplateEntity : templateEntities) {
                     MessageTemplateDTO templateDTO = templateFromEntity(curThemeEntity, curTemplateEntity);
-                    keyedMessageTemplates.add(templateDTO);
+                    messageTemplates.add(templateDTO);
                 }
-
-                messageTemplates.put(criteriaSet, keyedMessageTemplates);
             }
 
             result.setMessageTemplates(messageTemplates);
@@ -68,6 +62,7 @@ public class NotificationAccessService {
 
         private static MessageTemplateDTO templateFromEntity(Theme themeEntity, MessageTemplate templateEntity) {
             MessageTemplateDTO templateDTO = new MessageTemplateDTO();
+            templateDTO.setDeliveryCriteria(buildCriteriaSet(themeEntity.getCriteria()));
             templateDTO.setMessageTemplateID(templateEntity.getId());
             templateDTO.setContentKeySet(templateEntity.toContentKeySet());
             templateDTO.setRecipientAddressContextKey(templateEntity.getRecipientAddressContextKey());
@@ -84,7 +79,7 @@ public class NotificationAccessService {
         private static DeliveryCriterionSetDTO buildCriteriaSet(Collection<ThemeCriteria> criteria) {
             DeliveryCriterionSetDTO result = new DeliveryCriterionSetDTO();
             for (ThemeCriteria criterion : criteria) {
-                result.addCriterion(new DeliveryCriteriaDTO(criterion.getKey(), criterion.getValue()));
+                result.addCriterion(criterion.getKey(), criterion.getValue());
             }
 
             return result;

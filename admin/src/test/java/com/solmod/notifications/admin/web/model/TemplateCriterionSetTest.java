@@ -2,35 +2,36 @@ package com.solmod.notifications.admin.web.model;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Set;
+import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 class TemplateCriterionSetTest {
 
     @Test
     void testEquals() {
         DeliveryCriterionSetDTO ruleset1 = new DeliveryCriterionSetDTO();
-        Set<DeliveryCriteriaDTO> rules1 = Set.of(new DeliveryCriteriaDTO("akey", "avalue"), new DeliveryCriteriaDTO("bkey", "bvalue"));
-        ruleset1.setCriteria(rules1);
+        Map<String, String> criteria1 = Map.of("keya", "valuea", "keyb", "valueb");
+        ruleset1.setCriteria(criteria1);
 
         DeliveryCriterionSetDTO ruleset2 = new DeliveryCriterionSetDTO();
-        Set<DeliveryCriteriaDTO> rules2 = Set.of(new DeliveryCriteriaDTO("akey", "avalue"), new DeliveryCriteriaDTO("bkey", "bvalue"));
-        ruleset2.setCriteria(rules2);
+        Map<String, String> criteria2 = Map.of("keyb", "valueb", "keya", "valuea");
+        ruleset2.setCriteria(criteria2);
 
-        assertTrue(ruleset1.equals(ruleset2));
+        assertEquals(ruleset1, ruleset2);
     }
 
     @Test
     void testNotEquals() {
         DeliveryCriterionSetDTO ruleset1 = new DeliveryCriterionSetDTO();
-        Set<DeliveryCriteriaDTO> rules1 = Set.of(new DeliveryCriteriaDTO("akey", "avalue"), new DeliveryCriteriaDTO("bkey", "bvalue"), new DeliveryCriteriaDTO("ckey", "cvalue"));
-        ruleset1.setCriteria(rules1);
+        Map<String, String> criteria1 = Map.of("keya", "valuea", "keyb", "valueb", "keyc", "valuec");
+        ruleset1.setCriteria(criteria1);
 
         DeliveryCriterionSetDTO ruleset2 = new DeliveryCriterionSetDTO();
-        Set<DeliveryCriteriaDTO> rules2 = Set.of(new DeliveryCriteriaDTO("akey", "avalue"), new DeliveryCriteriaDTO("bkey", "bvalue"));
-        ruleset2.setCriteria(rules2);
+        Map<String, String> criteria2 = Map.of("keya", "valuea", "keyb", "valueb");
+        ruleset2.setCriteria(criteria2);
 
-        assertFalse(ruleset1.equals(ruleset2));
+        assertNotEquals(ruleset1, ruleset2);
     }
 }

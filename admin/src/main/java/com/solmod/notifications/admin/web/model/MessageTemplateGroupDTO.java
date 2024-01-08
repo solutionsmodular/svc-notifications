@@ -4,7 +4,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
-import java.util.Map;
 import java.util.Set;
 
 @Getter
@@ -12,5 +11,5 @@ import java.util.Set;
 public class MessageTemplateGroupDTO implements Serializable {
 
     // Collection of MessageTemplates is keyed on rule-set
-    private Map<DeliveryCriterionSetDTO, Set<MessageTemplateDTO>> messageTemplates;
+    private Set<MessageTemplateDTO> messageTemplates;
 }

@@ -58,7 +58,6 @@ public class EventBusHandler implements Function<SolMessage, List<SolCommunicati
             Sender
             Rendered message body (Content Manager + metadata)
 
-        1. X Get qualifying message templates (based on subject/verb)
         2. Create NotificationDelivery for each found
 
         TODO: Add Notification Group context builder here

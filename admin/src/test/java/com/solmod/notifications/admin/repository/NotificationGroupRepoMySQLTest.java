@@ -71,11 +71,12 @@ class NotificationGroupRepoMySQLTest {
 
         Iterator<MessageTemplate> iterator = resultTheme.getMessageTemplates().iterator();
         assertTrue(iterator.hasNext());
-        MessageTemplate resultTemplate = iterator.next();
-        assertNotNull(resultTemplate.getMessageBodyContentKey());
-        MessageTemplate emailResultTemplate = iterator.next();
-        assertNotNull(emailResultTemplate);
-        assertTrue(emailResultTemplate instanceof EmailMessageTemplate);
+        MessageTemplate resultTemplate1 = iterator.next();
+        assertNotNull(resultTemplate1.getMessageBodyContentKey());
+        MessageTemplate resultTemplate2 = iterator.next();
+        assertNotNull(resultTemplate2);
+        assertTrue(resultTemplate1 instanceof EmailMessageTemplate ||
+                resultTemplate2 instanceof EmailMessageTemplate);
     }
 
     @Test
@@ -92,6 +93,7 @@ class NotificationGroupRepoMySQLTest {
         }
 
         NotificationGroup bySubjectAndVerb = repo.findByTenantIdAndSubjectAndVerb(1L, "1somesubject", "1someverb");
+        // TODO: make assertions
         System.out.println("hi");
     }
 
@@ -124,7 +126,7 @@ class NotificationGroupRepoMySQLTest {
         testCriteria.setTheme(testTheme);
         testCriteria.setKey(var + "some-key");
         testCriteria.setValue(var + "some-value");
-        testTheme.setCriteria(List.of(testCriteria));
+        testTheme.setCriteria(Set.of(testCriteria));
         testTheme.setResendInterval(2);
         MessageTemplate testTemplate = new MessageTemplate();
         testTemplate.setTheme(testTheme);
@@ -137,7 +139,7 @@ class NotificationGroupRepoMySQLTest {
         testEmailTemplate.setMaxRetries(200 + var);
         testEmailTemplate.setMessageBodyContentKey(var + "TheEmailBody");
         testEmailTemplate.setRecipientAddressContextKey(var + "email_addy_event_metadata");
-        testTheme.setMessageTemplates(List.of(testTemplate, testEmailTemplate));
+        testTheme.setMessageTemplates(Set.of(testTemplate, testEmailTemplate));
 
         return testTheme;
     }

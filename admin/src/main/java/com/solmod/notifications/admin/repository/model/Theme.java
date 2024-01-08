@@ -2,7 +2,7 @@ package com.solmod.notifications.admin.repository.model;
 
 import jakarta.persistence.*;
 
-import java.util.Collection;
+import java.util.Set;
 
 @Entity(name = "MessageThemes")
 public class Theme {
@@ -12,9 +12,9 @@ public class Theme {
     private String description;
 
     @OneToMany(mappedBy = "theme", cascade = CascadeType.ALL)
-    private Collection<ThemeCriteria> criteria;
+    private Set<ThemeCriteria> criteria;
     @OneToMany(mappedBy = "theme", cascade = CascadeType.ALL)
-    private Collection<MessageTemplate> messageTemplates;
+    private Set<MessageTemplate> messageTemplates;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "notification_group_id")
     private NotificationGroup notificationGroup;
@@ -37,11 +37,11 @@ public class Theme {
         this.description = description;
     }
 
-    public Collection<ThemeCriteria> getCriteria() {
+    public Set<ThemeCriteria> getCriteria() {
         return criteria;
     }
 
-    public void setCriteria(Collection<ThemeCriteria> criteria) {
+    public void setCriteria(Set<ThemeCriteria> criteria) {
         this.criteria = criteria;
     }
 
@@ -53,11 +53,11 @@ public class Theme {
         this.notificationGroup = notificationGroup;
     }
 
-    public Collection<MessageTemplate> getMessageTemplates() {
+    public Set<MessageTemplate> getMessageTemplates() {
         return messageTemplates;
     }
 
-    public void setMessageTemplates(Collection<MessageTemplate> messageTemplates) {
+    public void setMessageTemplates(Set<MessageTemplate> messageTemplates) {
         this.messageTemplates = messageTemplates;
     }
 

@@ -2,7 +2,6 @@ package com.solmod.notifications.admin.service;
 
 import com.solmod.notifications.admin.repository.NotificationGroupRepo;
 import com.solmod.notifications.admin.repository.model.*;
-import com.solmod.notifications.admin.web.model.DeliveryCriterionSetDTO;
 import com.solmod.notifications.admin.web.model.MessageTemplateDTO;
 import com.solmod.notifications.admin.web.model.MessageTemplateGroupDTO;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,8 +13,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -60,12 +57,12 @@ class NotificationAccessServiceTest {
 
         MessageTemplateGroupDTO result = service.getNotificationTemplateGroup(mockTenantId, mockSubject, mockVerb);
 
-        Map<DeliveryCriterionSetDTO, Set<MessageTemplateDTO>> commonCriteriaDTO = result.getMessageTemplates();
+        MessageTemplateDTO resultTemplateDTO = result.getMessageTemplates().iterator().next();
+        // TODO: iterate mockThemeCriteria and compare resultTemplateDTO as having key/value
+        for (ThemeCriteria mockCriterion : mockTheme.getCriteria()) {
+            assertEquals(mockCriterion.getValue(), resultTemplateDTO.getDeliveryCriteria().getCriteria().get(mockCriterion.getKey()));
+        }
 
-        DeliveryCriterionSetDTO commonCriteria = commonCriteriaDTO.keySet().iterator().next();
-        assertEquals(commonCriteria, result.getMessageTemplates().keySet().iterator().next());
-
-        MessageTemplateDTO resultTemplateDTO = commonCriteriaDTO.values().iterator().next().iterator().next();
         assertEquals(mockTemplate.getMaxRetries(), resultTemplateDTO.getMaxRetries());
         assertEquals("ALERT", resultTemplateDTO.getContentKeySet().getContentKeys().get("timelineNodeType"));
         assertEquals("nodetitlecontentkey", resultTemplateDTO.getContentKeySet().getContentKeys().get("nodeTitleContentKey"));
@@ -93,7 +90,7 @@ class NotificationAccessServiceTest {
         ThemeCriteria mockCriteria1 = new ThemeCriteria();
         mockCriteria1.setKey("criteria1akey");
         mockCriteria1.setValue("criteria1aval");
-        theme1.setCriteria(List.of(mockCriteria1));
+        theme1.setCriteria(Set.of(mockCriteria1));
 
         TimelineMessageTemplate mockTemplate1 = new TimelineMessageTemplate();
         mockTemplate1.setMaxRetries(15);
