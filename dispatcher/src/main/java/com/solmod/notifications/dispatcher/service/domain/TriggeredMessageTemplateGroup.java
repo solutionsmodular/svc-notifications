@@ -1,32 +1,31 @@
 package com.solmod.notifications.dispatcher.service.domain;
 
+import com.solmod.notifications.admin.web.model.MessageTemplateDTO;
 import com.solmod.notifications.admin.web.model.MessageTemplateGroupDTO;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.Data;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
-@NoArgsConstructor
-@Getter
-@Setter
+@Data
 public class TriggeredMessageTemplateGroup {
 
     private MessageTemplateGroupDTO qualifiedTemplates;
-    private List<String> denyMessages;
+    private Map<Long, String> denyMessages;
 
     /**
-     * Post filter, a nonqualifying template will be removed from qualifiedTemplates.
+     * During filter, any nonqualifying templates will be removed from qualifiedTemplates.
      * A deny message is all that will remain of record of that template
      *
-     * @param denyMessage String
+     * @param messageTemplateId {@code Long} identifying the message template from the admin services
+     * @param denyMessage String human-readable description of the reason for the rejection
      */
-    public void addDenyMessage(String denyMessage) {
+    public void addDenyMessage(Long messageTemplateId, String denyMessage) {
         if (denyMessages == null) {
-            denyMessages = new LinkedList<>();
+            denyMessages = new HashMap<>();
         }
 
-        denyMessages.add(denyMessage);
+        denyMessages.put(messageTemplateId, denyMessage);
     }
 }

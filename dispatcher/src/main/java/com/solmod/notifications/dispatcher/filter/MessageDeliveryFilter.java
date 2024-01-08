@@ -16,7 +16,7 @@ public interface MessageDeliveryFilter {
      * @param solMessage
      * @return
      */
-    TriggeredMessageTemplateGroup apply(TriggeredMessageTemplateGroup templateGroup, SolMessage solMessage);
+    void apply(TriggeredMessageTemplateGroup templateGroup, SolMessage solMessage);
 /*
     Message metadata -> Context
     Resolved recipient

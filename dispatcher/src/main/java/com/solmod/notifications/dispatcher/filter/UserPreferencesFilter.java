@@ -6,7 +6,7 @@ import org.apache.commons.lang3.NotImplementedException;
 
 public class UserPreferencesFilter  implements MessageDeliveryFilter {
     @Override
-    public TriggeredMessageTemplateGroup apply(TriggeredMessageTemplateGroup templateGroup, SolMessage solMessage) {
+    public void apply(TriggeredMessageTemplateGroup templateGroup, SolMessage solMessage) {
         throw new NotImplementedException("UserPreferencesFilter is not yet implemented");
     }
 }
