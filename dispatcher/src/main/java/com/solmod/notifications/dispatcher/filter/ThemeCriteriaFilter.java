@@ -42,6 +42,10 @@ public class ThemeCriteriaFilter  implements MessageDeliveryFilter {
     }
 
     private boolean qualifyTemplate(MessageTemplateDTO curTemplate, Map<String, Object> flattenedMetadata) {
+        if (curTemplate.getDeliveryCriteria() == null || curTemplate.getDeliveryCriteria().getCriteria().isEmpty()) {
+            return true;
+        }
+
         AtomicBoolean qualifies = new AtomicBoolean(true);
         curTemplate.getDeliveryCriteria().getCriteria().forEach((key, value) -> {
             Object propertyValue = flattenedMetadata.get(key);
