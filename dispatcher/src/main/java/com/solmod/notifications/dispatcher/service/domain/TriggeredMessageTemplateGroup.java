@@ -12,7 +12,7 @@ import java.util.Set;
 public class TriggeredMessageTemplateGroup {
 
     private MessageTemplateGroupDTO qualifiedTemplates;
-    private Map<Long, String> denyMessages;
+    private Map<Long, String> denyMessages = new HashMap<>();
 
     /**
      * During filter, any nonqualifying templates will be removed from qualifiedTemplates.
@@ -22,10 +22,6 @@ public class TriggeredMessageTemplateGroup {
      * @param denyMessage String human-readable description of the reason for the rejection
      */
     public void addDenyMessage(Long messageTemplateId, String denyMessage) {
-        if (denyMessages == null) {
-            denyMessages = new HashMap<>();
-        }
-
         denyMessages.put(messageTemplateId, denyMessage);
     }
 }
