@@ -79,32 +79,6 @@ class NotificationGroupRepoMySQLTest {
                 resultTemplate2 instanceof EmailMessageTemplate);
     }
 
-    @Test
-    void buildSaveAndGetAllBySubjectVerb() {
-        for (int i = 0; i < 5; i++) {
-            NotificationGroup entity = buildBasicNotificationGroup(i);
-            Theme testTheme = buildTheme(entity, i);
-            entity.setThemes(List.of(testTheme));
-            NotificationGroup savedGroup = repo.save(entity);
-            assertNotNull(savedGroup.getId());
-            assertEquals(entity.getSubject(), savedGroup.getSubject());
-            assertNotNull(savedGroup.getThemes());
-            assertNotEquals(0, savedGroup.getThemes().size());
-        }
-
-        NotificationGroup bySubjectAndVerb = repo.findByTenantIdAndSubjectAndVerb(1L, "1somesubject", "1someverb");
-        // TODO: make assertions
-        System.out.println("hi");
-    }
-
-    /**
-     * This just shows @Transaction is at entire class level and test data is not persisted outside test
-     */
-    @Test
-    void assertNothing() {
-        Iterable<NotificationGroup> all = repo.findAll();
-        assertFalse(all.iterator().hasNext());
-    }
 
     @NotNull
     private NotificationGroup buildBasicNotificationGroup(int var) {

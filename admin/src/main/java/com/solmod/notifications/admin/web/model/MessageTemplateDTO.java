@@ -1,12 +1,8 @@
 package com.solmod.notifications.admin.web.model;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
-@Setter
-@NoArgsConstructor
+@Data
 public class MessageTemplateDTO {
     private DeliveryCriterionSetDTO deliveryCriteria;
     private Long messageTemplateID;

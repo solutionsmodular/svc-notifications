@@ -41,6 +41,20 @@ public class ThemeCriteriaFilter  implements MessageDeliveryFilter {
         }
     }
 
+    /**
+     * Create a flat, Properties-like, construct representing the data in the provided context. This facilitates
+     * the use of context keys such as {@code parent.child.property}
+     *
+     * @param context {@code Object} of any sort, to flatten
+     * @return Map of String key Object value context
+     * @throws JsonProcessingException In the event there's something funky with the specified context
+     */
+    public Map<String, Object> flatten(Object context) throws JsonProcessingException {
+        String json = objectMapper.writeValueAsString(context);
+
+        return JsonFlattener.flattenAsMap(json);
+    }
+
     private boolean qualifyTemplate(MessageTemplateDTO curTemplate, Map<String, Object> flattenedMetadata) {
         if (curTemplate.getDeliveryCriteria() == null || curTemplate.getDeliveryCriteria().getCriteria().isEmpty()) {
             return true;
@@ -55,19 +69,5 @@ public class ThemeCriteriaFilter  implements MessageDeliveryFilter {
         });
 
         return qualifies.get();
-    }
-
-    /**
-     * Create a flat, Properties-like, construct representing the data in the provided context. This facilitates
-     * the use of context keys such as {@code parent.child.property}
-     *
-     * @param context {@code Object} of any sort, to flatten
-     * @return Map of String key Object value context
-     * @throws JsonProcessingException In the event there's something funky with the specified context
-     */
-    public Map<String, Object> flatten(Object context) throws JsonProcessingException {
-        String json = objectMapper.writeValueAsString(context);
-
-        return JsonFlattener.flattenAsMap(json);
     }
 }
