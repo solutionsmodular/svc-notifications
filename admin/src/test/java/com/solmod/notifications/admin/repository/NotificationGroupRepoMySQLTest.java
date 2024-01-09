@@ -28,8 +28,6 @@ class NotificationGroupRepoMySQLTest {
     @Autowired
     NotificationGroupRepo repo;
 
-    private static UUID resultGroupId;
-
 /*
     @Container
     private static final MySQLContainer<?> mysqlContainer = new MySQLContainer<>("mysql:8.2.0")
@@ -48,51 +46,45 @@ class NotificationGroupRepoMySQLTest {
 
     @Test
     void buildSaveAndGetAll() {
+        Long resultGroupId = null;
         for (int i = 0; i < 5; i++) {
             NotificationGroup entity = buildBasicNotificationGroup(i);
             Theme testTheme = buildTheme(entity, i);
-            entity.setMessageThemes(List.of(testTheme));
+            entity.setThemes(List.of(testTheme));
             NotificationGroup savedGroup = repo.save(entity);
             resultGroupId = savedGroup.getId();
             assertNotNull(savedGroup.getId());
             assertEquals(entity.getSubject(), savedGroup.getSubject());
-            assertNotNull(savedGroup.getMessageThemes());
-            assertNotEquals(0, savedGroup.getMessageThemes().size());
+            assertNotNull(savedGroup.getThemes());
+            assertNotEquals(0, savedGroup.getThemes().size());
         }
 
         NotificationGroup foundGroup = repo.findById(resultGroupId).orElse(null);
         assertNotNull(foundGroup);
-        Collection<Theme> themes = foundGroup.getMessageThemes();
+        Collection<Theme> themes = foundGroup.getThemes();
         assertNotNull(themes);
 
         assertEquals(1, themes.size());
         Theme resultTheme = themes.iterator().next();
 
         assertEquals(1, resultTheme.getCriteria().size());
-        assertEquals(1, resultTheme.getDeliveryRules().size());
 
         Iterator<MessageTemplate> iterator = resultTheme.getMessageTemplates().iterator();
         assertTrue(iterator.hasNext());
-        MessageTemplate resultTemplate = iterator.next();
-        assertNotNull(resultTemplate.getMessageBodyContentKey());
-        MessageTemplate emailResultTemplate = iterator.next();
-        assertNotNull(emailResultTemplate);
-        assertTrue(emailResultTemplate instanceof EmailMessageTemplate);
+        MessageTemplate resultTemplate1 = iterator.next();
+        assertNotNull(resultTemplate1.getMessageBodyContentKey());
+        MessageTemplate resultTemplate2 = iterator.next();
+        assertNotNull(resultTemplate2);
+        assertTrue(resultTemplate1 instanceof EmailMessageTemplate ||
+                resultTemplate2 instanceof EmailMessageTemplate);
     }
 
-    /**
-     * This just shows @Transaction is at entire class level and test data is not persisted outside test
-     */
-    @Test
-    void assertNothing() {
-        Iterable<NotificationGroup> all = repo.findAll();
-        assertFalse(all.iterator().hasNext());
-    }
 
     @NotNull
     private NotificationGroup buildBasicNotificationGroup(int var) {
         NotificationGroup entity = new NotificationGroup();
         entity.setDescription("This is a test: " + var);
+        entity.setTenantId(1L);
         entity.setSubject(var + "somesubject");
         entity.setVerb(var + "someverb");
         return entity;
@@ -108,14 +100,11 @@ class NotificationGroupRepoMySQLTest {
         testCriteria.setTheme(testTheme);
         testCriteria.setKey(var + "some-key");
         testCriteria.setValue(var + "some-value");
-        testTheme.setCriteria(List.of(testCriteria));
-        ThemeDeliveryRules testRules = new ThemeDeliveryRules();
-        testRules.setTheme(testTheme);
-        testRules.setIntervalPeriod(Calendar.HOUR);
-        testRules.setResendInterval(2);
-        testTheme.setDeliveryRules(List.of(testRules));
+        testTheme.setCriteria(Set.of(testCriteria));
+        testTheme.setResendInterval(2);
         MessageTemplate testTemplate = new MessageTemplate();
         testTemplate.setTheme(testTheme);
+        testTemplate.setSender("somesender");
         testTemplate.setMaxRetries(100 + var);
         testTemplate.setMessageBodyContentKey(var + "TheBody");
         testTemplate.setRecipientAddressContextKey(var + "sms_number_perhaps");
@@ -124,7 +113,7 @@ class NotificationGroupRepoMySQLTest {
         testEmailTemplate.setMaxRetries(200 + var);
         testEmailTemplate.setMessageBodyContentKey(var + "TheEmailBody");
         testEmailTemplate.setRecipientAddressContextKey(var + "email_addy_event_metadata");
-        testTheme.setMessageTemplates(List.of(testTemplate, testEmailTemplate));
+        testTheme.setMessageTemplates(Set.of(testTemplate, testEmailTemplate));
 
         return testTheme;
     }

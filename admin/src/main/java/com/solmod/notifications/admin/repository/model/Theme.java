@@ -2,7 +2,7 @@ package com.solmod.notifications.admin.repository.model;
 
 import jakarta.persistence.*;
 
-import java.util.Collection;
+import java.util.Set;
 
 @Entity(name = "MessageThemes")
 public class Theme {
@@ -12,14 +12,14 @@ public class Theme {
     private String description;
 
     @OneToMany(mappedBy = "theme", cascade = CascadeType.ALL)
-    private Collection<ThemeCriteria> criteria;
+    private Set<ThemeCriteria> criteria;
     @OneToMany(mappedBy = "theme", cascade = CascadeType.ALL)
-    private Collection<ThemeDeliveryRules> deliveryRules;
-    @OneToMany(mappedBy = "theme", cascade = CascadeType.ALL)
-    private Collection<MessageTemplate> messageTemplates;
+    private Set<MessageTemplate> messageTemplates;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "notification_group_id")
     private NotificationGroup notificationGroup;
+    private Integer maxSend;
+    private Integer resendInterval;
 
     public Long getId() {
         return id;
@@ -37,20 +37,12 @@ public class Theme {
         this.description = description;
     }
 
-    public Collection<ThemeCriteria> getCriteria() {
+    public Set<ThemeCriteria> getCriteria() {
         return criteria;
     }
 
-    public void setCriteria(Collection<ThemeCriteria> criteria) {
+    public void setCriteria(Set<ThemeCriteria> criteria) {
         this.criteria = criteria;
-    }
-
-    public Collection<ThemeDeliveryRules> getDeliveryRules() {
-        return deliveryRules;
-    }
-
-    public void setDeliveryRules(Collection<ThemeDeliveryRules> deliveryRules) {
-        this.deliveryRules = deliveryRules;
     }
 
     public NotificationGroup getNotificationGroup() {
@@ -61,11 +53,27 @@ public class Theme {
         this.notificationGroup = notificationGroup;
     }
 
-    public Collection<MessageTemplate> getMessageTemplates() {
+    public Set<MessageTemplate> getMessageTemplates() {
         return messageTemplates;
     }
 
-    public void setMessageTemplates(Collection<MessageTemplate> messageTemplates) {
+    public void setMessageTemplates(Set<MessageTemplate> messageTemplates) {
         this.messageTemplates = messageTemplates;
+    }
+
+    public Integer getMaxSend() {
+        return maxSend;
+    }
+
+    public void setMaxSend(Integer maxSend) {
+        this.maxSend = maxSend;
+    }
+
+    public Integer getResendInterval() {
+        return resendInterval;
+    }
+
+    public void setResendInterval(Integer resendInterval) {
+        this.resendInterval = resendInterval;
     }
 }

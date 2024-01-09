@@ -1,5 +1,6 @@
 package com.solmod.notifications.admin.repository.model;
 
+import com.solmod.notifications.admin.web.model.ContentKeySetDTO;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -17,6 +18,14 @@ public class TimelineMessageTemplate extends MessageTemplate {
         TIMELINE, ALERT, COMMUNITY // TODO: These should be config and tenanted
     }
 
+    @Override
+    public ContentKeySetDTO toContentKeySet() {
+        ContentKeySetDTO contentKeySet = super.toContentKeySet();
+        contentKeySet.addContentKey("timelineNodeType", timelineNodeType.name());
+        contentKeySet.addContentKey("nodeTitleContentKey", nodeTitleContentKey);
+        return contentKeySet;
+    }
+
     public TimelineNodeType getTimelineNodeType() {
         return timelineNodeType;
     }
@@ -30,6 +39,6 @@ public class TimelineMessageTemplate extends MessageTemplate {
     }
 
     public void setNodeTitleContentKey(String nodeTitleContentKey) {
-        nodeTitleContentKey = nodeTitleContentKey;
+        this.nodeTitleContentKey = nodeTitleContentKey;
     }
 }

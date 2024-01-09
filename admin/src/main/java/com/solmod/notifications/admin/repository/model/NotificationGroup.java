@@ -3,7 +3,6 @@ package com.solmod.notifications.admin.repository.model;
 import jakarta.persistence.*;
 
 import java.util.Collection;
-import java.util.UUID;
 
 /**
  * Group a collection of Message Themes for a given subject/verb
@@ -11,29 +10,38 @@ import java.util.UUID;
 @Entity(name = "NotificationGroups")
 public class NotificationGroup {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    private Long id;
+
+    private Long tenantId;
 
     @OneToMany(mappedBy = "notificationGroup", cascade = CascadeType.ALL)
     private Collection<Theme> themes;
     private String subject;
     private String verb;
     private String description;
-    private boolean active;
 
-    public UUID getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(UUID id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
-    public Collection<Theme> getMessageThemes() {
+    public Long getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(Long tenantId) {
+        this.tenantId = tenantId;
+    }
+
+    public Collection<Theme> getThemes() {
         return themes;
     }
 
-    public void setMessageThemes(Collection<Theme> themes) {
+    public void setThemes(Collection<Theme> themes) {
         this.themes = themes;
     }
 
@@ -59,13 +67,5 @@ public class NotificationGroup {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
     }
 }
