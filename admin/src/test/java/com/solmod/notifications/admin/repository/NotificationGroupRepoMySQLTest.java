@@ -2,24 +2,24 @@ package com.solmod.notifications.admin.repository;
 
 import com.solmod.notifications.admin.repository.model.*;
 import org.jetbrains.annotations.NotNull;
-import org.junit.FixMethodOrder;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 //@Testcontainers
 @ActiveProfiles(value = "local")
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @Transactional
 //@ContextConfiguration(initializers = {NotificationGroupRepoMySQLTest.Initializer.class})
 @RunWith(SpringRunner.class)

@@ -34,7 +34,7 @@ public class MessageDelivery {
     private DateTime dateCreated;
     private DateTime dateCompleted;
 
-    enum Status {
+    public enum Status {
         // MessageDelivery statuses
         D,  // Delivered
         F,  // Failed
