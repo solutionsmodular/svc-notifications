@@ -1,10 +1,15 @@
 package com.solmod.notifications.dispatcher.filter;
 
-import com.solmod.notifications.admin.web.model.MessageTemplateDTO;
+import com.solmod.notifications.dispatcher.domain.MessageTemplate;
 import com.solmod.notifications.dispatcher.domain.SolMessage;
 import com.solmod.notifications.dispatcher.repository.MessageDeliveryRepo;
+import com.solmod.notifications.dispatcher.repository.domain.MessageDelivery;
 import com.solmod.notifications.dispatcher.service.domain.TriggeredMessageTemplateGroup;
 import org.springframework.stereotype.Component;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 @Component
 public class MessageDeliveryRulesFilter implements MessageDeliveryFilter {
@@ -17,20 +22,21 @@ public class MessageDeliveryRulesFilter implements MessageDeliveryFilter {
 
     @Override
     public void apply(TriggeredMessageTemplateGroup templateGroup, SolMessage solMessage) {
-        for (MessageTemplateDTO curTemplate : templateGroup.getQualifiedTemplates().getMessageTemplates()) {
+        Set<MessageTemplate> qualifyingTemplates = templateGroup.getQualifiedTemplates();
+        Iterator<MessageTemplate> templateIter = qualifyingTemplates.iterator();
+        while (templateIter.hasNext()) {
+            MessageTemplate curTemplate = templateIter.next();
 
-            // 1. if template has no delivery rules
-            if (curTemplate.getMaxSend() != null && !curTemplate.getMaxSend().equals(0)
-                    && curTemplate.getResendInterval() != null && !curTemplate.getResendInterval().equals(0)) {
-                // do the checking
-                // 2. Get all deliveries where template ID and message identifier metadata are the same
-                // 2.a How long is the wait?
-                curTemplate.getMaxSend(); // 0 means no max
-                curTemplate.getResendInterval(); // in minutes, 0 means no wait
-                messageDeliveryRepo.findAllDeliveries(
+            // Filter only if there are send rules in place
+            if (curTemplate.hasSendRules()) {
+                List<MessageDelivery> allDeliveries = messageDeliveryRepo.findAllDeliveries(
                         curTemplate.getMessageTemplateID(),
                         solMessage.getIdMetadataKey(),
                         solMessage.getIdMetadataValue());
+
+                if (!curTemplate.meetsSendRules(allDeliveries)) {
+                    templateIter.remove();
+                }
             }
         }
     }

@@ -1,7 +1,9 @@
 package com.solmod.notifications.dispatcher.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.solmod.notifications.admin.service.NotificationAccessService;
 import com.solmod.notifications.admin.web.model.MessageTemplateGroupDTO;
+import com.solmod.notifications.dispatcher.domain.MessageTemplate;
 import com.solmod.notifications.dispatcher.domain.SolCommunication;
 import com.solmod.notifications.dispatcher.domain.SolMessage;
 import com.solmod.notifications.dispatcher.service.domain.TriggeredMessageTemplateGroup;
@@ -11,7 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * This service receives and handles messages which qualify for an externally configured pub/sub queue subscription.
@@ -27,11 +31,13 @@ public class EventBusHandler implements Function<SolMessage, List<SolCommunicati
 
     NotificationAccessService accessService;
     MessageFilterService messageFilterService;
+    ObjectMapper objectMapper;
 
     @Autowired
-    public EventBusHandler(NotificationAccessService accessService, MessageFilterService messageFilterService) {
+    public EventBusHandler(NotificationAccessService accessService, MessageFilterService messageFilterService, ObjectMapper objectMapper) {
         this.accessService = accessService;
         this.messageFilterService = messageFilterService;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -48,7 +54,10 @@ public class EventBusHandler implements Function<SolMessage, List<SolCommunicati
         MessageTemplateGroupDTO templates = accessService.getNotificationTemplateGroup(solMessage.getTenantId(), solMessage.getSubject(), solMessage.getVerb());
         // TODO: If the above returned no results, then an error should be logged suggesting adjusting subscription
         TriggeredMessageTemplateGroup messagesToSend = new TriggeredMessageTemplateGroup();
-        messagesToSend.setQualifiedTemplates(templates); // Before filters, all templates qualify
+        Set<MessageTemplate> dispatchTemplates = templates.getMessageTemplates().stream().map(
+                t -> objectMapper.convertValue(t, MessageTemplate.class)).collect(Collectors.toSet());
+        messagesToSend.setQualifiedTemplates(dispatchTemplates); // Before filters, all templates qualify
+
         messageFilterService.runThroughFilters(messagesToSend, solMessage);
 
         /*

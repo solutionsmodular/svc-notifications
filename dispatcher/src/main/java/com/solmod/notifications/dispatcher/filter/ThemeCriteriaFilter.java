@@ -4,10 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.wnameless.json.flattener.JsonFlattener;
 import com.solmod.notifications.admin.web.model.MessageTemplateDTO;
+import com.solmod.notifications.dispatcher.domain.MessageTemplate;
 import com.solmod.notifications.dispatcher.domain.SolMessage;
 import com.solmod.notifications.dispatcher.service.domain.TriggeredMessageTemplateGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Iterator;
@@ -19,15 +21,23 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Component
 public class ThemeCriteriaFilter  implements MessageDeliveryFilter {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
     private final Logger log = LoggerFactory.getLogger(ThemeCriteriaFilter.class);
+
+    private final ObjectMapper objectMapper;
+
+    @Autowired
+    public ThemeCriteriaFilter(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
+
+
 
     @Override
     public void apply(TriggeredMessageTemplateGroup templateGroup, SolMessage solMessage) {
         try {
             Map<String, Object> flattened = flatten(solMessage.getData());
-            Set<MessageTemplateDTO> messageTemplates = templateGroup.getQualifiedTemplates().getMessageTemplates();
-            Iterator<MessageTemplateDTO> templateIter = messageTemplates.iterator();
+            Set<MessageTemplate> messageTemplates = templateGroup.getQualifiedTemplates();
+            Iterator<MessageTemplate> templateIter = messageTemplates.iterator();
             while (templateIter.hasNext()) { // use iter.hasNext because of iter.remove used herein
                 MessageTemplateDTO curTemplate = templateIter.next();
                 if (!qualifyTemplate(curTemplate, flattened)) {

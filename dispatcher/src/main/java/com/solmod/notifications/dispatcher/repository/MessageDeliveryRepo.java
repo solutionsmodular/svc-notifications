@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.Collection;
+import java.util.List;
 
 @Repository
 public interface MessageDeliveryRepo extends CrudRepository<MessageDelivery, Long> {
@@ -16,5 +16,5 @@ public interface MessageDeliveryRepo extends CrudRepository<MessageDelivery, Lon
             "and d.messageTemplateId = :templateId " +
             "and d.status <> 'F' " +
             "order by d.dateCompleted DESC, d.dateCreated DESC ")
-    Collection<MessageDelivery> findAllDeliveries(Long templateId, String metadataKey, String metadataValue);
+    List<MessageDelivery> findAllDeliveries(Long templateId, String metadataKey, String metadataValue);
 }
