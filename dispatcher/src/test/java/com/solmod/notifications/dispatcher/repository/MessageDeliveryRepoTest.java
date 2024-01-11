@@ -2,8 +2,7 @@ package com.solmod.notifications.dispatcher.repository;
 
 import com.solmod.notifications.dispatcher.repository.domain.MessageDelivery;
 import com.solmod.notifications.dispatcher.repository.domain.MessageMetadata;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,10 +11,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
+import java.util.Date;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest
 @ActiveProfiles(value = "local")
@@ -28,24 +28,74 @@ class MessageDeliveryRepoTest {
     MessageDeliveryRepo repo;
 
     @Test
-    void assertSaveAndLoad() {
-        MessageDelivery mock = new MessageDelivery();
-        mock.setDateCreated(DateTime.now(DateTimeZone.UTC));
-        mock.setMessageTemplateId(58L);
-        mock.setStatus(MessageDelivery.Status.F);
+    @DisplayName("findAllDeliveries - All metadata returned for qualifying deliveries")
+    void assertFindAllDeliveries_QualifyingDelivery_ExtraMetadataLoaded() {
+        String matchKey = "metadata-key";
+        String matchVal = "metadata-value";
 
-        MessageMetadata metadata = new MessageMetadata();
-        metadata.setMessageDelivery(mock);
-        metadata.setMetadataKey("metadata-key");
-        metadata.setMetadataValue("metadata-value");
-        mock.setMessageMetadata(Set.of(metadata));
+        // Arrange
+        MessageDelivery mock = new MessageDelivery();
+        mock.setDateCreated(new Date());
+        mock.setMessageTemplateId(58L);
+        mock.setStatus(MessageDelivery.Status.D);
+        mock.setMessageMetadata(Set.of(
+                new MessageMetadata(mock, matchKey, matchVal),
+                new MessageMetadata(mock, "another-key", "another-value")));
         MessageDelivery saved = repo.save(mock);
 
-        MessageDelivery found = repo.findById(saved.getId()).orElse(null);
-        assertNotNull(found);
-        assertEquals(mock.getMessageTemplateId(), found.getMessageTemplateId());
-        assertEquals(1, found.getMessageMetadata().size());
-        assertEquals(MessageDelivery.Status.F, found.getStatus());
+        // Act
+        Collection<MessageDelivery> allDeliveries =
+                repo.findAllDeliveries(saved.getMessageTemplateId(), matchKey, matchVal);
+
+        // Assert
+        assertEquals(1, allDeliveries.size());
+        MessageDelivery foundDelivery = allDeliveries.iterator().next();
+        assertEquals(2, foundDelivery.getMessageMetadata().size());
+        assertEquals(saved.getId(), foundDelivery.getId());
+    }
+
+    @Test
+    @DisplayName("findAllDeliveries - Deliveries not returned when criteria not met")
+    void assertFindAllDeliveries_WrongCriterionValueNotReturned() {
+        String matchKey = "metadata-key";
+        String matchVal = "metadata-value";
+
+        // Arrange
+        MessageDelivery mock = new MessageDelivery();
+        mock.setDateCreated(new Date());
+        mock.setMessageTemplateId(58L);
+        mock.setStatus(MessageDelivery.Status.D);
+        mock.setMessageMetadata(Set.of(new MessageMetadata(mock, matchKey, "different-value")));
+        MessageDelivery saved = repo.save(mock);
+
+        // Act
+        Collection<MessageDelivery> allDeliveries =
+                repo.findAllDeliveries(saved.getMessageTemplateId(), matchKey, matchVal);
+
+        // Assert
+        assertEquals(0, allDeliveries.size());
+    }
+
+    @Test
+    @DisplayName("findAllDeliveries - Failed deliveries not returned")
+    void assertFindAllDeliveries_FailedNotReturned() {
+        String matchKey = "metadata-key";
+        String matchVal = "metadata-value";
+
+        // Arrange
+        MessageDelivery mock = new MessageDelivery();
+        mock.setDateCreated(new Date());
+        mock.setMessageTemplateId(58L);
+        mock.setStatus(MessageDelivery.Status.F);
+        mock.setMessageMetadata(Set.of(new MessageMetadata(mock, matchKey, matchVal)));
+        MessageDelivery saved = repo.save(mock);
+
+        // Act
+        Collection<MessageDelivery> allDeliveries =
+                repo.findAllDeliveries(saved.getMessageTemplateId(), matchKey, matchVal);
+
+        // Assert
+        assertEquals(0, allDeliveries.size());
     }
 
 }

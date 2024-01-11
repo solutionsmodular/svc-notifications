@@ -9,9 +9,10 @@ import lombok.Data;
 public class SolMessage {
     private String subject;
     private String verb;
+    private String idMetadataKey;
+    private String idMetadataValue;
     private String publisher; // app/component
     private Long tenantId;
     private Long entityId;
     private Object data;
-    private Object identifier;
 }

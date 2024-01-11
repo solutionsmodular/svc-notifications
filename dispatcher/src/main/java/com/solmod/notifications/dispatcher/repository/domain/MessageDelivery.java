@@ -1,9 +1,8 @@
 package com.solmod.notifications.dispatcher.repository.domain;
 
-import com.solmod.notifications.dispatcher.repository.domain.MessageMetadata;
 import jakarta.persistence.*;
-import org.joda.time.DateTime;
 
+import java.util.Date;
 import java.util.Set;
 
 /**
@@ -31,8 +30,8 @@ public class MessageDelivery {
     private String sender;
     @OneToMany(mappedBy = "messageDelivery", cascade = CascadeType.ALL)
     private Set<MessageMetadata> messageMetadata;
-    private DateTime dateCreated;
-    private DateTime dateCompleted;
+    private Date dateCreated;
+    private Date dateCompleted;
 
     public enum Status {
         // MessageDelivery statuses
@@ -99,19 +98,19 @@ public class MessageDelivery {
         this.messageMetadata = messageMetadata;
     }
 
-    public DateTime getDateCreated() {
+    public Date getDateCreated() {
         return dateCreated;
     }
 
-    public void setDateCreated(DateTime dateCreated) {
+    public void setDateCreated(Date dateCreated) {
         this.dateCreated = dateCreated;
     }
 
-    public DateTime getDateCompleted() {
+    public Date getDateCompleted() {
         return dateCompleted;
     }
 
-    public void setDateCompleted(DateTime dateCompleted) {
+    public void setDateCompleted(Date dateCompleted) {
         this.dateCompleted = dateCompleted;
     }
 }

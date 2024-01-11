@@ -13,6 +13,16 @@ public class MessageMetadata {
     private String metadataKey;
     private String metadataValue;
 
+    public MessageMetadata() {
+
+    }
+
+    public MessageMetadata(MessageDelivery delivery, String key, String value) {
+        this.messageDelivery = delivery;
+        this.metadataKey = key;
+        this.metadataValue = value;
+    }
+
     public Long getId() {
         return id;
     }
