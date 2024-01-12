@@ -8,6 +8,7 @@ import com.solmod.notifications.dispatcher.service.domain.TriggeredMessageTempla
 import org.apache.commons.lang3.time.DateUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -34,6 +35,7 @@ class MessageDeliveryRulesFilterTest {
     }
 
     @Test
+    @DisplayName("findAllDeliveries - Assert qualifying templates are not removed by filter")
     void assertQualifyingTemplatesNotRemoved() {
         // Arrange
         MessageTemplate template = buildTemplate();
@@ -63,6 +65,7 @@ class MessageDeliveryRulesFilterTest {
     }
 
     @Test
+    @DisplayName("findAllDeliveries - Assert templates are removed by filter")
     void assertNonQualifyingTemplatesRemoved() {
         // Arrange
         MessageTemplate template = buildTemplate();
