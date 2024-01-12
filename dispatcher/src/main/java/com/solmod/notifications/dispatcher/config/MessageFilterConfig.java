@@ -14,11 +14,13 @@ import java.util.Set;
 public class MessageFilterConfig {
 
     @Bean
-    Set<MessageDeliveryFilter> deliveryFilters() {
+    Set<MessageDeliveryFilter> deliveryFilters(ThemeCriteriaFilter themeCriteriaFilter,
+                                               MessageDeliveryRulesFilter messageDeliveryRulesFilter,
+                                               UserPreferencesFilter userPreferencesFilter) {
         HashSet<MessageDeliveryFilter> messageDeliveryFilters = new HashSet<>();
-        messageDeliveryFilters.add(new ThemeCriteriaFilter());
-        messageDeliveryFilters.add(new MessageDeliveryRulesFilter());
-        messageDeliveryFilters.add(new UserPreferencesFilter());
+        messageDeliveryFilters.add(themeCriteriaFilter);
+        messageDeliveryFilters.add(messageDeliveryRulesFilter);
+        messageDeliveryFilters.add(userPreferencesFilter);
         return messageDeliveryFilters;
     }
 }

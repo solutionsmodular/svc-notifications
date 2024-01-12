@@ -1,7 +1,6 @@
 package com.solmod.notifications.dispatcher.service.domain;
 
-import com.solmod.notifications.admin.web.model.MessageTemplateDTO;
-import com.solmod.notifications.admin.web.model.MessageTemplateGroupDTO;
+import com.solmod.notifications.dispatcher.domain.MessageTemplate;
 import lombok.Data;
 
 import java.util.HashMap;
@@ -11,7 +10,7 @@ import java.util.Set;
 @Data
 public class TriggeredMessageTemplateGroup {
 
-    private MessageTemplateGroupDTO qualifiedTemplates;
+    private Set<MessageTemplate> qualifiedTemplates;
     private Map<Long, String> denyMessages = new HashMap<>();
 
     /**
