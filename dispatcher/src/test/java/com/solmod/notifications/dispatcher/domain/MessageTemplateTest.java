@@ -60,7 +60,7 @@ class MessageTemplateTest {
         // Arrange
         MessageTemplate template = new MessageTemplate();
         template.setResendInterval(20);
-        template.setMaxSend(5);
+        template.setMaxSend(2);
         MessageDelivery delivery = new MessageDelivery();
         delivery.setDateCreated(DateUtils.addMinutes(new Date(), -15));
         MessageDelivery delivery2 = new MessageDelivery();
