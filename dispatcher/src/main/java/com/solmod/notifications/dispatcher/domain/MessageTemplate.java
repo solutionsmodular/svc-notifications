@@ -2,12 +2,14 @@ package com.solmod.notifications.dispatcher.domain;
 
 import com.solmod.notifications.admin.web.model.MessageTemplateDTO;
 import com.solmod.notifications.dispatcher.repository.domain.MessageDelivery;
+import lombok.Data;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.time.DateUtils;
 
 import java.util.Date;
 import java.util.List;
 
+@Data
 public class MessageTemplate extends MessageTemplateDTO {
 
     /**
