@@ -55,6 +55,7 @@ class MessageTemplateTest {
     }
 
     @Test
+    @DisplayName("meetsSendRules - False after the max number of sends has been reached")
     void assertFalseOnMaxSendViolation() {
         // Arrange
         MessageTemplate template = new MessageTemplate();
@@ -73,6 +74,7 @@ class MessageTemplateTest {
     }
 
     @Test
+    @DisplayName("meetsSendRules - False if an attempt to deliver before resend interval has been reached")
     void assertFalseOnResendIntervalViolation() {
         // Arrange
         MessageTemplate template = new MessageTemplate();
