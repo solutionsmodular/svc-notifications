@@ -6,6 +6,7 @@ import lombok.Data;
 public class MessageTemplateDTO {
     private DeliveryCriterionSetDTO deliveryCriteria;
     private Long messageTemplateID;
+    // Sender protocol
     private String sender;
     private String recipientAddressContextKey;
     private ContentKeySetDTO contentKeySet;
@@ -15,5 +16,5 @@ public class MessageTemplateDTO {
     // Resends control how many times a message could possibly be delivered in response to a repeat SolBus event
     private Integer maxSend;
     private Integer resendInterval; // in minutes
-
+    private String messageClass;
 }

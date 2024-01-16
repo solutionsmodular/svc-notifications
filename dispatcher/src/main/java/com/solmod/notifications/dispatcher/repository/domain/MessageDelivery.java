@@ -21,7 +21,8 @@ public class MessageDelivery {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
-    private String recipientAddyContextKey;
+    @Column(unique = true)
+    private String recipientAddress;
     private Long messageTemplateId;
     @Enumerated(EnumType.STRING)
     @Column(length = 3)
@@ -34,12 +35,12 @@ public class MessageDelivery {
     private Date dateCompleted;
 
     public enum Status {
-        // MessageDelivery statuses
         D,  // Delivered
         F,  // Failed
         PC, // Pending Context
         PD, // Pending Delivery (callback)
-        PR; // Pending Retry
+        PR, // Pending Retry
+        PT; // Pending time window
     }
 
     public Long getId() {
@@ -50,12 +51,12 @@ public class MessageDelivery {
         this.id = id;
     }
 
-    public String getRecipientAddyContextKey() {
-        return recipientAddyContextKey;
+    public String getRecipientAddress() {
+        return recipientAddress;
     }
 
-    public void setRecipientAddyContextKey(String recipientAddyContextKey) {
-        this.recipientAddyContextKey = recipientAddyContextKey;
+    public void setRecipientAddress(String recipientAddyContextKey) {
+        this.recipientAddress = recipientAddyContextKey;
     }
 
     public Long getMessageTemplateId() {

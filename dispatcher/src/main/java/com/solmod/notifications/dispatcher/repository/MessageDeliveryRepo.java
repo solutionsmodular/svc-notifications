@@ -14,7 +14,8 @@ public interface MessageDeliveryRepo extends CrudRepository<MessageDelivery, Lon
             "LEFT JOIN MessageMetadata m on m.messageDelivery = d " +
             "where m.metadataKey = :metadataKey and m.metadataValue = :metadataValue " +
             "and d.messageTemplateId = :templateId " +
+            "and d.recipientAddress = :recipientAddress " +
             "and d.status <> 'F' " +
             "order by d.dateCompleted DESC, d.dateCreated DESC ")
-    List<MessageDelivery> findAllDeliveries(Long templateId, String metadataKey, String metadataValue);
+    List<MessageDelivery> findAllDeliveries(Long templateId, String recipientAddress, String metadataKey, String metadataValue);
 }

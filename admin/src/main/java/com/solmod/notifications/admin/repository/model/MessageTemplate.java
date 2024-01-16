@@ -25,7 +25,15 @@ public class MessageTemplate {
     private Integer minWaitForRetry; // in seconds
     private Integer maxSend;
     private Integer resendInterval;
+    @Enumerated(EnumType.STRING)
+    @Column(length = 4)
+    private MessageClass messageClass;
 
+    public enum MessageClass {
+        GEN, // Generic, sent to everyone, marketing, etc
+        TEAM, // Regarding a team or team member
+        SELF; //
+    }
     public ContentKeySetDTO toContentKeySet() {
         ContentKeySetDTO contentKeySet = new ContentKeySetDTO();
         contentKeySet.addContentKey("messageBodyContentKey", messageBodyContentKey);
@@ -102,5 +110,13 @@ public class MessageTemplate {
 
     public void setResendInterval(Integer resendInterval) {
         this.resendInterval = resendInterval;
+    }
+
+    public MessageClass getMessageClass() {
+        return messageClass;
+    }
+
+    public void setMessageClass(MessageClass messageClass) {
+        this.messageClass = messageClass;
     }
 }

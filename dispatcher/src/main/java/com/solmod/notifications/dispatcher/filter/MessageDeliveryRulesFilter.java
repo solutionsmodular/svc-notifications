@@ -4,10 +4,10 @@ import com.solmod.notifications.dispatcher.domain.MessageTemplate;
 import com.solmod.notifications.dispatcher.domain.SolMessage;
 import com.solmod.notifications.dispatcher.repository.MessageDeliveryRepo;
 import com.solmod.notifications.dispatcher.repository.domain.MessageDelivery;
+import com.solmod.notifications.dispatcher.service.domain.DeliveryPermission;
 import com.solmod.notifications.dispatcher.service.domain.TriggeredMessageTemplateGroup;
 import org.springframework.stereotype.Component;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -21,23 +21,31 @@ public class MessageDeliveryRulesFilter implements MessageDeliveryFilter {
     }
 
     @Override
-    public void apply(TriggeredMessageTemplateGroup templateGroup, SolMessage solMessage) {
-        Set<MessageTemplate> qualifyingTemplates = templateGroup.getQualifiedTemplates();
-        Iterator<MessageTemplate> templateIter = qualifyingTemplates.iterator();
-        while (templateIter.hasNext()) {
-            MessageTemplate curTemplate = templateIter.next();
+    public FilterResponse apply(final TriggeredMessageTemplateGroup templateGroup, SolMessage solMessage) {
+        FilterResponse response = new FilterResponse("delivery-rules");
+        if (templateGroup.getQualifiedTemplates().isEmpty()) {
+            return response;
+        }
 
-            // Filter only if there are send rules in place
+        Set<MessageTemplate> qualifyingTemplates = templateGroup.getQualifiedTemplates();
+        for (MessageTemplate curTemplate : qualifyingTemplates) {
+            // Filter only if there are send-rules in place
+            String recipientAddress = solMessage.buildMetadata().getOrDefault(
+                    curTemplate.getRecipientAddressContextKey(), "").toString();
             if (curTemplate.hasSendRules()) {
                 List<MessageDelivery> allDeliveries = messageDeliveryRepo.findAllDeliveries(
                         curTemplate.getMessageTemplateID(),
+                        recipientAddress,
                         solMessage.getIdMetadataKey(),
                         solMessage.getIdMetadataValue());
 
-                if (!curTemplate.meetsSendRules(allDeliveries)) {
-                    templateIter.remove();
-                }
+                response.addDeliveryPermission(curTemplate.getMessageTemplateID(),
+                        curTemplate.meetsSendRules(allDeliveries, solMessage) ? DeliveryPermission.SEND_NOW : DeliveryPermission.SEND_NEVER);
+            } else {
+                response.addDeliveryPermission(curTemplate.getMessageTemplateID(), DeliveryPermission.SEND_NOW);
             }
         }
+
+        return response;
     }
 }

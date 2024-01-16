@@ -6,7 +6,9 @@ import com.solmod.notifications.admin.web.model.MessageTemplateGroupDTO;
 import com.solmod.notifications.dispatcher.domain.MessageTemplate;
 import com.solmod.notifications.dispatcher.domain.SolCommunication;
 import com.solmod.notifications.dispatcher.domain.SolMessage;
+import com.solmod.notifications.dispatcher.repository.domain.MessageMetadata;
 import com.solmod.notifications.dispatcher.service.domain.TriggeredMessageTemplateGroup;
+import io.micrometer.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,6 +62,12 @@ public class EventBusHandler implements Function<SolMessage, List<SolCommunicati
 
         messageFilterService.runThroughFilters(messagesToSend, solMessage);
 
+/*
+create deliveries for each template/recipient
+        for (MessageTemplate curTemplate : dispatchTemplates) {
+            Object o = solMessage.getMetadata().get(curTemplate.getRecipientAddressContextKey());
+        }
+*/
         /*
         In:
             Message metadata -> Context

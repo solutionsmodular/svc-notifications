@@ -13,7 +13,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collection;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
@@ -69,6 +68,7 @@ class NotificationAccessServiceTest extends TestCommons {
         assertEquals("messagebodycontentkey", resultTemplateDTO.getContentKeySet().getContentKeys().get("messageBodyContentKey"));
         assertEquals(15, resultTemplateDTO.getMaxRetries());
         assertEquals(600, resultTemplateDTO.getMinWaitForRetry());
+        assertEquals(MessageTemplate.MessageClass.GEN.name(), resultTemplateDTO.getMessageClass());
         assertEquals(mockTemplate.getMinWaitForRetry(), resultTemplateDTO.getMinWaitForRetry());
         assertEquals(mockTemplate.getRecipientAddressContextKey(), resultTemplateDTO.getRecipientAddressContextKey());
         assertEquals(mockTemplate.getSender(), resultTemplateDTO.getSender());

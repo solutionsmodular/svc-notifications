@@ -38,6 +38,7 @@ class MessageDeliveryRepoTest {
         mock.setDateCreated(new Date());
         mock.setMessageTemplateId(58L);
         mock.setStatus(MessageDelivery.Status.D);
+        mock.setRecipientAddress("someone@somewhere.com");
         mock.setMessageMetadata(Set.of(
                 new MessageMetadata(mock, matchKey, matchVal),
                 new MessageMetadata(mock, "another-key", "another-value")));
@@ -45,7 +46,7 @@ class MessageDeliveryRepoTest {
 
         // Act
         Collection<MessageDelivery> allDeliveries =
-                repo.findAllDeliveries(saved.getMessageTemplateId(), matchKey, matchVal);
+                repo.findAllDeliveries(saved.getMessageTemplateId(), "someone@somewhere.com", matchKey, matchVal);
 
         // Assert
         assertEquals(1, allDeliveries.size());
@@ -65,12 +66,13 @@ class MessageDeliveryRepoTest {
         mock.setDateCreated(new Date());
         mock.setMessageTemplateId(58L);
         mock.setStatus(MessageDelivery.Status.D);
+        mock.setRecipientAddress("someone@somewhere.com");
         mock.setMessageMetadata(Set.of(new MessageMetadata(mock, matchKey, "different-value")));
         MessageDelivery saved = repo.save(mock);
 
         // Act
         Collection<MessageDelivery> allDeliveries =
-                repo.findAllDeliveries(saved.getMessageTemplateId(), matchKey, matchVal);
+                repo.findAllDeliveries(saved.getMessageTemplateId(), "someone@somewhere.com", matchKey, matchVal);
 
         // Assert
         assertEquals(0, allDeliveries.size());
@@ -87,12 +89,13 @@ class MessageDeliveryRepoTest {
         mock.setDateCreated(new Date());
         mock.setMessageTemplateId(58L);
         mock.setStatus(MessageDelivery.Status.F);
+        mock.setRecipientAddress("someone@somewhere.com");
         mock.setMessageMetadata(Set.of(new MessageMetadata(mock, matchKey, matchVal)));
         MessageDelivery saved = repo.save(mock);
 
         // Act
         Collection<MessageDelivery> allDeliveries =
-                repo.findAllDeliveries(saved.getMessageTemplateId(), matchKey, matchVal);
+                repo.findAllDeliveries(saved.getMessageTemplateId(), "someone@somewhere.com", matchKey, matchVal);
 
         // Assert
         assertEquals(0, allDeliveries.size());
