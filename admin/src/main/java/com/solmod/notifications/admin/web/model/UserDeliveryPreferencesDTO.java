@@ -9,7 +9,7 @@ import java.util.UUID;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UserDeliveryPreferencesDTO {
     private UUID userId;
-    private String messageClass;
+    private String messageClass; // Comma-delimited list of the classes permitted
     private String sender;
     private Integer sendWindowStart; // hour of day
     private Integer sendWindowEnd; // hour of day

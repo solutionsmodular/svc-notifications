@@ -40,36 +40,38 @@ public class UserPreferencesFilter implements MessageDeliveryFilter {
             return response;
         }
 
-        Iterator<MessageTemplate> templateIter = templateGroup.getQualifiedTemplates().iterator();
-        while (templateIter.hasNext()) {
-            MessageTemplate curTemplate = templateIter.next();
-
+        for (MessageTemplate curTemplate : templateGroup.getQualifiedTemplates()) {
             String recipientAddress = solMessage.buildMetadata().getOrDefault(
                     curTemplate.getRecipientAddressContextKey(), "").toString();
-            // TODO: This should come from a service, not via repo
-            List<MessageDelivery> allDeliveries = deliveryRepo.findAllDeliveries(curTemplate.getMessageTemplateID(),
-                    recipientAddress,
-                    solMessage.getIdMetadataKey(),
-                    solMessage.getIdMetadataValue());
-
-            String templateSender = curTemplate.getSender();
-            // Get would-be recipient for the message, given the SolMessage metadata
 
             if (!StringUtils.isEmpty(recipientAddress)) {
+                // TODO: This should come from a service, not via repo
+                List<MessageDelivery> allDeliveries = deliveryRepo.findAllDeliveries(curTemplate.getMessageTemplateID(),
+                        recipientAddress,
+                        solMessage.getIdMetadataKey(),
+                        solMessage.getIdMetadataValue());
+
+                String templateSender = curTemplate.getSender();
+                // Get would-be recipient for the message, given the SolMessage metadata
+
                 MessageDelivery latestDelivery = allDeliveries.stream().findFirst().orElse(null);
                 if (latestDelivery != null) {
                     UserDeliveryPreferencesDTO usersPrefs =
                             userDeliveryPreferencesService.getDeliveryPreferences(recipientAddress, templateSender);
 
                     DeliveryPermission deliveryPermission =
-                            canDeliver(usersPrefs, Objects.requireNonNullElse(latestDelivery.getDateCompleted(), latestDelivery.getDateCreated()));
+                            canDeliver(curTemplate, usersPrefs,
+                                    Objects.requireNonNullElse(latestDelivery.getDateCompleted(), latestDelivery.getDateCreated()));
 
                     response.addDeliveryPermission(curTemplate.getMessageTemplateID(), deliveryPermission);
                 }
+            } else {
+                logger.error("Can not get recipient address for template {} from message {}",
+                        curTemplate.getMessageTemplateID(), solMessage.getIdMetadataKey() + "|" + solMessage.getIdMetadataValue());
             }
         }
 
-        throw new NotImplementedException("UserPreferencesFilter is not yet implemented");
+        return response;
     }
 
     /**
@@ -82,22 +84,29 @@ public class UserPreferencesFilter implements MessageDeliveryFilter {
      *  </li>
      * </ul>
      *
+     * @param template
      * @param usersPrefs
      * @param latestEffective
      * @return
      */
-    DeliveryPermission canDeliver(UserDeliveryPreferencesDTO usersPrefs, Date latestEffective) {
-        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone(usersPrefs.getTimezone()));
-        Date now = new Date();
-        cal.setTime(now);
+    DeliveryPermission canDeliver(MessageTemplate template, UserDeliveryPreferencesDTO usersPrefs, Date latestEffective) {
+
+        // Ensure the class of the message is allowed by the user's permissions
+        if (!Objects.requireNonNullElse(usersPrefs.getMessageClass(), "").toUpperCase()
+                .contains(template.getMessageClass().toUpperCase())) {
+            return DeliveryPermission.SEND_NEVER;
+        }
 
         //Ensure if this delivery would be at least resendInterval from the last delivery
+        Date now = new Date();
         Date resendIntervalAgo = DateUtils.addMinutes(now, -usersPrefs.getResendInterval());
         if (latestEffective.after(resendIntervalAgo)) {
             return DeliveryPermission.SEND_NEVER;
         }
 
         // Ensure this delivery will fall within the user's preferred delivery window
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(now);
         long fragmentInHours = DateUtils.getFragmentInHours(cal, 6);
 
         boolean withinDeliveryWindow = usersPrefs.getSendWindowStart() == null || usersPrefs.getSendWindowEnd() == null ||
