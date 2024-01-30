@@ -1,19 +1,19 @@
 package com.solmod.notifications.dispatcher.domain;
 
 import com.solmod.notifications.dispatcher.repository.domain.MessageDelivery;
+import com.solmod.notifications.dispatcher.service.domain.DeliveryPermission;
 import org.apache.commons.lang3.time.DateUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.springframework.boot.test.system.CapturedOutput;
-import org.springframework.boot.test.system.OutputCaptureExtension;
 
 import java.util.Date;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static com.solmod.notifications.dispatcher.service.domain.DeliveryPermission.Verdict.SEND_NEVER;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MessageTemplateTest {
 
@@ -32,10 +32,10 @@ class MessageTemplateTest {
         delivery.setDateCreated(new Date());
 
         // Act
-        boolean result = template.meetsSendRules(List.of(delivery), new SolMessage());
+        DeliveryPermission result = template.applySendRules(List.of(delivery));
 
         // Assert
-        assertTrue(result);
+        assertEquals(DeliveryPermission.SEND_NOW_PERMISSION, result);
     }
 
     @Test
@@ -51,16 +51,15 @@ class MessageTemplateTest {
         delivery2.setDateCreated(DateUtils.addMinutes(new Date(), -20));
 
         // Act
-        boolean result = template.meetsSendRules(List.of(delivery, delivery2), new SolMessage());
+        DeliveryPermission result = template.applySendRules(List.of(delivery, delivery2));
 
         // Assert
-        assertTrue(result);
+        assertEquals(DeliveryPermission.SEND_NOW_PERMISSION, result);
     }
 
     @Test
     @DisplayName("meetsSendRules - False after the max number of sends has been reached")
-    @ExtendWith(OutputCaptureExtension.class)
-    void assertFalseOnMaxSendViolation(CapturedOutput output) {
+    void assertFalseOnMaxSendViolation() {
         // Arrange
         MessageTemplate template = new MessageTemplate();
         template.setResendInterval(20);
@@ -71,17 +70,16 @@ class MessageTemplateTest {
         delivery2.setDateCreated(DateUtils.addMinutes(new Date(), -20));
 
         // Act
-        boolean result = template.meetsSendRules(List.of(delivery, delivery2), new SolMessage());
+        DeliveryPermission result = template.applySendRules(List.of(delivery, delivery2));
 
         // Assert
-        assertFalse(result);
-        assertTrue(output.getOut().contains("would exceed maxSend rules for the template"));
+        assertEquals(SEND_NEVER, result.getVerdict());
+        assertTrue(result.getMessage().contains("received the max duplicates"));
     }
 
     @Test
     @DisplayName("meetsSendRules - False if an attempt to deliver before resend interval has been reached")
-    @ExtendWith(OutputCaptureExtension.class)
-    void assertFalseOnResendIntervalViolation(CapturedOutput output) {
+    void assertFalseOnResendIntervalViolation() {
         // Arrange
         MessageTemplate template = new MessageTemplate();
         template.setResendInterval(5);
@@ -92,11 +90,11 @@ class MessageTemplateTest {
         delivery2.setDateCreated(DateUtils.addMinutes(new Date(), -20));
 
         // Act
-        boolean result = template.meetsSendRules(List.of(delivery, delivery2), new SolMessage());
+        DeliveryPermission result = template.applySendRules(List.of(delivery, delivery2));
 
         // Assert
-        assertFalse(result);
-        assertTrue(output.getOut().contains("would violate resend interval"));
+        assertEquals(SEND_NEVER, result.getVerdict());
+        assertTrue(result.getMessage().contains("received this message within the resendInterval"));
     }
 
 }

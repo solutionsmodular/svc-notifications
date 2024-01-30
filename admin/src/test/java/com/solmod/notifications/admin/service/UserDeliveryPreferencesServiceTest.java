@@ -42,7 +42,7 @@ class UserDeliveryPreferencesServiceTest extends TestCommons {
         List<UserDeliveryPreferencesDTO> result = service.getUserDeliveryPreferences(userId);
 
         for (UserDeliveryPreferencesDTO curPref : result) {
-            assertNotNull(curPref.getMessageClass());
+            assertNotNull(curPref.getSupportedMessageClasses());
             assertNotNull(curPref.getSender());
             assertEquals(userId, curPref.getUserId());
             assertNotNull(curPref.getRecipientAddress());

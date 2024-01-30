@@ -30,7 +30,7 @@ public class MessageDeliveryRulesFilter implements MessageDeliveryFilter {
         Set<MessageTemplate> qualifyingTemplates = templateGroup.getQualifiedTemplates();
         for (MessageTemplate curTemplate : qualifyingTemplates) {
             // Filter only if there are send-rules in place
-            String recipientAddress = solMessage.buildMetadata().getOrDefault(
+            String recipientAddress = solMessage.getMetadata().getOrDefault(
                     curTemplate.getRecipientAddressContextKey(), "").toString();
             if (curTemplate.hasSendRules()) {
                 List<MessageDelivery> allDeliveries = messageDeliveryRepo.findAllDeliveries(
@@ -39,10 +39,9 @@ public class MessageDeliveryRulesFilter implements MessageDeliveryFilter {
                         solMessage.getIdMetadataKey(),
                         solMessage.getIdMetadataValue());
 
-                response.addDeliveryPermission(curTemplate.getMessageTemplateID(),
-                        curTemplate.meetsSendRules(allDeliveries, solMessage) ? DeliveryPermission.SEND_NOW : DeliveryPermission.SEND_NEVER);
+                response.addDeliveryPermission(curTemplate.getMessageTemplateID(), curTemplate.applySendRules(allDeliveries));
             } else {
-                response.addDeliveryPermission(curTemplate.getMessageTemplateID(), DeliveryPermission.SEND_NOW);
+                response.addDeliveryPermission(curTemplate.getMessageTemplateID(), DeliveryPermission.SEND_NOW_PERMISSION);
             }
         }
 

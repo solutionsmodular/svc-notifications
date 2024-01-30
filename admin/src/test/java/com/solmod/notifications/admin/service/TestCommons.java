@@ -11,7 +11,7 @@ public class TestCommons {
     @NotNull
     public UserDeliveryPreferences buildUserDeliveryPreferences(String recipientAddress, String sender, int resendInterval, UUID userId) {
         UserDeliveryPreferences mockPrefs = new UserDeliveryPreferences();
-        mockPrefs.setMessageClass(MessageTemplate.MessageClass.TEAM.name());
+        mockPrefs.setSupportedMessageClasses(MessageTemplate.MessageClass.TEAM.name());
         mockPrefs.setRecipientAddress(recipientAddress);
         mockPrefs.setSender(sender);
         mockPrefs.setResendInterval(resendInterval);

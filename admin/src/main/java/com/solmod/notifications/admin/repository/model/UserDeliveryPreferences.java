@@ -15,7 +15,7 @@ public class UserDeliveryPreferences {
     private Long id;
     private UUID userId;
 
-    private String messageClass;
+    private String supportedMessageClasses;
     private String sender;
 
     private Integer sendWindowStart; // hour of day
@@ -72,12 +72,12 @@ public class UserDeliveryPreferences {
         this.timezone = timezone;
     }
 
-    public String getMessageClass() {
-        return messageClass;
+    public String getSupportedMessageClasses() {
+        return supportedMessageClasses;
     }
 
-    public void setMessageClass(String messageClass) {
-        this.messageClass = messageClass;
+    public void setSupportedMessageClasses(String messageClass) {
+        this.supportedMessageClasses = messageClass;
     }
 
     public String getRecipientAddress() {

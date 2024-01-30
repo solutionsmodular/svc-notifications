@@ -13,15 +13,17 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.boot.test.system.CapturedOutput;
-import org.springframework.boot.test.system.OutputCaptureExtension;
 
-import java.util.*;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static com.solmod.notifications.dispatcher.service.domain.DeliveryPermission.Verdict.SEND_NEVER;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 
@@ -67,7 +69,7 @@ class MessageDeliveryRulesFilterTest {
         FilterResponse response = filter.apply(triggeredGroup, solMessage);
 
         // Assert
-        assertEquals(DeliveryPermission.SEND_NOW, response.getPermissions().get(template.getMessageTemplateID()));
+        assertEquals(DeliveryPermission.SEND_NOW_PERMISSION, response.getPermissions().get(template.getMessageTemplateID()));
     }
 
     @Test
@@ -102,13 +104,12 @@ class MessageDeliveryRulesFilterTest {
         FilterResponse response = filter.apply(triggeredGroup, solMessage);
 
         // Assert
-        assertEquals(DeliveryPermission.SEND_NOW, response.getPermissions().get(template.getMessageTemplateID()));
+        assertEquals(DeliveryPermission.SEND_NOW_PERMISSION, response.getPermissions().get(template.getMessageTemplateID()));
     }
 
     @Test
     @DisplayName("apply - Assert too many deliveries results in SEND_NEVER")
-    @ExtendWith(OutputCaptureExtension.class)
-    void assertNonQualifyingByNumDeliveries(CapturedOutput output) {
+    void assertNonQualifyingByNumDeliveries() {
         // Arrange
         MessageTemplate template = buildTemplate();
         template.setMaxSend(2);
@@ -137,8 +138,9 @@ class MessageDeliveryRulesFilterTest {
         FilterResponse response = filter.apply(triggeredGroup, solMessage);
 
         // Assert
-        assertEquals(DeliveryPermission.SEND_NEVER, response.getPermissions().get(template.getMessageTemplateID()));
-        assertTrue(output.getOut().contains("would exceed maxSend rules"));
+        DeliveryPermission result = response.getPermissions().get(template.getMessageTemplateID());
+        assertEquals(SEND_NEVER, result.getVerdict());
+        assertTrue(result.getMessage().contains("received the max duplicates"));
     }
 
     @Test
@@ -173,7 +175,7 @@ class MessageDeliveryRulesFilterTest {
         FilterResponse response = filter.apply(triggeredGroup, solMessage);
 
         // Assert
-        assertEquals(DeliveryPermission.SEND_NEVER, response.getPermissions().get(template.getMessageTemplateID()));
+        assertEquals(SEND_NEVER, response.getPermissions().get(template.getMessageTemplateID()).getVerdict());
     }
 
     @NotNull

@@ -7,14 +7,12 @@ import com.solmod.notifications.dispatcher.service.domain.DeliveryPermission;
 import com.solmod.notifications.dispatcher.service.domain.TriggeredMessageTemplateGroup;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.boot.test.system.CapturedOutput;
-import org.springframework.boot.test.system.OutputCaptureExtension;
 
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static com.solmod.notifications.dispatcher.service.domain.DeliveryPermission.Verdict.SEND_NEVER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -35,7 +33,7 @@ class ThemeCriteriaFilterTest {
 
         FilterResponse response = filter.apply(templateGroup, solMessage);
 
-        assertEquals(DeliveryPermission.SEND_NOW, response.getPermissions().get(88L));
+        assertEquals(DeliveryPermission.SEND_NOW_PERMISSION, response.getPermissions().get(88L));
     }
 
     @Test
@@ -56,13 +54,12 @@ class ThemeCriteriaFilterTest {
 
         FilterResponse response = filter.apply(templateGroup, solMessage);
 
-        assertEquals(DeliveryPermission.SEND_NOW, response.getPermissions().get(88L));
+        assertEquals(DeliveryPermission.SEND_NOW_PERMISSION, response.getPermissions().get(88L));
     }
 
     @Test
     @DisplayName("Templates with criteria result in removal for messages without required criteria")
-    @ExtendWith(OutputCaptureExtension.class)
-    void nonQualifyingTemplate_MissingRequired(CapturedOutput output) {
+    void nonQualifyingTemplate_MissingRequired() {
         // Arrange
         ThemeCriteriaFilter filter = new ThemeCriteriaFilter();
         SolMessage solMessage = new SolMessage();
@@ -83,14 +80,14 @@ class ThemeCriteriaFilterTest {
         FilterResponse response = filter.apply(templateGroup, solMessage);
 
         // Assert
-        assertEquals(DeliveryPermission.SEND_NEVER, response.getPermissions().get(88L));
-        assertTrue(output.getOut().contains("missing a value"));
+        DeliveryPermission result = response.getPermissions().get(88L);
+        assertEquals(SEND_NEVER, result.getVerdict());
+        assertTrue(result.getMessage().contains("missing template criterion key3"));
     }
 
     @Test
     @DisplayName("Templates with criteria result in removal for messages without required criteria")
-    @ExtendWith(OutputCaptureExtension.class)
-    void nonQualifyingTemplate_MismatchedRequired(CapturedOutput output) {
+    void nonQualifyingTemplate_MismatchedRequired() {
         // Arrange
         ThemeCriteriaFilter filter = new ThemeCriteriaFilter();
         SolMessage solMessage = new SolMessage();
@@ -111,8 +108,9 @@ class ThemeCriteriaFilterTest {
         FilterResponse response = filter.apply(templateGroup, solMessage);
 
         // Assert
-        assertEquals(DeliveryPermission.SEND_NEVER, response.getPermissions().get(88L));
-        assertTrue(output.getOut().contains("has invalid value"));
+        DeliveryPermission result = response.getPermissions().get(88L);
+        assertEquals(SEND_NEVER, result.getVerdict());
+        assertTrue(result.getMessage().contains("incorrect value for template criterion key2"));
     }
 
 }

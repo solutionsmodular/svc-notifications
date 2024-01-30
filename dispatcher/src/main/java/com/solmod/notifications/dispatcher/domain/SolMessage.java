@@ -1,10 +1,8 @@
 package com.solmod.notifications.dispatcher.domain;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.wnameless.json.flattener.JsonFlattener;
-import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,7 +11,6 @@ import java.util.Map;
 /**
  * On the SolBus, all messages follow this format
  */
-@Data
 public class SolMessage {
     public static final ObjectMapper objectMapper = new ObjectMapper();
     public static final Logger log = LoggerFactory.getLogger(SolMessage.class);
@@ -26,20 +23,7 @@ public class SolMessage {
     private Long tenantId;
     private Long entityId;
     private Object data;
-    @JsonIgnore
     private Map<String, Object> metadata;
-
-    public Map<String, Object> buildMetadata() {
-        try {
-            if (this.metadata == null && data != null) {
-                this.metadata = flatten(data);
-            }
-        } catch (JsonProcessingException e) {
-            log.error("Exception attempting to get message metadata {}", e.getMessage(), e);
-        }
-
-        return this.metadata;
-    }
 
     /**
      * Create a flat, Properties-like, construct representing the data in the provided context. This facilitates
@@ -55,4 +39,87 @@ public class SolMessage {
         return JsonFlattener.flattenAsMap(json);
     }
 
+    private Map<String, Object> buildMetadata() {
+        try {
+            if (this.metadata == null && data != null) {
+                this.metadata = flatten(data);
+            }
+        } catch (JsonProcessingException e) {
+            log.error("Exception attempting to get message metadata {}", e.getMessage(), e);
+        }
+
+        return this.metadata;
+    }
+
+    public String getSubject() {
+        return subject;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
+
+    public String getVerb() {
+        return verb;
+    }
+
+    public void setVerb(String verb) {
+        this.verb = verb;
+    }
+
+    public String getIdMetadataKey() {
+        return idMetadataKey;
+    }
+
+    public void setIdMetadataKey(String idMetadataKey) {
+        this.idMetadataKey = idMetadataKey;
+    }
+
+    public String getIdMetadataValue() {
+        return idMetadataValue;
+    }
+
+    public void setIdMetadataValue(String idMetadataValue) {
+        this.idMetadataValue = idMetadataValue;
+    }
+
+    public String getPublisher() {
+        return publisher;
+    }
+
+    public void setPublisher(String publisher) {
+        this.publisher = publisher;
+    }
+
+    public Long getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(Long tenantId) {
+        this.tenantId = tenantId;
+    }
+
+    public Long getEntityId() {
+        return entityId;
+    }
+
+    public void setEntityId(Long entityId) {
+        this.entityId = entityId;
+    }
+
+    public Object getData() {
+        return data;
+    }
+
+    public void setData(Object data) {
+        this.data = data;
+    }
+
+    public Map<String, Object> getMetadata() {
+        return metadata == null ? buildMetadata() : metadata;
+    }
+
+    public Object getMetadata(String key) {
+        return metadata.get(key);
+    }
 }

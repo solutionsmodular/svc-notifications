@@ -1,6 +1,7 @@
 package com.solmod.notifications.dispatcher.service;
 
 import com.solmod.notifications.dispatcher.domain.SolMessage;
+import com.solmod.notifications.dispatcher.filter.FilterException;
 import com.solmod.notifications.dispatcher.filter.MessageDeliveryFilter;
 import com.solmod.notifications.dispatcher.service.domain.TriggeredMessageTemplateGroup;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +26,7 @@ public class MessageFilterService {
      * @param templateGroup {@link TriggeredMessageTemplateGroup}
      * @param solMessage {@link SolMessage}
      */
-    public void runThroughFilters(TriggeredMessageTemplateGroup templateGroup, final SolMessage solMessage) {
+    public void runThroughFilters(TriggeredMessageTemplateGroup templateGroup, final SolMessage solMessage) throws FilterException {
         for (MessageDeliveryFilter deliveryFilter : deliveryFilters) {
             deliveryFilter.apply(templateGroup, solMessage);
         }
