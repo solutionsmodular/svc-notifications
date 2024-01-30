@@ -189,14 +189,14 @@ class MessageDeliveryRulesFilterTest {
 
     @Data
     @AllArgsConstructor
-    private class TestDataObject {
+    private static class TestDataObject {
         private String emailAddy;
         private TestDataChildObject some;
     }
 
     @Data
     @AllArgsConstructor
-    private class TestDataChildObject {
+    private static class TestDataChildObject {
         private String key;
     }
 }

@@ -23,8 +23,8 @@ import static java.util.Collections.emptyList;
 @Component
 public class UserPreferencesFilter implements MessageDeliveryFilter {
 
-    private MessageDeliveryRepo deliveryRepo;
-    private UserDeliveryPreferencesService userDeliveryPreferencesService;
+    private final MessageDeliveryRepo deliveryRepo;
+    private final UserDeliveryPreferencesService userDeliveryPreferencesService;
     private final Logger logger = LoggerFactory.getLogger(UserPreferencesFilter.class);
 
     @Autowired
@@ -62,15 +62,14 @@ public class UserPreferencesFilter implements MessageDeliveryFilter {
 
         // Ensure the user has preferences specified for the template's sender
         if (usersPrefs == null) {
-            String message = String.format("User preferences do not include setting for template %s, sender %s",
-                    curTemplate.getMessageTemplateID(), curTemplate.getSender());
+            String message = String.format("Recipient has no specified preferences for %s sender", curTemplate.getSender());
             result = new DeliveryPermission(SEND_NEVER, message);
         }
         // Ensure the user's preferences for the template's sender allow for the template's class
         else if (!Objects.requireNonNullElse(usersPrefs.getSupportedMessageClasses(), "").toUpperCase()
                 .contains(curTemplate.getMessageClass().toUpperCase())) {
-            String message = String.format("User preferences do not allow for template %s, class %s",
-                    curTemplate.getMessageTemplateID(), curTemplate.getMessageClass());
+            String message = String.format("User preferences do not allow %s messages via %s",
+                    curTemplate.getMessageClass(), curTemplate.getSender());
             result = new DeliveryPermission(SEND_NEVER, message);
         }
         // Ensure the message does not violate time-based settings: resendInterval and deliveryWindow
@@ -110,9 +109,9 @@ public class UserPreferencesFilter implements MessageDeliveryFilter {
      *  </li>
      * </ul>
      *
-     * @param usersPrefs
-     * @param latestDelivery
-     * @return
+     * @param usersPrefs {@link UserDeliveryPreferencesDTO}
+     * @param latestDelivery {@link MessageDelivery} Could be null if no previous deliveries sent
+     * @return {@link DeliveryPermission} Indicating the permissions as they relate to time-based criteria
      */
     DeliveryPermission applyTimeBasedRules(UserDeliveryPreferencesDTO usersPrefs, MessageDelivery latestDelivery) {
         Date now = new Date();

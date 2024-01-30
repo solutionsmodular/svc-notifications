@@ -1,5 +1,6 @@
 package com.solmod.notifications.admin.service;
 
+import com.solmod.notifications.admin.domain.MessageClass;
 import com.solmod.notifications.admin.repository.model.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -11,7 +12,7 @@ public class TestCommons {
     @NotNull
     public UserDeliveryPreferences buildUserDeliveryPreferences(String recipientAddress, String sender, int resendInterval, UUID userId) {
         UserDeliveryPreferences mockPrefs = new UserDeliveryPreferences();
-        mockPrefs.setSupportedMessageClasses(MessageTemplate.MessageClass.TEAM.name());
+        mockPrefs.setSupportedMessageClasses(MessageClass.TEAM.name());
         mockPrefs.setRecipientAddress(recipientAddress);
         mockPrefs.setSender(sender);
         mockPrefs.setResendInterval(resendInterval);
@@ -44,7 +45,7 @@ public class TestCommons {
         mockTemplate.setTimelineNodeType(TimelineMessageTemplate.TimelineNodeType.ALERT);
         mockTemplate.setNodeTitleContentKey("nodetitlecontentkey");
         mockTemplate.setMessageBodyContentKey("messagebodycontentkey");
-        mockTemplate.setMessageClass(MessageTemplate.MessageClass.GEN);
+        mockTemplate.setMessageClass(MessageClass.GEN);
 
         theme.setMessageTemplates(Set.of(mockTemplate));
         Set<Theme> themes = Set.of(theme);

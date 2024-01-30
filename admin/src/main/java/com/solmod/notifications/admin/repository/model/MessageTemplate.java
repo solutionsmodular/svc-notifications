@@ -1,5 +1,6 @@
 package com.solmod.notifications.admin.repository.model;
 
+import com.solmod.notifications.admin.domain.MessageClass;
 import com.solmod.notifications.admin.web.model.ContentKeySetDTO;
 import jakarta.persistence.*;
 
@@ -29,11 +30,6 @@ public class MessageTemplate {
     @Column(length = 4)
     private MessageClass messageClass;
 
-    public enum MessageClass {
-        GEN, // Generic, sent to everyone, marketing, etc
-        TEAM, // Regarding a team or team member
-        SELF; //
-    }
     public ContentKeySetDTO toContentKeySet() {
         ContentKeySetDTO contentKeySet = new ContentKeySetDTO();
         contentKeySet.addContentKey("messageBodyContentKey", messageBodyContentKey);
