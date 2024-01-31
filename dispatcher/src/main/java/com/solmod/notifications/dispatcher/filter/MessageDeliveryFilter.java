@@ -12,16 +12,11 @@ public interface MessageDeliveryFilter {
      * 1. Receive a {@link  TriggeredMessageTemplateGroup}
      * 2. Assess each MessageTemplate
      *
-     * @param templateGroup
-     * @param solMessage
-     * @return
+     * @param templateGroup {@link TriggeredMessageTemplateGroup}
+     * @param solMessage    {@link SolMessage}
+     * @return {@link FilterResponse}
+     * @throws {@link FilterException} in the event of an error preventing proper calculation/processing
      */
-    void apply(TriggeredMessageTemplateGroup templateGroup, SolMessage solMessage);
-/*
-    Message metadata -> Context
-    Resolved recipient
-    Sender
-    Rendered message body (Content Manager + metadata)
-*/
-
+    FilterResponse apply(final TriggeredMessageTemplateGroup templateGroup, SolMessage solMessage)
+            throws FilterException;
 }

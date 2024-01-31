@@ -6,6 +6,7 @@ import com.solmod.notifications.admin.web.model.MessageTemplateGroupDTO;
 import com.solmod.notifications.dispatcher.domain.MessageTemplate;
 import com.solmod.notifications.dispatcher.domain.SolCommunication;
 import com.solmod.notifications.dispatcher.domain.SolMessage;
+import com.solmod.notifications.dispatcher.filter.FilterException;
 import com.solmod.notifications.dispatcher.service.domain.TriggeredMessageTemplateGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,8 +59,18 @@ public class EventBusHandler implements Function<SolMessage, List<SolCommunicati
                 t -> objectMapper.convertValue(t, MessageTemplate.class)).collect(Collectors.toSet());
         messagesToSend.setQualifiedTemplates(dispatchTemplates); // Before filters, all templates qualify
 
-        messageFilterService.runThroughFilters(messagesToSend, solMessage);
+        try {
+            messageFilterService.runThroughFilters(messagesToSend, solMessage);
+        } catch (FilterException e) {
+            // TODO
+        }
 
+/*
+create deliveries for each template/recipient
+        for (MessageTemplate curTemplate : dispatchTemplates) {
+            Object o = solMessage.getMetadata().get(curTemplate.getRecipientAddressContextKey());
+        }
+*/
         /*
         In:
             Message metadata -> Context

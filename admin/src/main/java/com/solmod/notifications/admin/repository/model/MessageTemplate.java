@@ -1,5 +1,6 @@
 package com.solmod.notifications.admin.repository.model;
 
+import com.solmod.notifications.admin.domain.MessageClass;
 import com.solmod.notifications.admin.web.model.ContentKeySetDTO;
 import jakarta.persistence.*;
 
@@ -25,6 +26,9 @@ public class MessageTemplate {
     private Integer minWaitForRetry; // in seconds
     private Integer maxSend;
     private Integer resendInterval;
+    @Enumerated(EnumType.STRING)
+    @Column(length = 4)
+    private MessageClass messageClass;
 
     public ContentKeySetDTO toContentKeySet() {
         ContentKeySetDTO contentKeySet = new ContentKeySetDTO();
@@ -102,5 +106,13 @@ public class MessageTemplate {
 
     public void setResendInterval(Integer resendInterval) {
         this.resendInterval = resendInterval;
+    }
+
+    public MessageClass getMessageClass() {
+        return messageClass;
+    }
+
+    public void setMessageClass(MessageClass messageClass) {
+        this.messageClass = messageClass;
     }
 }

@@ -1,5 +1,6 @@
 package com.solmod.notifications.admin.service;
 
+import com.solmod.notifications.admin.domain.MessageClass;
 import com.solmod.notifications.admin.repository.NotificationGroupRepo;
 import com.solmod.notifications.admin.repository.model.*;
 import com.solmod.notifications.admin.web.model.MessageTemplateDTO;
@@ -13,7 +14,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collection;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
@@ -69,6 +69,7 @@ class NotificationAccessServiceTest extends TestCommons {
         assertEquals("messagebodycontentkey", resultTemplateDTO.getContentKeySet().getContentKeys().get("messageBodyContentKey"));
         assertEquals(15, resultTemplateDTO.getMaxRetries());
         assertEquals(600, resultTemplateDTO.getMinWaitForRetry());
+        assertEquals(MessageClass.GEN.name(), resultTemplateDTO.getMessageClass());
         assertEquals(mockTemplate.getMinWaitForRetry(), resultTemplateDTO.getMinWaitForRetry());
         assertEquals(mockTemplate.getRecipientAddressContextKey(), resultTemplateDTO.getRecipientAddressContextKey());
         assertEquals(mockTemplate.getSender(), resultTemplateDTO.getSender());

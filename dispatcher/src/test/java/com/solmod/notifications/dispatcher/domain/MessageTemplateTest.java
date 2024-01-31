@@ -1,6 +1,7 @@
 package com.solmod.notifications.dispatcher.domain;
 
 import com.solmod.notifications.dispatcher.repository.domain.MessageDelivery;
+import com.solmod.notifications.dispatcher.service.domain.DeliveryPermission;
 import org.apache.commons.lang3.time.DateUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -10,7 +11,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.util.Date;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static com.solmod.notifications.dispatcher.service.domain.DeliveryPermission.Verdict.SEND_NEVER;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MessageTemplateTest {
 
@@ -29,10 +32,10 @@ class MessageTemplateTest {
         delivery.setDateCreated(new Date());
 
         // Act
-        boolean result = template.meetsSendRules(List.of(delivery));
+        DeliveryPermission result = template.applySendRules(List.of(delivery));
 
         // Assert
-        assertTrue(result);
+        assertEquals(DeliveryPermission.SEND_NOW_PERMISSION, result);
     }
 
     @Test
@@ -40,7 +43,7 @@ class MessageTemplateTest {
     void assertTrueOnMaxSendAndResendIntervalMet_ByDeliveryCreatedDate() {
         // Arrange
         MessageTemplate template = new MessageTemplate();
-        template.setResendInterval(15);
+        template.setResendInterval(10);
         template.setMaxSend(5);
         MessageDelivery delivery = new MessageDelivery();
         delivery.setDateCreated(DateUtils.addMinutes(new Date(), -15));
@@ -48,10 +51,10 @@ class MessageTemplateTest {
         delivery2.setDateCreated(DateUtils.addMinutes(new Date(), -20));
 
         // Act
-        boolean result = template.meetsSendRules(List.of(delivery, delivery2));
+        DeliveryPermission result = template.applySendRules(List.of(delivery, delivery2));
 
         // Assert
-        assertTrue(result);
+        assertEquals(DeliveryPermission.SEND_NOW_PERMISSION, result);
     }
 
     @Test
@@ -67,10 +70,11 @@ class MessageTemplateTest {
         delivery2.setDateCreated(DateUtils.addMinutes(new Date(), -20));
 
         // Act
-        boolean result = template.meetsSendRules(List.of(delivery, delivery2));
+        DeliveryPermission result = template.applySendRules(List.of(delivery, delivery2));
 
         // Assert
-        assertFalse(result);
+        assertEquals(SEND_NEVER, result.getVerdict());
+        assertTrue(result.getMessage().contains("received the max duplicates"));
     }
 
     @Test
@@ -79,17 +83,18 @@ class MessageTemplateTest {
         // Arrange
         MessageTemplate template = new MessageTemplate();
         template.setResendInterval(5);
-        template.setMaxSend(2);
+        template.setMaxSend(3);
         MessageDelivery delivery = new MessageDelivery();
-        delivery.setDateCreated(DateUtils.addMinutes(new Date(), -15));
+        delivery.setDateCreated(DateUtils.addMinutes(new Date(), -3));
         MessageDelivery delivery2 = new MessageDelivery();
         delivery2.setDateCreated(DateUtils.addMinutes(new Date(), -20));
 
         // Act
-        boolean result = template.meetsSendRules(List.of(delivery, delivery2));
+        DeliveryPermission result = template.applySendRules(List.of(delivery, delivery2));
 
         // Assert
-        assertFalse(result);
+        assertEquals(SEND_NEVER, result.getVerdict());
+        assertTrue(result.getMessage().contains("received this message within the resendInterval"));
     }
 
 }

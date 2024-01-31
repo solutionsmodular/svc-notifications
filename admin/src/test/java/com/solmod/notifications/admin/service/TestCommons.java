@@ -1,39 +1,54 @@
 package com.solmod.notifications.admin.service;
 
-import com.solmod.notifications.admin.repository.model.NotificationGroup;
-import com.solmod.notifications.admin.repository.model.Theme;
-import com.solmod.notifications.admin.repository.model.ThemeCriteria;
-import com.solmod.notifications.admin.repository.model.TimelineMessageTemplate;
+import com.solmod.notifications.admin.domain.MessageClass;
+import com.solmod.notifications.admin.repository.model.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Set;
+import java.util.UUID;
 
 public class TestCommons {
+
+    @NotNull
+    public UserDeliveryPreferences buildUserDeliveryPreferences(String recipientAddress, String sender, int resendInterval, UUID userId) {
+        UserDeliveryPreferences mockPrefs = new UserDeliveryPreferences();
+        mockPrefs.setSupportedMessageClasses(MessageClass.TEAM.name());
+        mockPrefs.setRecipientAddress(recipientAddress);
+        mockPrefs.setSender(sender);
+        mockPrefs.setResendInterval(resendInterval);
+        mockPrefs.setSendWindowStart(8);
+        mockPrefs.setSendWindowEnd(18);
+        mockPrefs.setTimezone("PST");
+        mockPrefs.setUserId(userId);
+        return mockPrefs;
+    }
 
     public static NotificationGroup buildMockGroup() {
         NotificationGroup result = new NotificationGroup();
         result.setTenantId(1L);
         result.setSubject("somesubject");
         result.setVerb("someverb");
-        Theme theme1 = new Theme();
-        theme1.setResendInterval(15);
-        ThemeCriteria mockCriteria1 = new ThemeCriteria();
-        mockCriteria1.setKey("criteria1akey");
-        mockCriteria1.setValue("criteria1aval");
-        theme1.setCriteria(Set.of(mockCriteria1));
+        Theme theme = new Theme();
+        theme.setResendInterval(15);
+        ThemeCriteria mockCriteria = new ThemeCriteria();
+        mockCriteria.setKey("criteria1akey");
+        mockCriteria.setValue("criteria1aval");
+        theme.setCriteria(Set.of(mockCriteria));
 
-        TimelineMessageTemplate mockTemplate1 = new TimelineMessageTemplate();
-        mockTemplate1.setMaxRetries(15);
-        mockTemplate1.setMinWaitForRetry(60*10); // 10min
-        mockTemplate1.setMaxSend(15);
-        mockTemplate1.setSender("someSenderTemplate1");
-        mockTemplate1.setResendInterval(2);
-        mockTemplate1.setRecipientAddressContextKey("template1recipientaddy");
-        mockTemplate1.setTimelineNodeType(TimelineMessageTemplate.TimelineNodeType.ALERT);
-        mockTemplate1.setNodeTitleContentKey("nodetitlecontentkey");
-        mockTemplate1.setMessageBodyContentKey("messagebodycontentkey");
+        TimelineMessageTemplate mockTemplate = new TimelineMessageTemplate();
+        mockTemplate.setMaxRetries(15);
+        mockTemplate.setMinWaitForRetry(60*10); // 10min
+        mockTemplate.setMaxSend(15);
+        mockTemplate.setSender("someSenderTemplate1");
+        mockTemplate.setResendInterval(2);
+        mockTemplate.setRecipientAddressContextKey("template1recipientaddy");
+        mockTemplate.setTimelineNodeType(TimelineMessageTemplate.TimelineNodeType.ALERT);
+        mockTemplate.setNodeTitleContentKey("nodetitlecontentkey");
+        mockTemplate.setMessageBodyContentKey("messagebodycontentkey");
+        mockTemplate.setMessageClass(MessageClass.GEN);
 
-        theme1.setMessageTemplates(Set.of(mockTemplate1));
-        Set<Theme> themes = Set.of(theme1);
+        theme.setMessageTemplates(Set.of(mockTemplate));
+        Set<Theme> themes = Set.of(theme);
         result.setThemes(themes);
         return result;
     }

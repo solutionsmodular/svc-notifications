@@ -44,6 +44,7 @@ public class DTOFactory {
         templateDTO.setSender(templateEntity.getSender());
         templateDTO.setMinWaitForRetry(templateEntity.getMinWaitForRetry());
         templateDTO.setMaxRetries(templateEntity.getMaxRetries());
+        templateDTO.setMessageClass(templateEntity.getMessageClass().name());
         // Limit to the lowest value between Theme and Template
 
         Integer resultMaxSend = null;
