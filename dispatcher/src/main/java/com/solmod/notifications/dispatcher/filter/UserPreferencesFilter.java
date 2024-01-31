@@ -16,8 +16,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 
-import static com.solmod.notifications.dispatcher.service.domain.DeliveryPermission.Verdict.SEND_LATER;
-import static com.solmod.notifications.dispatcher.service.domain.DeliveryPermission.Verdict.SEND_NEVER;
+import static com.solmod.notifications.dispatcher.service.domain.DeliveryPermission.Verdict.*;
 import static java.util.Collections.emptyList;
 
 @Component
@@ -52,6 +51,21 @@ public class UserPreferencesFilter implements MessageDeliveryFilter {
         return response;
     }
 
+    /**
+     * Determine if the following hold true before permitting:
+     * <ul>
+     *     <li>Recipient's address can be gleaned from the {@link SolMessage}</li>
+     *     <li>Recipient has preferences configured for the template sender</li>
+     *     <li>Recipient allows the template class via sender</li>
+     *     <li>Sending this message will not be a duplicate of a message sent within the resendInterval</li>
+     *     <li>"Now" is within the valid send window. When it isn't, it's set to be sent later</li>
+     * </ul>
+     *
+     * @param solMessage {@link SolMessage}
+     * @param curTemplate {@link MessageTemplate}
+     * @return {@link DeliveryPermission}
+     * @throws FilterException in the event of processing error, such as recipient can't be gleaned from message
+     */
     private DeliveryPermission processRules(SolMessage solMessage, MessageTemplate curTemplate) throws FilterException {
         DeliveryPermission result;
         String recipientAddress = getRecipientAddressOrException(solMessage, curTemplate);
@@ -116,8 +130,12 @@ public class UserPreferencesFilter implements MessageDeliveryFilter {
     DeliveryPermission applyTimeBasedRules(UserDeliveryPreferencesDTO usersPrefs, MessageDelivery latestDelivery) {
         Date now = new Date();
 
+        if (latestDelivery == null) {
+            return DeliveryPermission.SEND_NOW_PERMISSION;
+        }
+
         // If duplicate sent, ensure at least resendInterval has elapsed since the last delivery
-        if (latestDelivery != null && usersPrefs.getResendInterval() != null) {
+        if (usersPrefs.getResendInterval() != null) {
             Date effectiveLatestDeliveryDate =
                     Objects.requireNonNullElse(latestDelivery.getDateCompleted(), latestDelivery.getDateCreated());
             Date resendIntervalAgo = DateUtils.addMinutes(now, -usersPrefs.getResendInterval());
