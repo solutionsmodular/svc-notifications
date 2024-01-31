@@ -18,7 +18,6 @@ public class SolMessage {
     private String subject;
     private String verb;
     private String idMetadataKey;
-    private String idMetadataValue;
     private String publisher; // app/component
     private Long tenantId;
     private Long entityId;
@@ -73,14 +72,6 @@ public class SolMessage {
 
     public void setIdMetadataKey(String idMetadataKey) {
         this.idMetadataKey = idMetadataKey;
-    }
-
-    public String getIdMetadataValue() {
-        return idMetadataValue;
-    }
-
-    public void setIdMetadataValue(String idMetadataValue) {
-        this.idMetadataValue = idMetadataValue;
     }
 
     public String getPublisher() {

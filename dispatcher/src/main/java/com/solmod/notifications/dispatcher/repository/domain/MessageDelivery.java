@@ -27,7 +27,7 @@ public class MessageDelivery {
     @Enumerated(EnumType.STRING)
     @Column(length = 3)
     private Status status;
-    private String statusMessage; // e.g. Status = failed, message is failure
+    private String statusMessage; // e.g. when Status = failed, message is failure
     private String sender;
     @OneToMany(mappedBy = "messageDelivery", cascade = CascadeType.ALL)
     private Set<MessageMetadata> messageMetadata;
@@ -37,8 +37,9 @@ public class MessageDelivery {
     public enum Status {
         D,  // Delivered
         F,  // Failed
-        PC, // Pending Context
-        PD, // Pending Delivery (callback)
+        PX, // Pending Context
+        PD, // Pending Delivery - initial send
+        PC, // Pending callback from delivery
         PR, // Pending Retry
         PT; // Pending time window
     }

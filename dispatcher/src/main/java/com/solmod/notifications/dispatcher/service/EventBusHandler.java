@@ -6,15 +6,18 @@ import com.solmod.notifications.admin.web.model.MessageTemplateGroupDTO;
 import com.solmod.notifications.dispatcher.domain.MessageTemplate;
 import com.solmod.notifications.dispatcher.domain.SolCommunication;
 import com.solmod.notifications.dispatcher.domain.SolMessage;
+import com.solmod.notifications.dispatcher.domain.TriggeringEvent;
 import com.solmod.notifications.dispatcher.filter.FilterException;
+import com.solmod.notifications.dispatcher.repository.domain.MessageDelivery;
+import com.solmod.notifications.dispatcher.repository.domain.MessageMetadata;
+import com.solmod.notifications.dispatcher.service.domain.DeliveryPermission;
 import com.solmod.notifications.dispatcher.service.domain.TriggeredMessageTemplateGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -30,14 +33,19 @@ public class EventBusHandler implements Function<SolMessage, List<SolCommunicati
 
     Logger log = LoggerFactory.getLogger(getClass());
 
-    NotificationAccessService accessService;
-    MessageFilterService messageFilterService;
+    private final NotificationAccessService accessService;
+    private final MessageFilterService messageFilterService;
+    private final MessageDispatcherService messageDispatcherService;
     ObjectMapper objectMapper;
 
     @Autowired
-    public EventBusHandler(NotificationAccessService accessService, MessageFilterService messageFilterService, ObjectMapper objectMapper) {
+    public EventBusHandler(NotificationAccessService accessService,
+                           MessageFilterService messageFilterService,
+                           MessageDispatcherService messageDispatcherService,
+                           ObjectMapper objectMapper) {
         this.accessService = accessService;
         this.messageFilterService = messageFilterService;
+        this.messageDispatcherService = messageDispatcherService;
         this.objectMapper = objectMapper;
     }
 
@@ -53,56 +61,15 @@ public class EventBusHandler implements Function<SolMessage, List<SolCommunicati
     public List<SolCommunication> apply(final SolMessage solMessage) {
 
         MessageTemplateGroupDTO templates = accessService.getNotificationTemplateGroup(solMessage.getTenantId(), solMessage.getSubject(), solMessage.getVerb());
-        // TODO: If the above returned no results, then an error should be logged suggesting adjusting subscription
-        TriggeredMessageTemplateGroup messagesToSend = new TriggeredMessageTemplateGroup();
-        Set<MessageTemplate> dispatchTemplates = templates.getMessageTemplates().stream().map(
-                t -> objectMapper.convertValue(t, MessageTemplate.class)).collect(Collectors.toSet());
-        messagesToSend.setQualifiedTemplates(dispatchTemplates); // Before filters, all templates qualify
 
-        try {
-            messageFilterService.runThroughFilters(messagesToSend, solMessage);
-        } catch (FilterException e) {
-            // TODO
-        }
-
-/*
-create deliveries for each template/recipient
-        for (MessageTemplate curTemplate : dispatchTemplates) {
-            Object o = solMessage.getMetadata().get(curTemplate.getRecipientAddressContextKey());
-        }
-*/
-        /*
-        In:
-            Message metadata -> Context
-            Resolved recipient
-            Sender
-            Rendered message body (Content Manager + metadata)
-
-        2. Create NotificationDelivery for each found
-
-        TODO: Add Notification Group context builder here
-        TODO: Add MessageTheme context builder here
-        2. Apply MessageTheme metadata:criteria filter
-            Update NotificationDelivery for each reject
-        3. Apply MessageTheme delivery rules filter
-            Update NotificationDelivery for each reject
-        TODO: Add MessageTemplate context builder here
-        4. Apply MessageTemplate delivery rules filter
-            Update NotificationDelivery for each reject
-        5. Apply UserPreferences filter
-            Update NotificationDelivery for each reject
-        6. Unfiltered/remaining/qualifying SolMessages...
-         */
-/*
-                trigger = logNotificationTrigger(notificationEvent);
-                Map<String, Object> context = flatten(Map.of("solmod_evt", solMessage));
-                // TODO: Plus we have to get the context that's already been persisted from previous matching triggers
-                Map<String, String> relevantContext = persistRelevantContext(trigger, context, messageConfigs);
-*/
-
+        TriggeringEvent trigger = new TriggeringEvent();
+        trigger.setEventMetadata(solMessage.getMetadata()); // TODO: convert this to a <String, String>
+        trigger.setSubjectIdentifierMetadataKey(solMessage.getIdMetadataKey());
+        messageDispatcherService.dispatchDelivery(templates, solMessage);
 
         return null;
     }
+
 
 }
 

@@ -15,7 +15,7 @@ public class DeliveryPermission {
     private String message;
 
     public enum Verdict {
-        SEND_NOW, SEND_LATER, SEND_NEVER
+        SEND_NOW, SEND_LATER, SEND_NEVER // logic to determine ultimate permission relies on this order
     }
 
     public DeliveryPermission(Verdict verdict) {
