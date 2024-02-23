@@ -60,13 +60,12 @@ class MessageDeliveryRulesFilterTest {
         triggeredGroup.setQualifiedTemplates(templates);
 
         SolMessage solMessage = new SolMessage();
-        solMessage.setIdMetadataKey("some.key");
-        solMessage.setIdMetadataValue("somevalue");
+        solMessage.setSubjectIdMetadataKey("some.key");
         solMessage.setData(new TestDataObject("someone@somewhere.com", new TestDataChildObject("somevalue")));
         solMessage.setTenantId(15L);
 
         // Act
-        FilterResponse response = filter.apply(triggeredGroup, solMessage);
+        FilterResponse response = filter.apply(triggeredGroup, solMessage.toTrigger());
 
         // Assert
         assertEquals(DeliveryPermission.SEND_NOW_PERMISSION, response.getPermissions().get(template.getMessageTemplateID()));
@@ -95,13 +94,12 @@ class MessageDeliveryRulesFilterTest {
         triggeredGroup.setQualifiedTemplates(templates);
 
         SolMessage solMessage = new SolMessage();
-        solMessage.setIdMetadataKey("some.key");
-        solMessage.setIdMetadataValue("somevalue");
+        solMessage.setSubjectIdMetadataKey("some.key");
         solMessage.setData(new TestDataObject("someone@somewhere.com", new TestDataChildObject("somevalue")));
         solMessage.setTenantId(15L);
 
         // Act
-        FilterResponse response = filter.apply(triggeredGroup, solMessage);
+        FilterResponse response = filter.apply(triggeredGroup, solMessage.toTrigger());
 
         // Assert
         assertEquals(DeliveryPermission.SEND_NOW_PERMISSION, response.getPermissions().get(template.getMessageTemplateID()));
@@ -129,13 +127,12 @@ class MessageDeliveryRulesFilterTest {
         triggeredGroup.setQualifiedTemplates(templates);
 
         SolMessage solMessage = new SolMessage();
-        solMessage.setIdMetadataKey("some.key");
-        solMessage.setIdMetadataValue("somevalue");
+        solMessage.setSubjectIdMetadataKey("some.key");
         solMessage.setData(new TestDataObject("someone@somewhere.com", new TestDataChildObject("somevalue")));
         solMessage.setTenantId(15L);
 
         // Act
-        FilterResponse response = filter.apply(triggeredGroup, solMessage);
+        FilterResponse response = filter.apply(triggeredGroup, solMessage.toTrigger());
 
         // Assert
         DeliveryPermission result = response.getPermissions().get(template.getMessageTemplateID());
@@ -166,13 +163,12 @@ class MessageDeliveryRulesFilterTest {
         triggeredGroup.setQualifiedTemplates(templates);
 
         SolMessage solMessage = new SolMessage();
-        solMessage.setIdMetadataKey("some.key");
-        solMessage.setIdMetadataValue("somevalue");
+        solMessage.setSubjectIdMetadataKey("some.key");
         solMessage.setData(new TestDataObject("someone@somewhere.com", new TestDataChildObject("somevalue")));
         solMessage.setTenantId(15L);
 
         // Act
-        FilterResponse response = filter.apply(triggeredGroup, solMessage);
+        FilterResponse response = filter.apply(triggeredGroup, solMessage.toTrigger());
 
         // Assert
         assertEquals(SEND_NEVER, response.getPermissions().get(template.getMessageTemplateID()).getVerdict());

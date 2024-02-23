@@ -2,11 +2,9 @@ package com.solmod.notifications.dispatcher.filter;
 
 import com.solmod.notifications.admin.web.model.MessageTemplateDTO;
 import com.solmod.notifications.dispatcher.domain.MessageTemplate;
-import com.solmod.notifications.dispatcher.domain.SolMessage;
+import com.solmod.notifications.dispatcher.domain.TriggeringEvent;
 import com.solmod.notifications.dispatcher.service.domain.DeliveryPermission;
 import com.solmod.notifications.dispatcher.service.domain.TriggeredMessageTemplateGroup;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -16,13 +14,13 @@ import java.util.Set;
 public class ThemeCriteriaFilter  implements MessageDeliveryFilter {
 
     @Override
-    public FilterResponse apply(TriggeredMessageTemplateGroup templateGroup, SolMessage solMessage) {
+    public FilterResponse apply(TriggeredMessageTemplateGroup templateGroup, TriggeringEvent trigger) {
         FilterResponse response = new FilterResponse("theme-criteria");
         if (templateGroup.getQualifiedTemplates().isEmpty()) {
             return response;
         }
 
-        Map<String, Object> flattened = solMessage.getMetadata();
+        Map<String, String> flattened = trigger.getEventMetadata();
         Set<MessageTemplate> messageTemplates = templateGroup.getQualifiedTemplates();
         for (MessageTemplateDTO curTemplate : messageTemplates) { // use iter.hasNext because of iter.remove used herein
             response.addDeliveryPermission(curTemplate.getMessageTemplateID(), qualifyTemplate(curTemplate, flattened));
@@ -31,7 +29,7 @@ public class ThemeCriteriaFilter  implements MessageDeliveryFilter {
         return response;
     }
 
-    private DeliveryPermission qualifyTemplate(MessageTemplateDTO curTemplate, Map<String, Object> flattenedMetadata) {
+    private DeliveryPermission qualifyTemplate(MessageTemplateDTO curTemplate, Map<String, String> flattenedMetadata) {
         if (curTemplate.getDeliveryCriteria() == null || curTemplate.getDeliveryCriteria().getCriteria().isEmpty()) {
             return DeliveryPermission.SEND_NOW_PERMISSION;
         }

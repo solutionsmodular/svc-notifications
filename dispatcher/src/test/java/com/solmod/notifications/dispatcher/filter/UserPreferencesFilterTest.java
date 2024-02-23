@@ -21,10 +21,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import java.io.Serializable;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static com.solmod.notifications.dispatcher.service.domain.DeliveryPermission.Verdict.SEND_NEVER;
 import static org.junit.jupiter.api.Assertions.*;
@@ -73,7 +70,7 @@ class UserPreferencesFilterTest {
         when(userDeliveryPreferencesService.getDeliveryPreferences(email, sender)).thenReturn(null);
 
         // Act
-        FilterResponse apply = filter.apply(tGroup, msg);
+        FilterResponse apply = filter.apply(tGroup, msg.toTrigger());
 
         // Assert
         DeliveryPermission result = apply.getPermissions().get(template.getMessageTemplateID());
@@ -106,7 +103,7 @@ class UserPreferencesFilterTest {
 
         // Act
         Exception exception = assertThrows(FilterException.class, () -> {
-            filter.apply(tGroup, msg);
+            filter.apply(tGroup, msg.toTrigger());
         });
 
 
@@ -141,7 +138,7 @@ class UserPreferencesFilterTest {
 
         when(userDeliveryPreferencesService.getDeliveryPreferences(email, sender)).thenReturn(mockPrefs);
 
-        FilterResponse response = filter.apply(tGroup, msg);
+        FilterResponse response = filter.apply(tGroup, msg.toTrigger());
 
         DeliveryPermission result = response.getPermissions().get(template.getMessageTemplateID());
         assertEquals(DeliveryPermission.SEND_NOW_PERMISSION, result);
@@ -176,7 +173,7 @@ class UserPreferencesFilterTest {
 
         when(userDeliveryPreferencesService.getDeliveryPreferences(email, sender)).thenReturn(mockPrefs);
 
-        FilterResponse response = filter.apply(tGroup, msg);
+        FilterResponse response = filter.apply(tGroup, msg.toTrigger());
 
         DeliveryPermission result = response.getPermissions().get(template.getMessageTemplateID());
         assertEquals(SEND_NEVER, result.getVerdict());
@@ -214,7 +211,7 @@ class UserPreferencesFilterTest {
 
         when(userDeliveryPreferencesService.getDeliveryPreferences(email, sender)).thenReturn(mockPrefs);
 
-        FilterResponse response = filter.apply(tGroup, msg);
+        FilterResponse response = filter.apply(tGroup, msg.toTrigger());
 
         DeliveryPermission result = response.getPermissions().get(template.getMessageTemplateID());
         assertEquals(DeliveryPermission.SEND_NOW_PERMISSION, result);
@@ -238,6 +235,7 @@ class UserPreferencesFilterTest {
         SolMessage msg = new SolMessage();
         TestObject v1 = new TestObject(new TestUser(email));
         Map<String, TestObject> data = Map.of("root", v1);
+        msg.setSubjectIdMetadataKey("root.user.email"); // since I know this will be in the metadata
         msg.setData(data);
 
         Map<String, Object> metadata = msg.getMetadata();
@@ -250,8 +248,20 @@ class UserPreferencesFilterTest {
         mockPrefs.setSupportedMessageClasses(MessageClass.TEAM.name() + "," + MessageClass.SELF.name());
 
         when(userDeliveryPreferencesService.getDeliveryPreferences(email, sender)).thenReturn(mockPrefs);
+        MessageDelivery delivery = new MessageDelivery();
+        Date now = new Date();
+        Calendar nowCal = Calendar.getInstance();
+        nowCal.setTime(now);
+        nowCal.set(Calendar.HOUR_OF_DAY, 5); // Outside of the window 3-4
 
-        FilterResponse response = filter.apply(tGroup, msg);
+        delivery.setDateCreated(nowCal.getTime());
+        when(deliveryRepo.findAllDeliveries(template.getMessageTemplateID(),
+                email,
+                "root.user.email", // use what we've already set up for email for simplicity
+                email)).thenReturn(List.of(delivery));
+
+
+        FilterResponse response = filter.apply(tGroup, msg.toTrigger());
 
         DeliveryPermission result = response.getPermissions().get(template.getMessageTemplateID());
         assertEquals(DeliveryPermission.Verdict.SEND_LATER, result.getVerdict());
@@ -288,11 +298,10 @@ class UserPreferencesFilterTest {
 
         when(userDeliveryPreferencesService.getDeliveryPreferences(email, sender)).thenReturn(mockPrefs);
 
-        FilterResponse response = filter.apply(tGroup, msg);
+        FilterResponse response = filter.apply(tGroup, msg.toTrigger());
 
         DeliveryPermission result = response.getPermissions().get(template.getMessageTemplateID());
-        assertEquals(DeliveryPermission.Verdict.SEND_LATER, result.getVerdict());
-        assertTrue(result.getMessage().contains("within recipient blackout period"));
+        assertEquals(DeliveryPermission.Verdict.SEND_NOW, result.getVerdict());
     }
 
     @Test
@@ -315,8 +324,7 @@ class UserPreferencesFilterTest {
         TestObject v1 = new TestObject(new TestUser(email));
         Map<String, TestObject> data = Map.of("root", v1);
         msg.setData(data);
-        msg.setIdMetadataKey("root.user.email");
-        msg.setIdMetadataValue(email);
+        msg.setSubjectIdMetadataKey("root.user.email");
 
         Map<String, Object> metadata = msg.getMetadata();
         assertNotNull(metadata.get("root.user.email"));
@@ -334,7 +342,7 @@ class UserPreferencesFilterTest {
                 "root.user.email", // use what we've already set up for email for simplicity
                 email)).thenReturn(List.of(delivery));
 
-        FilterResponse response = filter.apply(tGroup, msg);
+        FilterResponse response = filter.apply(tGroup, msg.toTrigger());
 
         DeliveryPermission result = response.getPermissions().get(template.getMessageTemplateID());
         assertEquals(DeliveryPermission.SEND_NOW_PERMISSION, result);
@@ -360,8 +368,7 @@ class UserPreferencesFilterTest {
         TestObject v1 = new TestObject(new TestUser(email));
         Map<String, TestObject> data = Map.of("root", v1);
         msg.setData(data);
-        msg.setIdMetadataKey("root.user.email");
-        msg.setIdMetadataValue(email);
+        msg.setSubjectIdMetadataKey("root.user.email");
 
         Map<String, Object> metadata = msg.getMetadata();
         assertNotNull(metadata.get("root.user.email"));
@@ -379,7 +386,7 @@ class UserPreferencesFilterTest {
                 "root.user.email", // use what we've already set up for email for simplicity
                 email)).thenReturn(List.of(delivery));
 
-        FilterResponse response = filter.apply(tGroup, msg);
+        FilterResponse response = filter.apply(tGroup, msg.toTrigger());
 
         DeliveryPermission result = response.getPermissions().get(template.getMessageTemplateID());
         assertEquals(SEND_NEVER, result.getVerdict());

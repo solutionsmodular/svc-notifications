@@ -6,6 +6,10 @@ import java.util.Map;
 
 @Data
 public class TriggeringEvent {
+    private  String subject;
+    private String verb;
+    private String subjectIdMetadataKey;
+    private String subjectId;
     private Map<String, String> eventMetadata;
-    private String subjectIdentifierMetadataKey;
+    private Long tenantId;
 }

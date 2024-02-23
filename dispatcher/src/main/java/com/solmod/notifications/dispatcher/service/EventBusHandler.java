@@ -2,24 +2,16 @@ package com.solmod.notifications.dispatcher.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.solmod.notifications.admin.service.NotificationAccessService;
-import com.solmod.notifications.admin.web.model.MessageTemplateGroupDTO;
-import com.solmod.notifications.dispatcher.domain.MessageTemplate;
 import com.solmod.notifications.dispatcher.domain.SolCommunication;
 import com.solmod.notifications.dispatcher.domain.SolMessage;
 import com.solmod.notifications.dispatcher.domain.TriggeringEvent;
-import com.solmod.notifications.dispatcher.filter.FilterException;
-import com.solmod.notifications.dispatcher.repository.domain.MessageDelivery;
-import com.solmod.notifications.dispatcher.repository.domain.MessageMetadata;
-import com.solmod.notifications.dispatcher.service.domain.DeliveryPermission;
-import com.solmod.notifications.dispatcher.service.domain.TriggeredMessageTemplateGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * This service receives and handles messages which qualify for an externally configured pub/sub queue subscription.
@@ -60,12 +52,8 @@ public class EventBusHandler implements Function<SolMessage, List<SolCommunicati
     @Override
     public List<SolCommunication> apply(final SolMessage solMessage) {
 
-        MessageTemplateGroupDTO templates = accessService.getNotificationTemplateGroup(solMessage.getTenantId(), solMessage.getSubject(), solMessage.getVerb());
-
-        TriggeringEvent trigger = new TriggeringEvent();
-        trigger.setEventMetadata(solMessage.getMetadata()); // TODO: convert this to a <String, String>
-        trigger.setSubjectIdentifierMetadataKey(solMessage.getIdMetadataKey());
-        messageDispatcherService.dispatchDelivery(templates, solMessage);
+        TriggeringEvent trigger =solMessage.toTrigger();
+        messageDispatcherService.dispatchDelivery(trigger);
 
         return null;
     }

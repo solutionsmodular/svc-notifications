@@ -4,19 +4,23 @@ import com.solmod.notifications.admin.service.UserDeliveryPreferencesService;
 import com.solmod.notifications.admin.web.model.UserDeliveryPreferencesDTO;
 import com.solmod.notifications.dispatcher.domain.MessageTemplate;
 import com.solmod.notifications.dispatcher.domain.SolMessage;
+import com.solmod.notifications.dispatcher.domain.TriggeringEvent;
 import com.solmod.notifications.dispatcher.repository.MessageDeliveryRepo;
 import com.solmod.notifications.dispatcher.repository.domain.MessageDelivery;
 import com.solmod.notifications.dispatcher.service.domain.DeliveryPermission;
 import com.solmod.notifications.dispatcher.service.domain.TriggeredMessageTemplateGroup;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 
-import static com.solmod.notifications.dispatcher.service.domain.DeliveryPermission.Verdict.*;
+import static com.solmod.notifications.dispatcher.service.domain.DeliveryPermission.Verdict.SEND_LATER;
+import static com.solmod.notifications.dispatcher.service.domain.DeliveryPermission.Verdict.SEND_NEVER;
 import static java.util.Collections.emptyList;
 
 @Component
@@ -24,7 +28,6 @@ public class UserPreferencesFilter implements MessageDeliveryFilter {
 
     private final MessageDeliveryRepo deliveryRepo;
     private final UserDeliveryPreferencesService userDeliveryPreferencesService;
-    private final Logger logger = LoggerFactory.getLogger(UserPreferencesFilter.class);
 
     @Autowired
     public UserPreferencesFilter(MessageDeliveryRepo deliveryRepo,
@@ -34,7 +37,7 @@ public class UserPreferencesFilter implements MessageDeliveryFilter {
     }
 
     @Override
-    public FilterResponse apply(TriggeredMessageTemplateGroup templateGroup, SolMessage solMessage)
+    public FilterResponse apply(TriggeredMessageTemplateGroup templateGroup, TriggeringEvent trigger)
             throws FilterException {
         FilterResponse response = new FilterResponse("user-preferences");
 
@@ -44,7 +47,7 @@ public class UserPreferencesFilter implements MessageDeliveryFilter {
 
         // Determine send'ability for each template in the group
         for (MessageTemplate curTemplate : templateGroup.getQualifiedTemplates()) {
-            DeliveryPermission permissionToSendTemplate = processRules(solMessage, curTemplate);
+            DeliveryPermission permissionToSendTemplate = processRules(trigger, curTemplate);
             response.addDeliveryPermission(curTemplate.getMessageTemplateID(), permissionToSendTemplate);
         }
 
@@ -61,14 +64,14 @@ public class UserPreferencesFilter implements MessageDeliveryFilter {
      *     <li>"Now" is within the valid send window. When it isn't, it's set to be sent later</li>
      * </ul>
      *
-     * @param solMessage {@link SolMessage}
+     * @param trigger {@link TriggeringEvent}
      * @param curTemplate {@link MessageTemplate}
      * @return {@link DeliveryPermission}
      * @throws FilterException in the event of processing error, such as recipient can't be gleaned from message
      */
-    private DeliveryPermission processRules(SolMessage solMessage, MessageTemplate curTemplate) throws FilterException {
+    private DeliveryPermission processRules(TriggeringEvent trigger, MessageTemplate curTemplate) throws FilterException {
         DeliveryPermission result;
-        String recipientAddress = getRecipientAddressOrException(solMessage, curTemplate);
+        String recipientAddress = getRecipientAddressOrException(trigger, curTemplate);
 
         String templateSender = curTemplate.getSender();
         UserDeliveryPreferencesDTO usersPrefs =
@@ -93,8 +96,8 @@ public class UserPreferencesFilter implements MessageDeliveryFilter {
             List<MessageDelivery> allDeliveries =
                     Objects.requireNonNullElse(deliveryRepo.findAllDeliveries(curTemplate.getMessageTemplateID(),
                             recipientAddress,
-                            solMessage.getIdMetadataKey(),
-                            solMessage.getIdMetadataValue()), emptyList());
+                            trigger.getSubjectIdMetadataKey(),
+                            trigger.getEventMetadata().get(trigger.getSubjectIdMetadataKey())), emptyList());
 
             MessageDelivery latestDelivery = allDeliveries.stream().findFirst().orElse(null);
             result = applyTimeBasedRules(usersPrefs, latestDelivery);
@@ -103,14 +106,14 @@ public class UserPreferencesFilter implements MessageDeliveryFilter {
         return result;
     }
 
-    private String getRecipientAddressOrException(SolMessage solMessage, MessageTemplate curTemplate)
+    private String getRecipientAddressOrException(TriggeringEvent trigger, MessageTemplate curTemplate)
             throws FilterException {
         String addyKey = curTemplate.getRecipientAddressContextKey();
-        Object addressData = solMessage.getMetadata().get(addyKey);
-        if (addressData == null) {
+        String addressData = trigger.getEventMetadata().get(addyKey);
+        if (StringUtils.isBlank(addressData)) {
             throw new FilterException("Could not determine recipient address, expected at " + addyKey);
         }
-        return addressData.toString();
+        return addressData;
     }
 
     /**

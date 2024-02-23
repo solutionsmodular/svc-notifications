@@ -1,6 +1,6 @@
 package com.solmod.notifications.dispatcher.service;
 
-import com.solmod.notifications.dispatcher.domain.SolMessage;
+import com.solmod.notifications.dispatcher.domain.TriggeringEvent;
 import com.solmod.notifications.dispatcher.filter.FilterException;
 import com.solmod.notifications.dispatcher.filter.FilterResponse;
 import com.solmod.notifications.dispatcher.filter.MessageDeliveryFilter;
@@ -29,16 +29,16 @@ public class MessageFilterService {
      * If original {@link TriggeredMessageTemplateGroup} is required alongside filtered, clone before calling
      *
      * @param templateGroup {@link TriggeredMessageTemplateGroup}
-     * @param solMessage    {@link SolMessage}
+     * @param trigger    {@link TriggeringEvent}
      * @return Map of {@link DeliveryPermission} representing the most restrictive of the verdicts as calculated by each filter
      */
-    public Map<Long, DeliveryPermission> determineDeliveryPermissions(TriggeredMessageTemplateGroup templateGroup, final SolMessage solMessage)
+    public Map<Long, DeliveryPermission> determineDeliveryPermissions(TriggeredMessageTemplateGroup templateGroup, final TriggeringEvent trigger)
             throws FilterException {
         Map<Long, DeliveryPermission> resultingPermissions = new HashMap<>();
 
         for (MessageDeliveryFilter deliveryFilter : deliveryFilters) {
             // TODO stop processing filters for any template that's SEND_NEVER
-            FilterResponse groupPermissions = deliveryFilter.apply(templateGroup, solMessage);
+            FilterResponse groupPermissions = deliveryFilter.apply(templateGroup, trigger);
             overlayTemplatePermission(groupPermissions, resultingPermissions);
         }
 

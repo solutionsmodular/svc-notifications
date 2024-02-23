@@ -31,7 +31,7 @@ class ThemeCriteriaFilterTest {
         messageTemplate.setMessageTemplateID(88L);
         templateGroup.setQualifiedTemplates(Set.of(messageTemplate));
 
-        FilterResponse response = filter.apply(templateGroup, solMessage);
+        FilterResponse response = filter.apply(templateGroup, solMessage.toTrigger());
 
         assertEquals(DeliveryPermission.SEND_NOW_PERMISSION, response.getPermissions().get(88L));
     }
@@ -52,7 +52,7 @@ class ThemeCriteriaFilterTest {
         messageTemplate.setDeliveryCriteria(criteriaSet);
         templateGroup.setQualifiedTemplates(Set.of(messageTemplate));
 
-        FilterResponse response = filter.apply(templateGroup, solMessage);
+        FilterResponse response = filter.apply(templateGroup, solMessage.toTrigger());
 
         assertEquals(DeliveryPermission.SEND_NOW_PERMISSION, response.getPermissions().get(88L));
     }
@@ -77,7 +77,7 @@ class ThemeCriteriaFilterTest {
         templateGroup.setQualifiedTemplates(templates);
 
         // Act
-        FilterResponse response = filter.apply(templateGroup, solMessage);
+        FilterResponse response = filter.apply(templateGroup, solMessage.toTrigger());
 
         // Assert
         DeliveryPermission result = response.getPermissions().get(88L);
@@ -105,7 +105,7 @@ class ThemeCriteriaFilterTest {
         templateGroup.setQualifiedTemplates(templates);
 
         // Act
-        FilterResponse response = filter.apply(templateGroup, solMessage);
+        FilterResponse response = filter.apply(templateGroup, solMessage.toTrigger());
 
         // Assert
         DeliveryPermission result = response.getPermissions().get(88L);

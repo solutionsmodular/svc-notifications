@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * On the SolBus, all messages follow this format
@@ -17,13 +18,21 @@ public class SolMessage {
 
     private String subject;
     private String verb;
-    private String idMetadataKey;
+    private String subjectIdMetadataKey;
     private String publisher; // app/component
     private Long tenantId;
     private Long entityId;
     private Object data;
     private Map<String, Object> metadata;
 
+    public TriggeringEvent toTrigger() {
+        TriggeringEvent result = new TriggeringEvent();
+        result.setEventMetadata(getMetadata().entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> (String) e.getValue())));
+        result.setSubjectId(metadata.getOrDefault(subjectIdMetadataKey, "").toString());
+        result.setSubjectIdMetadataKey(getSubjectIdMetadataKey());
+        return result;
+    }
     /**
      * Create a flat, Properties-like, construct representing the data in the provided context. This facilitates
      * the use of context keys such as {@code parent.child.property}
@@ -66,12 +75,12 @@ public class SolMessage {
         this.verb = verb;
     }
 
-    public String getIdMetadataKey() {
-        return idMetadataKey;
+    public String getSubjectIdMetadataKey() {
+        return subjectIdMetadataKey;
     }
 
-    public void setIdMetadataKey(String idMetadataKey) {
-        this.idMetadataKey = idMetadataKey;
+    public void setSubjectIdMetadataKey(String subjectIdMetadataKey) {
+        this.subjectIdMetadataKey = subjectIdMetadataKey;
     }
 
     public String getPublisher() {

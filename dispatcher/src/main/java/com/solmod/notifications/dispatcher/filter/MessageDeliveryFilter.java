@@ -1,6 +1,6 @@
 package com.solmod.notifications.dispatcher.filter;
 
-import com.solmod.notifications.dispatcher.domain.SolMessage;
+import com.solmod.notifications.dispatcher.domain.TriggeringEvent;
 import com.solmod.notifications.dispatcher.service.domain.TriggeredMessageTemplateGroup;
 
 @FunctionalInterface
@@ -13,10 +13,9 @@ public interface MessageDeliveryFilter {
      * 2. Assess each MessageTemplate
      *
      * @param templateGroup {@link TriggeredMessageTemplateGroup}
-     * @param solMessage    {@link SolMessage}
+     * @param trigger    {@link com.solmod.notifications.dispatcher.domain.TriggeringEvent}
      * @return {@link FilterResponse}
-     * @throws {@link FilterException} in the event of an error preventing proper calculation/processing
+     * @throws FilterException in the event of an error preventing proper calculation/processing
      */
-    FilterResponse apply(final TriggeredMessageTemplateGroup templateGroup, SolMessage solMessage)
-            throws FilterException;
+    FilterResponse apply(final TriggeredMessageTemplateGroup templateGroup, TriggeringEvent trigger) throws FilterException;
 }
