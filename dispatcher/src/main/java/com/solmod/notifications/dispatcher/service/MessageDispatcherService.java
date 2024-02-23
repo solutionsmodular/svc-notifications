@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -48,9 +50,10 @@ public class MessageDispatcherService {
         // TODO: some sort of initial filtering here, perhaps based on template status?
         messagesToSend.setQualifiedTemplates(dispatchTemplates); // Before filters, all templates qualify
 
+        List<MessageDelivery> resultingDeliveries = new LinkedList<>();
         for (MessageTemplate curTemplate : messagesToSend.getQualifiedTemplates()) {
             try {
-                Map<Long, DeliveryPermission> deliveryPermissions = messageFilterService.determineDeliveryPermissions(messagesToSend, trigger);
+                Map<Long, DeliveryPermission> deliveryPermissions = messageFilterService.applyDeliveryFilters(messagesToSend, trigger);
                 DeliveryPermission deliveryPermission = deliveryPermissions.get(curTemplate.getMessageTemplateID());
                 // If the current verdict is SEND_NEVER, no sense in doing stuff anymore
                 if (deliveryPermission.getVerdict() == DeliveryPermission.Verdict.SEND_NEVER) {

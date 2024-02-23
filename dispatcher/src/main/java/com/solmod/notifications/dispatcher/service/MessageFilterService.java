@@ -32,7 +32,7 @@ public class MessageFilterService {
      * @param trigger    {@link TriggeringEvent}
      * @return Map of {@link DeliveryPermission} representing the most restrictive of the verdicts as calculated by each filter
      */
-    public Map<Long, DeliveryPermission> determineDeliveryPermissions(TriggeredMessageTemplateGroup templateGroup, final TriggeringEvent trigger)
+    public Map<Long, DeliveryPermission> applyDeliveryFilters(TriggeredMessageTemplateGroup templateGroup, final TriggeringEvent trigger)
             throws FilterException {
         Map<Long, DeliveryPermission> resultingPermissions = new HashMap<>();
 
