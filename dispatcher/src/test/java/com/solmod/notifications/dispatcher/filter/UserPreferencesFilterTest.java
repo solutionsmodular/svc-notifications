@@ -8,7 +8,6 @@ import com.solmod.notifications.dispatcher.domain.SolMessage;
 import com.solmod.notifications.dispatcher.repository.MessageDeliveryRepo;
 import com.solmod.notifications.dispatcher.repository.domain.MessageDelivery;
 import com.solmod.notifications.dispatcher.service.domain.DeliveryPermission;
-import com.solmod.notifications.dispatcher.service.domain.TriggeredMessageTemplateGroup;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -51,14 +50,12 @@ class UserPreferencesFilterTest {
         String sender = "email";
 
         // Arrange
-        TriggeredMessageTemplateGroup tGroup = new TriggeredMessageTemplateGroup();
         MessageTemplate template = new MessageTemplate();
 
         template.setMessageTemplateID(5500L);
         template.setSender(sender); // This and class relate to preferences
         template.setMessageClass(MessageClass.TEAM.name());
         template.setRecipientAddressContextKey("root.user.email");
-        tGroup.setQualifiedTemplates(Set.of(template));
         SolMessage msg = new SolMessage();
         TestObject v1 = new TestObject(new TestUser(email));
 
@@ -70,10 +67,9 @@ class UserPreferencesFilterTest {
         when(userDeliveryPreferencesService.getDeliveryPreferences(email, sender)).thenReturn(null);
 
         // Act
-        FilterResponse apply = filter.apply(tGroup, msg.toTrigger());
+        DeliveryPermission result = filter.apply(template, msg.toTrigger());
 
         // Assert
-        DeliveryPermission result = apply.getPermissions().get(template.getMessageTemplateID());
         assertEquals(SEND_NEVER, result.getVerdict());
         assertTrue(result.getMessage().contains("has no specified preferences for email sender"));
         verify(userDeliveryPreferencesService, times(1)).getDeliveryPreferences(email, sender);
@@ -85,14 +81,12 @@ class UserPreferencesFilterTest {
         String email = "some.email@somewhere.com";
         String sender = "email";
 
-        TriggeredMessageTemplateGroup tGroup = new TriggeredMessageTemplateGroup();
         MessageTemplate template = new MessageTemplate();
 
         template.setMessageTemplateID(5500L);
         template.setSender(sender); // This and class relate to preferences
         template.setMessageClass(MessageClass.TEAM.name());
         template.setRecipientAddressContextKey("root.user.wrongemailkey");
-        tGroup.setQualifiedTemplates(Set.of(template));
         SolMessage msg = new SolMessage();
         TestObject v1 = new TestObject(new TestUser(email));
 
@@ -102,11 +96,12 @@ class UserPreferencesFilterTest {
         assertNotNull(metadata.get("root.user.email"));
 
         // Act
-        Exception exception = assertThrows(FilterException.class, () -> {
-            filter.apply(tGroup, msg.toTrigger());
-        });
+        Exception exception = assertThrows(FilterException.class, () ->
+                filter.apply(template, msg.toTrigger()));
 
-
+        String exceptionMessage = exception.getMessage();
+        assertTrue(exceptionMessage.contains("Could not determine recipient address"));
+        assertTrue(exceptionMessage.contains("expected at root.user.wrongemailkey"));
     }
 
     @Test
@@ -115,14 +110,11 @@ class UserPreferencesFilterTest {
         String email = "some.email@somewhere.com";
         String sender = "email";
 
-        TriggeredMessageTemplateGroup tGroup = new TriggeredMessageTemplateGroup();
         MessageTemplate template = new MessageTemplate();
-
         template.setMessageTemplateID(5500L);
         template.setSender(sender); // This and class relate to preferences
         template.setMessageClass(MessageClass.TEAM.name());
         template.setRecipientAddressContextKey("root.user.email");
-        tGroup.setQualifiedTemplates(Set.of(template));
 
         SolMessage msg = new SolMessage();
         TestObject v1 = new TestObject(new TestUser(email));
@@ -138,9 +130,8 @@ class UserPreferencesFilterTest {
 
         when(userDeliveryPreferencesService.getDeliveryPreferences(email, sender)).thenReturn(mockPrefs);
 
-        FilterResponse response = filter.apply(tGroup, msg.toTrigger());
+        DeliveryPermission result = filter.apply(template, msg.toTrigger());
 
-        DeliveryPermission result = response.getPermissions().get(template.getMessageTemplateID());
         assertEquals(DeliveryPermission.SEND_NOW_PERMISSION, result);
     }
 
@@ -150,14 +141,11 @@ class UserPreferencesFilterTest {
         String email = "some.email@somewhere.com";
         String sender = "email";
 
-        TriggeredMessageTemplateGroup tGroup = new TriggeredMessageTemplateGroup();
         MessageTemplate template = new MessageTemplate();
-
         template.setMessageTemplateID(5500L);
         template.setSender(sender); // This and class relate to preferences
         template.setMessageClass(MessageClass.TEAM.name());
         template.setRecipientAddressContextKey("root.user.email");
-        tGroup.setQualifiedTemplates(Set.of(template));
 
         SolMessage msg = new SolMessage();
         TestObject v1 = new TestObject(new TestUser(email));
@@ -173,9 +161,8 @@ class UserPreferencesFilterTest {
 
         when(userDeliveryPreferencesService.getDeliveryPreferences(email, sender)).thenReturn(mockPrefs);
 
-        FilterResponse response = filter.apply(tGroup, msg.toTrigger());
+        DeliveryPermission result = filter.apply(template, msg.toTrigger());
 
-        DeliveryPermission result = response.getPermissions().get(template.getMessageTemplateID());
         assertEquals(SEND_NEVER, result.getVerdict());
         assertTrue(result.getMessage().contains("preferences do not allow TEAM messages via email"));
     }
@@ -186,14 +173,11 @@ class UserPreferencesFilterTest {
         String email = "some.email@somewhere.com";
         String sender = "email";
 
-        TriggeredMessageTemplateGroup tGroup = new TriggeredMessageTemplateGroup();
         MessageTemplate template = new MessageTemplate();
-
         template.setMessageTemplateID(5500L);
         template.setSender(sender); // This and class relate to preferences
         template.setMessageClass(MessageClass.TEAM.name());
         template.setRecipientAddressContextKey("root.user.email");
-        tGroup.setQualifiedTemplates(Set.of(template));
 
         SolMessage msg = new SolMessage();
         TestObject v1 = new TestObject(new TestUser(email));
@@ -211,9 +195,8 @@ class UserPreferencesFilterTest {
 
         when(userDeliveryPreferencesService.getDeliveryPreferences(email, sender)).thenReturn(mockPrefs);
 
-        FilterResponse response = filter.apply(tGroup, msg.toTrigger());
+        DeliveryPermission result = filter.apply(template, msg.toTrigger());
 
-        DeliveryPermission result = response.getPermissions().get(template.getMessageTemplateID());
         assertEquals(DeliveryPermission.SEND_NOW_PERMISSION, result);
     }
 
@@ -223,14 +206,11 @@ class UserPreferencesFilterTest {
         String email = "some.email@somewhere.com";
         String sender = "email";
 
-        TriggeredMessageTemplateGroup tGroup = new TriggeredMessageTemplateGroup();
         MessageTemplate template = new MessageTemplate();
-
         template.setMessageTemplateID(5500L);
         template.setSender(sender); // This and class relate to preferences
         template.setMessageClass(MessageClass.TEAM.name());
         template.setRecipientAddressContextKey("root.user.email");
-        tGroup.setQualifiedTemplates(Set.of(template));
 
         SolMessage msg = new SolMessage();
         TestObject v1 = new TestObject(new TestUser(email));
@@ -261,9 +241,8 @@ class UserPreferencesFilterTest {
                 email)).thenReturn(List.of(delivery));
 
 
-        FilterResponse response = filter.apply(tGroup, msg.toTrigger());
+        DeliveryPermission result = filter.apply(template, msg.toTrigger());
 
-        DeliveryPermission result = response.getPermissions().get(template.getMessageTemplateID());
         assertEquals(DeliveryPermission.Verdict.SEND_LATER, result.getVerdict());
         assertTrue(result.getMessage().contains("within recipient blackout period"));
     }
@@ -274,14 +253,11 @@ class UserPreferencesFilterTest {
         String email = "some.email@somewhere.com";
         String sender = "email";
 
-        TriggeredMessageTemplateGroup tGroup = new TriggeredMessageTemplateGroup();
         MessageTemplate template = new MessageTemplate();
-
         template.setMessageTemplateID(5500L);
         template.setSender(sender); // This and class relate to preferences
         template.setMessageClass(MessageClass.TEAM.name());
         template.setRecipientAddressContextKey("root.user.email");
-        tGroup.setQualifiedTemplates(Set.of(template));
 
         SolMessage msg = new SolMessage();
         TestObject v1 = new TestObject(new TestUser(email));
@@ -298,9 +274,8 @@ class UserPreferencesFilterTest {
 
         when(userDeliveryPreferencesService.getDeliveryPreferences(email, sender)).thenReturn(mockPrefs);
 
-        FilterResponse response = filter.apply(tGroup, msg.toTrigger());
+        DeliveryPermission result = filter.apply(template, msg.toTrigger());
 
-        DeliveryPermission result = response.getPermissions().get(template.getMessageTemplateID());
         assertEquals(DeliveryPermission.Verdict.SEND_NOW, result.getVerdict());
     }
 
@@ -311,14 +286,11 @@ class UserPreferencesFilterTest {
         String sender = "email";
         int resendInterval = 5;
 
-        TriggeredMessageTemplateGroup tGroup = new TriggeredMessageTemplateGroup();
         MessageTemplate template = new MessageTemplate();
-
         template.setMessageTemplateID(5500L);
         template.setSender(sender); // This and class relate to preferences
         template.setMessageClass(MessageClass.TEAM.name());
         template.setRecipientAddressContextKey("root.user.email");
-        tGroup.setQualifiedTemplates(Set.of(template));
 
         SolMessage msg = new SolMessage();
         TestObject v1 = new TestObject(new TestUser(email));
@@ -342,9 +314,8 @@ class UserPreferencesFilterTest {
                 "root.user.email", // use what we've already set up for email for simplicity
                 email)).thenReturn(List.of(delivery));
 
-        FilterResponse response = filter.apply(tGroup, msg.toTrigger());
+        DeliveryPermission result = filter.apply(template, msg.toTrigger());
 
-        DeliveryPermission result = response.getPermissions().get(template.getMessageTemplateID());
         assertEquals(DeliveryPermission.SEND_NOW_PERMISSION, result);
     }
 
@@ -355,14 +326,11 @@ class UserPreferencesFilterTest {
         String sender = "email";
         int resendInterval = 5;
 
-        TriggeredMessageTemplateGroup tGroup = new TriggeredMessageTemplateGroup();
         MessageTemplate template = new MessageTemplate();
-
         template.setMessageTemplateID(5500L);
         template.setSender(sender); // This and class relate to preferences
         template.setMessageClass(MessageClass.TEAM.name());
         template.setRecipientAddressContextKey("root.user.email");
-        tGroup.setQualifiedTemplates(Set.of(template));
 
         SolMessage msg = new SolMessage();
         TestObject v1 = new TestObject(new TestUser(email));
@@ -386,9 +354,8 @@ class UserPreferencesFilterTest {
                 "root.user.email", // use what we've already set up for email for simplicity
                 email)).thenReturn(List.of(delivery));
 
-        FilterResponse response = filter.apply(tGroup, msg.toTrigger());
+        DeliveryPermission result = filter.apply(template, msg.toTrigger());
 
-        DeliveryPermission result = response.getPermissions().get(template.getMessageTemplateID());
         assertEquals(SEND_NEVER, result.getVerdict());
         assertEquals("Recipient's interval settings for duplicate message has not elapsed", result.getMessage());
     }

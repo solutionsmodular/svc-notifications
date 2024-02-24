@@ -1,35 +1,27 @@
 package com.solmod.notifications.dispatcher.filter;
 
-import com.solmod.notifications.admin.web.model.MessageTemplateDTO;
 import com.solmod.notifications.dispatcher.domain.MessageTemplate;
 import com.solmod.notifications.dispatcher.domain.TriggeringEvent;
 import com.solmod.notifications.dispatcher.service.domain.DeliveryPermission;
-import com.solmod.notifications.dispatcher.service.domain.TriggeredMessageTemplateGroup;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
-import java.util.Set;
 
 @Component
 public class ThemeCriteriaFilter  implements MessageDeliveryFilter {
 
     @Override
-    public FilterResponse apply(TriggeredMessageTemplateGroup templateGroup, TriggeringEvent trigger) {
-        FilterResponse response = new FilterResponse("theme-criteria");
-        if (templateGroup.getQualifiedTemplates().isEmpty()) {
-            return response;
-        }
-
-        Map<String, String> flattened = trigger.getEventMetadata();
-        Set<MessageTemplate> messageTemplates = templateGroup.getQualifiedTemplates();
-        for (MessageTemplateDTO curTemplate : messageTemplates) { // use iter.hasNext because of iter.remove used herein
-            response.addDeliveryPermission(curTemplate.getMessageTemplateID(), qualifyTemplate(curTemplate, flattened));
-        }
-
-        return response;
+    public String getFilterName() {
+        return "theme-criteria";
     }
 
-    private DeliveryPermission qualifyTemplate(MessageTemplateDTO curTemplate, Map<String, String> flattenedMetadata) {
+    @Override
+    public DeliveryPermission apply(MessageTemplate messageTemplate, TriggeringEvent trigger) {
+        Map<String, String> flattened = trigger.getEventMetadata();
+        return qualifyTemplate(messageTemplate, flattened);
+    }
+
+    private DeliveryPermission qualifyTemplate(MessageTemplate curTemplate, Map<String, String> flattenedMetadata) {
         if (curTemplate.getDeliveryCriteria() == null || curTemplate.getDeliveryCriteria().getCriteria().isEmpty()) {
             return DeliveryPermission.SEND_NOW_PERMISSION;
         }

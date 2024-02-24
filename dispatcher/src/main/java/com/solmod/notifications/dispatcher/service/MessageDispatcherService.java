@@ -8,7 +8,6 @@ import com.solmod.notifications.dispatcher.filter.FilterException;
 import com.solmod.notifications.dispatcher.repository.domain.MessageDelivery;
 import com.solmod.notifications.dispatcher.repository.domain.MessageMetadata;
 import com.solmod.notifications.dispatcher.service.domain.DeliveryPermission;
-import com.solmod.notifications.dispatcher.service.domain.TriggeredMessageTemplateGroup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,7 +15,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -44,17 +42,13 @@ public class MessageDispatcherService {
                 trigger.getSubject(), trigger.getVerb());
 
         // TODO: If the above returned no results, then an error should be logged suggesting adjusting subscription
-        TriggeredMessageTemplateGroup messagesToSend = new TriggeredMessageTemplateGroup();
         Set<MessageTemplate> dispatchTemplates = templateGroup.getMessageTemplates().stream().map(
                 t -> objectMapper.convertValue(t, MessageTemplate.class)).collect(Collectors.toSet());
-        // TODO: some sort of initial filtering here, perhaps based on template status?
-        messagesToSend.setQualifiedTemplates(dispatchTemplates); // Before filters, all templates qualify
 
         List<MessageDelivery> resultingDeliveries = new LinkedList<>();
-        for (MessageTemplate curTemplate : messagesToSend.getQualifiedTemplates()) {
+        for (MessageTemplate curTemplate : dispatchTemplates) {
             try {
-                Map<Long, DeliveryPermission> deliveryPermissions = messageFilterService.applyDeliveryFilters(messagesToSend, trigger);
-                DeliveryPermission deliveryPermission = deliveryPermissions.get(curTemplate.getMessageTemplateID());
+                DeliveryPermission deliveryPermission = messageFilterService.applyDeliveryFilters(curTemplate, trigger);
                 // If the current verdict is SEND_NEVER, no sense in doing stuff anymore
                 if (deliveryPermission.getVerdict() == DeliveryPermission.Verdict.SEND_NEVER) {
                     log.info("Skipping {} due to {}", curTemplate.getMessageTemplateID(), deliveryPermission.getMessage());

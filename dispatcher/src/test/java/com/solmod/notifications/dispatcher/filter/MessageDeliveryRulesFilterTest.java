@@ -5,7 +5,6 @@ import com.solmod.notifications.dispatcher.domain.SolMessage;
 import com.solmod.notifications.dispatcher.repository.MessageDeliveryRepo;
 import com.solmod.notifications.dispatcher.repository.domain.MessageDelivery;
 import com.solmod.notifications.dispatcher.service.domain.DeliveryPermission;
-import com.solmod.notifications.dispatcher.service.domain.TriggeredMessageTemplateGroup;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -17,9 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static com.solmod.notifications.dispatcher.service.domain.DeliveryPermission.Verdict.SEND_NEVER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -54,21 +51,16 @@ class MessageDeliveryRulesFilterTest {
         when(repo.findAllDeliveries(template.getMessageTemplateID(), "someone@somewhere.com", "some.key", "somevalue"))
                 .thenReturn(List.of(delivery, delivery2));
 
-        TriggeredMessageTemplateGroup triggeredGroup = new TriggeredMessageTemplateGroup();
-        Set<MessageTemplate> templates = new HashSet<>();
-        templates.add(template);
-        triggeredGroup.setQualifiedTemplates(templates);
-
         SolMessage solMessage = new SolMessage();
         solMessage.setSubjectIdMetadataKey("some.key");
         solMessage.setData(new TestDataObject("someone@somewhere.com", new TestDataChildObject("somevalue")));
         solMessage.setTenantId(15L);
 
         // Act
-        FilterResponse response = filter.apply(triggeredGroup, solMessage.toTrigger());
+        DeliveryPermission result = filter.apply(template, solMessage.toTrigger());
 
         // Assert
-        assertEquals(DeliveryPermission.SEND_NOW_PERMISSION, response.getPermissions().get(template.getMessageTemplateID()));
+        assertEquals(DeliveryPermission.SEND_NOW_PERMISSION, result);
     }
 
     @Test
@@ -88,21 +80,16 @@ class MessageDeliveryRulesFilterTest {
         when(repo.findAllDeliveries(template.getMessageTemplateID(), "someone@somewhere.com", "some.key", "somevalue"))
                 .thenReturn(List.of(delivery, delivery2));
 
-        TriggeredMessageTemplateGroup triggeredGroup = new TriggeredMessageTemplateGroup();
-        Set<MessageTemplate> templates = new HashSet<>();
-        templates.add(template);
-        triggeredGroup.setQualifiedTemplates(templates);
-
         SolMessage solMessage = new SolMessage();
         solMessage.setSubjectIdMetadataKey("some.key");
         solMessage.setData(new TestDataObject("someone@somewhere.com", new TestDataChildObject("somevalue")));
         solMessage.setTenantId(15L);
 
         // Act
-        FilterResponse response = filter.apply(triggeredGroup, solMessage.toTrigger());
+        DeliveryPermission result = filter.apply(template, solMessage.toTrigger());
 
         // Assert
-        assertEquals(DeliveryPermission.SEND_NOW_PERMISSION, response.getPermissions().get(template.getMessageTemplateID()));
+        assertEquals(DeliveryPermission.SEND_NOW_PERMISSION, result);
     }
 
     @Test
@@ -121,21 +108,15 @@ class MessageDeliveryRulesFilterTest {
         when(repo.findAllDeliveries(template.getMessageTemplateID(), "someone@somewhere.com", "some.key", "somevalue"))
                 .thenReturn(List.of(delivery, delivery2));
 
-        TriggeredMessageTemplateGroup triggeredGroup = new TriggeredMessageTemplateGroup();
-        Set<MessageTemplate> templates = new HashSet<>();
-        templates.add(template);
-        triggeredGroup.setQualifiedTemplates(templates);
-
         SolMessage solMessage = new SolMessage();
         solMessage.setSubjectIdMetadataKey("some.key");
         solMessage.setData(new TestDataObject("someone@somewhere.com", new TestDataChildObject("somevalue")));
         solMessage.setTenantId(15L);
 
         // Act
-        FilterResponse response = filter.apply(triggeredGroup, solMessage.toTrigger());
+        DeliveryPermission result = filter.apply(template, solMessage.toTrigger());
 
         // Assert
-        DeliveryPermission result = response.getPermissions().get(template.getMessageTemplateID());
         assertEquals(SEND_NEVER, result.getVerdict());
         assertTrue(result.getMessage().contains("received the max duplicates"));
     }
@@ -157,21 +138,16 @@ class MessageDeliveryRulesFilterTest {
         when(repo.findAllDeliveries(template.getMessageTemplateID(), "someone@somewhere.com", "some.key", "somevalue"))
                 .thenReturn(List.of(delivery, delivery2));
 
-        TriggeredMessageTemplateGroup triggeredGroup = new TriggeredMessageTemplateGroup();
-        Set<MessageTemplate> templates = new HashSet<>();
-        templates.add(template);
-        triggeredGroup.setQualifiedTemplates(templates);
-
         SolMessage solMessage = new SolMessage();
         solMessage.setSubjectIdMetadataKey("some.key");
         solMessage.setData(new TestDataObject("someone@somewhere.com", new TestDataChildObject("somevalue")));
         solMessage.setTenantId(15L);
 
         // Act
-        FilterResponse response = filter.apply(triggeredGroup, solMessage.toTrigger());
+        DeliveryPermission result = filter.apply(template, solMessage.toTrigger());
 
         // Assert
-        assertEquals(SEND_NEVER, response.getPermissions().get(template.getMessageTemplateID()).getVerdict());
+        assertEquals(SEND_NEVER, result.getVerdict());
     }
 
     @NotNull

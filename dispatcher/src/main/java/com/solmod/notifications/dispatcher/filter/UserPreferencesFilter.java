@@ -8,7 +8,6 @@ import com.solmod.notifications.dispatcher.domain.TriggeringEvent;
 import com.solmod.notifications.dispatcher.repository.MessageDeliveryRepo;
 import com.solmod.notifications.dispatcher.repository.domain.MessageDelivery;
 import com.solmod.notifications.dispatcher.service.domain.DeliveryPermission;
-import com.solmod.notifications.dispatcher.service.domain.TriggeredMessageTemplateGroup;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,21 +36,15 @@ public class UserPreferencesFilter implements MessageDeliveryFilter {
     }
 
     @Override
-    public FilterResponse apply(TriggeredMessageTemplateGroup templateGroup, TriggeringEvent trigger)
+    public String getFilterName() {
+        return "user-preferences";
+    }
+
+    @Override
+    public DeliveryPermission apply(final MessageTemplate messageTemplate, TriggeringEvent trigger)
             throws FilterException {
-        FilterResponse response = new FilterResponse("user-preferences");
 
-        if (templateGroup.getQualifiedTemplates().isEmpty()) {
-            return response;
-        }
-
-        // Determine send'ability for each template in the group
-        for (MessageTemplate curTemplate : templateGroup.getQualifiedTemplates()) {
-            DeliveryPermission permissionToSendTemplate = processRules(trigger, curTemplate);
-            response.addDeliveryPermission(curTemplate.getMessageTemplateID(), permissionToSendTemplate);
-        }
-
-        return response;
+        return processRules(trigger, messageTemplate);
     }
 
     /**

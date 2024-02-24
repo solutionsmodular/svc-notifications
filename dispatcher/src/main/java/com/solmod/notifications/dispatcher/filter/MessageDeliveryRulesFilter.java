@@ -5,11 +5,9 @@ import com.solmod.notifications.dispatcher.domain.TriggeringEvent;
 import com.solmod.notifications.dispatcher.repository.MessageDeliveryRepo;
 import com.solmod.notifications.dispatcher.repository.domain.MessageDelivery;
 import com.solmod.notifications.dispatcher.service.domain.DeliveryPermission;
-import com.solmod.notifications.dispatcher.service.domain.TriggeredMessageTemplateGroup;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Set;
 
 @Component
 public class MessageDeliveryRulesFilter implements MessageDeliveryFilter {
@@ -21,30 +19,25 @@ public class MessageDeliveryRulesFilter implements MessageDeliveryFilter {
     }
 
     @Override
-    public FilterResponse apply(final TriggeredMessageTemplateGroup templateGroup, TriggeringEvent trigger) {
-        FilterResponse response = new FilterResponse("delivery-rules");
-        if (templateGroup.getQualifiedTemplates().isEmpty()) {
-            return response;
+    public String getFilterName() {
+        return "delivery-rules";
+    }
+
+    @Override
+    public DeliveryPermission apply(final MessageTemplate messageTemplate, TriggeringEvent trigger) {
+
+        String recipientAddress = trigger.getEventMetadata().getOrDefault(
+                messageTemplate.getRecipientAddressContextKey(), "");
+        if (messageTemplate.hasSendRules()) {
+            List<MessageDelivery> allDeliveries = messageDeliveryRepo.findAllDeliveries(
+                    messageTemplate.getMessageTemplateID(),
+                    recipientAddress,
+                    trigger.getSubjectIdMetadataKey(),
+                    trigger.getEventMetadata().get(trigger.getSubjectIdMetadataKey()));
+
+            return messageTemplate.applySendRules(allDeliveries);
+        } else {
+            return DeliveryPermission.SEND_NOW_PERMISSION;
         }
-
-        Set<MessageTemplate> qualifyingTemplates = templateGroup.getQualifiedTemplates();
-        for (MessageTemplate curTemplate : qualifyingTemplates) {
-            // Filter only if there are send-rules in place
-            String recipientAddress = trigger.getEventMetadata().getOrDefault(
-                    curTemplate.getRecipientAddressContextKey(), "").toString();
-            if (curTemplate.hasSendRules()) {
-                List<MessageDelivery> allDeliveries = messageDeliveryRepo.findAllDeliveries(
-                        curTemplate.getMessageTemplateID(),
-                        recipientAddress,
-                        trigger.getSubjectIdMetadataKey(),
-                        trigger.getEventMetadata().get(trigger.getSubjectIdMetadataKey()));
-
-                response.addDeliveryPermission(curTemplate.getMessageTemplateID(), curTemplate.applySendRules(allDeliveries));
-            } else {
-                response.addDeliveryPermission(curTemplate.getMessageTemplateID(), DeliveryPermission.SEND_NOW_PERMISSION);
-            }
-        }
-
-        return response;
     }
 }
